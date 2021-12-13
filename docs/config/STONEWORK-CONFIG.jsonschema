@@ -1,0 +1,3369 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "properties": {
+        "linuxConfig": {
+            "properties": {
+                "RuleChainList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "logical name of the rule chain across all configured\nrule chains (mandatory)"
+                            },
+                            "namespace": {
+                                "$ref": "ligato.linux.namespace.NetNamespace",
+                                "additionalProperties": true,
+                                "description": "network namespace in which this rule chain is applied"
+                            },
+                            "interfaces": {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array",
+                                "description": "list of interfaces referred by the rules (optional)"
+                            },
+                            "protocol": {
+                                "enum": [
+                                    "IPV4",
+                                    0,
+                                    "IPV6",
+                                    1
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "protocol (address family) of the rule chain"
+                            },
+                            "table": {
+                                "enum": [
+                                    "FILTER",
+                                    0,
+                                    "NAT",
+                                    1,
+                                    "MANGLE",
+                                    2,
+                                    "RAW",
+                                    3,
+                                    "SECURITY",
+                                    4
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "table the rule chain belongs to"
+                            },
+                            "chainType": {
+                                "enum": [
+                                    "CUSTOM",
+                                    0,
+                                    "INPUT",
+                                    1,
+                                    "OUTPUT",
+                                    2,
+                                    "FORWARD",
+                                    3,
+                                    "PREROUTING",
+                                    4,
+                                    "POSTROUTING",
+                                    5
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "type of the chain"
+                            },
+                            "chainName": {
+                                "type": "string",
+                                "description": "name of the chain, used only for chains with CUSTOM chain_type"
+                            },
+                            "defaultPolicy": {
+                                "enum": [
+                                    "NONE",
+                                    0,
+                                    "ACCEPT",
+                                    1,
+                                    "DROP",
+                                    2,
+                                    "QUEUE",
+                                    3,
+                                    "RETURN",
+                                    4
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "default policy of the chain. Used for FILTER tables only."
+                            },
+                            "rules": {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array",
+                                "description": "ordered list of strings containing the match and action part of\nthe rules, e.g. \"-i eth0 -s 192.168.0.1 -j ACCEPT\""
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "arpEntries": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "interface": {
+                                "type": "string"
+                            },
+                            "ipAddress": {
+                                "type": "string"
+                            },
+                            "hwAddress": {
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "interfaces": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Name is mandatory field representing logical name for the interface.\n It must be unique across all configured interfaces."
+                            },
+                            "type": {
+                                "enum": [
+                                    "UNDEFINED",
+                                    0,
+                                    "VETH",
+                                    1,
+                                    "TAP_TO_VPP",
+                                    2,
+                                    "LOOPBACK",
+                                    3,
+                                    "EXISTING",
+                                    4,
+                                    "VRF_DEVICE",
+                                    5,
+                                    "DUMMY",
+                                    6
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "Type represents the type of interface and It must match with actual Link."
+                            },
+                            "namespace": {
+                                "$ref": "ligato.linux.namespace.NetNamespace",
+                                "additionalProperties": true,
+                                "description": "Namespace is a reference to a Linux network namespace where the interface\n should be put into."
+                            },
+                            "hostIfName": {
+                                "type": "string",
+                                "description": "Name of the interface in the host OS. If not set, the host name will be\n the same as the interface logical name."
+                            },
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Enabled controls if the interface should be UP."
+                            },
+                            "ipAddresses": {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array",
+                                "description": "IPAddresses define list of IP addresses for the interface and must be\n defined in the following format: \u003cipAddress\u003e/\u003cipPrefix\u003e.\n Interface IP address can be also allocated via netalloc plugin and\n referenced here, see: api/models/netalloc/netalloc.proto"
+                            },
+                            "physAddress": {
+                                "type": "string",
+                                "description": "PhysAddress represents physical address (MAC) of the interface.\n Random address will be assigned if left empty.\n Not used (and not supported) by VRF devices."
+                            },
+                            "mtu": {
+                                "type": "integer",
+                                "description": "MTU is the maximum transmission unit value."
+                            },
+                            "veth": {
+                                "properties": {
+                                    "peerIfName": {
+                                        "type": "string",
+                                        "description": "Name of the VETH peer, i.e. other end of the linux veth (mandatory for VETH)"
+                                    },
+                                    "rxChecksumOffloading": {
+                                        "enum": [
+                                            "CHKSM_OFFLOAD_DEFAULT",
+                                            0,
+                                            "CHKSM_OFFLOAD_ENABLED",
+                                            1,
+                                            "CHKSM_OFFLOAD_DISABLED",
+                                            2
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "Checksum offloading - Rx side (enabled by default)"
+                                    },
+                                    "txChecksumOffloading": {
+                                        "enum": [
+                                            "CHKSM_OFFLOAD_DEFAULT",
+                                            0,
+                                            "CHKSM_OFFLOAD_ENABLED",
+                                            1,
+                                            "CHKSM_OFFLOAD_DISABLED",
+                                            2
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "Checksum offloading - Tx side (enabled by default)"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object",
+                                "description": "VETH-specific configuration"
+                            },
+                            "tap": {
+                                "properties": {
+                                    "vppTapIfName": {
+                                        "type": "string",
+                                        "description": "Logical name of the VPP TAP interface (mandatory for TAP_TO_VPP)"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object",
+                                "description": "TAP_TO_VPP-specific configuration"
+                            },
+                            "vrfDev": {
+                                "properties": {
+                                    "routingTable": {
+                                        "type": "integer",
+                                        "description": "Routing table associated with the VRF.\n Table ID is an 8-bit unsigned integer value. Please note that 253, 254 and 255 are reserved values\n for special routing tables (main, default, local).\n Multiple VRFs inside the same network namespace should each use a different routing table.\n For more information, visit: http://linux-ip.net/html/routing-tables.html"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object",
+                                "description": "VRF_DEVICE-specific configuration"
+                            },
+                            "linkOnly": {
+                                "type": "boolean",
+                                "description": "Configure/Resync link only. IP/MAC addresses are expected to be configured\n externally - i.e. by a different agent or manually via CLI."
+                            },
+                            "vrfMasterInterface": {
+                                "type": "string",
+                                "description": "Reference to the logical name of a VRF_DEVICE interface.\n If defined, this interface will be enslaved to the VRF device and will thus become\n part of the VRF (L3-level separation) that the device represents.\n Interfaces enslaved to the same VRF_DEVICE master interface therefore\n comprise single VRF with a separate routing table."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "routes": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "outgoingInterface": {
+                                "type": "string",
+                                "description": "Outgoing interface logical name (mandatory)."
+                            },
+                            "scope": {
+                                "enum": [
+                                    "UNDEFINED",
+                                    0,
+                                    "GLOBAL",
+                                    1,
+                                    "SITE",
+                                    2,
+                                    "LINK",
+                                    3,
+                                    "HOST",
+                                    4
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "The scope of the area where the link is valid."
+                            },
+                            "dstNetwork": {
+                                "type": "string",
+                                "description": "Destination network address in the format \u003caddress\u003e/\u003cprefix\u003e (mandatory)\n Address can be also allocated via netalloc plugin and referenced here,\n see: api/models/netalloc/netalloc.proto"
+                            },
+                            "gwAddr": {
+                                "type": "string",
+                                "description": "Gateway IP address (without mask, optional).\n Address can be also allocated via netalloc plugin and referenced here,\n see: api/models/netalloc/netalloc.proto"
+                            },
+                            "metric": {
+                                "type": "integer",
+                                "description": "routing metric (weight)"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "netallocConfig": {
+            "properties": {
+                "ipAddresses": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "networkName": {
+                                "type": "string",
+                                "description": "NetworkName is some label assigned to the network where the IP address\n was assigned to the given interface.\n In theory, interface can have multiple IP adresses or there can be multiple\n address allocators and the network name allows to separate them.\n The network name is not allowed to contain forward slashes."
+                            },
+                            "interfaceName": {
+                                "type": "string",
+                                "description": "InterfaceName is the logical VPP or Linux interface name for which the\n address is allocated."
+                            },
+                            "address": {
+                                "type": "string",
+                                "description": "Address is an IP addres allocated to the interface inside the given\n network.\n If the address is specified without a mask, the all-ones mask (/32 for\n IPv4, /128 for IPv6) will be assumed."
+                            },
+                            "gw": {
+                                "type": "string",
+                                "description": "Gw is the address of the default gateway assigned to the interface in\n the given network.\n If the address is specified without a mask, then either:\n  a) the mask of the \u003caddress\u003e is used provided that GW IP falls into the\n     same network IP range, or\n  b) the all-ones mask is used otherwise"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "IPAllocation represents a single allocated IP address.\n\n To reference allocated address, instead of entering specific IP address\n for interface/route/ARP/..., use one of the following string templates\n prefixed with netalloc keyword \"alloc\" followed by colon:\n  a) reference IP address allocated for an interface:\n        \"alloc:\u003cnetwork_name\u003e/\u003cinterface_name\u003e\"\n  b) when interface is given (e.g. when asked for IP from interface model),\n     interface_name can be omitted:\n        \"alloc:\u003cnetwork_name\u003e\"\n  c) reference default gateway IP address assigned to an interface:\n        \"alloc:\u003cnetwork_name\u003e/\u003cinterface_name\u003e/GW\"\n  d) when asking for GW IP for interface which is given, interface_name\n     can be omitted:\n        \"alloc:\u003cnetwork_name\u003e/GW\""
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "vppConfig": {
+            "properties": {
+                "ABXList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "index": {
+                                "type": "integer",
+                                "description": "ABX index (unique identifier)"
+                            },
+                            "aclName": {
+                                "type": "string",
+                                "description": "Name of the associated access list"
+                            },
+                            "outputInterface": {
+                                "type": "string",
+                                "description": "Name of outgoing interface"
+                            },
+                            "dstMac": {
+                                "type": "string",
+                                "description": "Rewrite destination mac address"
+                            },
+                            "attachedInterfaces": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "inputInterface": {
+                                            "type": "string"
+                                        },
+                                        "priority": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "description": "List of interfaces attached to the ABX"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "ACL based xconnect"
+                    },
+                    "type": "array"
+                },
+                "BFDList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "interface": {
+                                "type": "string",
+                                "description": "Name of the interface the BFD session is attached to."
+                            },
+                            "localIp": {
+                                "type": "string",
+                                "description": "Local IP address. The interface must have the same address configured."
+                            },
+                            "peerIp": {
+                                "type": "string",
+                                "description": "IP address of the peer, must be the same IP version as the local address."
+                            },
+                            "minTxInterval": {
+                                "type": "integer",
+                                "description": "Desired minimum TX interval in milliseconds."
+                            },
+                            "minRxInterval": {
+                                "type": "integer",
+                                "description": "Required minimum RX interval in milliseconds."
+                            },
+                            "detectMultiplier": {
+                                "type": "integer",
+                                "description": "Detect multiplier, must be non-zero value."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Single-hop UDP-based bidirectional forwarding detection session"
+                    },
+                    "type": "array"
+                },
+                "DNSCache": {
+                    "properties": {
+                        "upstreamDnsServers": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "description": "List of upstream DNS servers that are contacted by VPP when unknown domain name needs to be resolved.\nThe results are cached and there should be no further upstream DNS server request for the same domain\nname until cached DNS record expiration."
+                        }
+                    },
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "Nat64AddressPoolList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "vrfId": {
+                                "type": "integer",
+                                "description": "VRF id of tenant, 0xFFFFFFFF means independent of VRF.\n Non-zero (and not all-ones) VRF has to be explicitly created (see proto/ligato/vpp/l3/vrf.proto)."
+                            },
+                            "firstIp": {
+                                "type": "string",
+                                "description": "First IP address of the pool."
+                            },
+                            "lastIp": {
+                                "type": "string",
+                                "description": "Last IP address of the pool. Should be higher than first_ip or empty."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Nat44AddressPool defines an address pool used for NAT64."
+                    },
+                    "type": "array"
+                },
+                "Nat64IPv6PrefixList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "vrfId": {
+                                "type": "integer",
+                                "description": "VRF id of tenant.\n At most one IPv6 prefix can be configured for a given VRF (that's why VRF is part of the key but prefix is not).\n Non-zero (and not all-ones) VRF has to be explicitly created (see proto/ligato/vpp/l3/vrf.proto)."
+                            },
+                            "prefix": {
+                                "type": "string",
+                                "description": "NAT64 prefix in the \u003cIPv6-Address\u003e/\u003cIPv6-Prefix\u003e format."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "IPv4-Embedded IPv6 Address Prefix used for NAT64.\n If no prefix is configured (at all or for a given VRF), then the well-known prefix (64:ff9b::/96) is used."
+                    },
+                    "type": "array"
+                },
+                "Nat64InterfaceList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Interface name (logical)."
+                            },
+                            "type": {
+                                "enum": [
+                                    "IPV6_INSIDE",
+                                    0,
+                                    "IPV4_OUTSIDE",
+                                    1
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ]
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Nat64Interface defines a local network interfaces enabled for NAT64."
+                    },
+                    "type": "array"
+                },
+                "Nat64StaticBIBList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "vrfId": {
+                                "type": "integer",
+                                "description": "VRF (table) ID. Non-zero VRF has to be explicitly created (see proto/ligato/vpp/l3/vrf.proto)."
+                            },
+                            "insideIpv6Address": {
+                                "type": "string",
+                                "description": "IPv6 host from the inside/local network."
+                            },
+                            "insidePort": {
+                                "type": "integer",
+                                "description": "Inside port number (of the IPv6 host)."
+                            },
+                            "outsideIpv4Address": {
+                                "type": "string",
+                                "description": "IPv4 host from the outside/external network."
+                            },
+                            "outsidePort": {
+                                "type": "integer",
+                                "description": "Outside port number (of the IPv4 host)."
+                            },
+                            "protocol": {
+                                "enum": [
+                                    "TCP",
+                                    0,
+                                    "UDP",
+                                    1,
+                                    "ICMP",
+                                    2
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ]
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Static NAT64 binding allowing IPv4 host from the outside to access IPv6 host from the inside."
+                    },
+                    "type": "array"
+                },
+                "RuleList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "ipAddress": {
+                                "type": "string"
+                            },
+                            "interface": {
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "VRRPEntryList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "interface": {
+                                "type": "string",
+                                "description": "This field refers to logical interface name"
+                            },
+                            "vrId": {
+                                "type": "integer",
+                                "description": "Should be \u003e 0 and \u003c= 255"
+                            },
+                            "priority": {
+                                "type": "integer",
+                                "description": "Priority defines which router becomes master. Should be \u003e 0 and \u003c= 255."
+                            },
+                            "interval": {
+                                "type": "integer",
+                                "description": "VR advertisement interval in milliseconds, should be =\u003e 10 and \u003c= 655350. \n (Later, in implemetation it is converted into centiseconds, so precision may be lost)."
+                            },
+                            "preempt": {
+                                "type": "boolean",
+                                "description": "Controls whether a (starting or restarting) \n higher-priority Backup router preempts a lower-priority Master router."
+                            },
+                            "accept": {
+                                "type": "boolean",
+                                "description": "Controls whether a virtual router in Master state will accept packets\n addressed to the address owner's IPvX address as its own if it is not the IPvX address owner."
+                            },
+                            "unicast": {
+                                "type": "boolean",
+                                "description": "Unicast mode may be used to take\n advantage of newer token ring adapter implementations that support\n non-promiscuous reception for multiple unicast MAC addresses and to\n avoid both the multicast traffic and usage conflicts associated with\n the use of token ring functional addresses."
+                            },
+                            "ipAddresses": {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array",
+                                "description": "Ip address quantity should be \u003e 0 and \u003c= 255."
+                            },
+                            "enabled": {
+                                "type": "boolean"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "VRRPEntry represents Virtual Router desired state."
+                    },
+                    "type": "array"
+                },
+                "abfs": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "index": {
+                                "type": "integer",
+                                "description": "ABF index (unique identifier)"
+                            },
+                            "aclName": {
+                                "type": "string",
+                                "description": "Name of the associated access list"
+                            },
+                            "attachedInterfaces": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "inputInterface": {
+                                            "type": "string"
+                                        },
+                                        "priority": {
+                                            "type": "integer"
+                                        },
+                                        "isIpv6": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "description": "List of interfaces attached to the ABF"
+                                },
+                                "type": "array"
+                            },
+                            "forwardingPaths": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "nextHopIp": {
+                                            "type": "string"
+                                        },
+                                        "interfaceName": {
+                                            "type": "string"
+                                        },
+                                        "weight": {
+                                            "type": "integer"
+                                        },
+                                        "preference": {
+                                            "type": "integer"
+                                        },
+                                        "dvr": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "description": "List of forwarding paths added to the ABF policy (via)"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "ABF defines ACL based forwarding."
+                    },
+                    "type": "array"
+                },
+                "acls": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "The name of an access list. A device MAY restrict the length\n and value of this name, possibly spaces and special\n characters are not allowed."
+                            },
+                            "rules": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "action": {
+                                            "enum": [
+                                                "DENY",
+                                                0,
+                                                "PERMIT",
+                                                1,
+                                                "REFLECT",
+                                                2
+                                            ],
+                                            "oneOf": [
+                                                {
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "type": "integer"
+                                                }
+                                            ]
+                                        },
+                                        "ipRule": {
+                                            "properties": {
+                                                "ip": {
+                                                    "properties": {
+                                                        "destinationNetwork": {
+                                                            "type": "string",
+                                                            "description": "Destination IPv4/IPv6 network address (\u003cip\u003e/\u003cnetwork\u003e)"
+                                                        },
+                                                        "sourceNetwork": {
+                                                            "type": "string",
+                                                            "description": "Destination IPv4/IPv6 network address (\u003cip\u003e/\u003cnetwork\u003e)"
+                                                        },
+                                                        "protocol": {
+                                                            "type": "integer",
+                                                            "description": "IP protocol number (http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml)\n Zero value (i.e. undefined protocol) means that the protocol to match will be automatically\n selected from one of the ICMP/ICMP6/TCP/UDP based on the rule definition. For example, if \"icmp\"\n is defined and src/dst addresses are IPv6 then packets of the ICMP6 protocol will be matched, etc."
+                                                        }
+                                                    },
+                                                    "additionalProperties": true,
+                                                    "type": "object"
+                                                },
+                                                "icmp": {
+                                                    "properties": {
+                                                        "icmpv6": {
+                                                            "type": "boolean",
+                                                            "description": "ICMPv6 flag, if false ICMPv4 will be used"
+                                                        },
+                                                        "icmpCodeRange": {
+                                                            "$ref": "ligato.vpp.acl.ACL.Rule.IpRule.Icmp.Range",
+                                                            "additionalProperties": true,
+                                                            "description": "Inclusive range representing icmp codes to be used."
+                                                        },
+                                                        "icmpTypeRange": {
+                                                            "$ref": "ligato.vpp.acl.ACL.Rule.IpRule.Icmp.Range",
+                                                            "additionalProperties": true
+                                                        }
+                                                    },
+                                                    "additionalProperties": true,
+                                                    "type": "object"
+                                                },
+                                                "tcp": {
+                                                    "properties": {
+                                                        "destinationPortRange": {
+                                                            "$ref": "ligato.vpp.acl.ACL.Rule.IpRule.PortRange",
+                                                            "additionalProperties": true
+                                                        },
+                                                        "sourcePortRange": {
+                                                            "$ref": "ligato.vpp.acl.ACL.Rule.IpRule.PortRange",
+                                                            "additionalProperties": true
+                                                        },
+                                                        "tcpFlagsMask": {
+                                                            "type": "integer",
+                                                            "description": "Binary mask for tcp flags to match. MSB order (FIN at position 0).\n Applied as logical AND to tcp flags field of the packet being matched,\n before it is compared with tcp-flags-value."
+                                                        },
+                                                        "tcpFlagsValue": {
+                                                            "type": "integer",
+                                                            "description": "Binary value for tcp flags to match. MSB order (FIN at position 0).\n Before tcp-flags-value is compared with tcp flags field of the packet being matched,\n tcp-flags-mask is applied to packet field value."
+                                                        }
+                                                    },
+                                                    "additionalProperties": true,
+                                                    "type": "object"
+                                                },
+                                                "udp": {
+                                                    "properties": {
+                                                        "destinationPortRange": {
+                                                            "$ref": "ligato.vpp.acl.ACL.Rule.IpRule.PortRange",
+                                                            "additionalProperties": true
+                                                        },
+                                                        "sourcePortRange": {
+                                                            "$ref": "ligato.vpp.acl.ACL.Rule.IpRule.PortRange",
+                                                            "additionalProperties": true
+                                                        }
+                                                    },
+                                                    "additionalProperties": true,
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "additionalProperties": true,
+                                            "type": "object"
+                                        },
+                                        "macipRule": {
+                                            "properties": {
+                                                "sourceAddress": {
+                                                    "type": "string"
+                                                },
+                                                "sourceAddressPrefix": {
+                                                    "type": "integer"
+                                                },
+                                                "sourceMacAddress": {
+                                                    "type": "string",
+                                                    "description": "Before source-mac-address is compared with source mac address field of the packet\n being matched, source-mac-address-mask is applied to packet field value."
+                                                },
+                                                "sourceMacAddressMask": {
+                                                    "type": "string",
+                                                    "description": "Source MAC address mask.\n Applied as logical AND with source mac address field of the packet being matched,\n before it is compared with source-mac-address."
+                                                }
+                                            },
+                                            "additionalProperties": true,
+                                            "type": "object"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "description": "List of access list entries (Rules). Each Access Control Rule has\n a list of match criteria and a list of actions.\n Access List entry that can define:\n - IPv4/IPv6 src ip prefix\n - src MAC address mask\n - src MAC address value\n - can be used only for static ACLs."
+                                },
+                                "type": "array"
+                            },
+                            "interfaces": {
+                                "properties": {
+                                    "egress": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    },
+                                    "ingress": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "ACL defines Access Control List."
+                    },
+                    "type": "array"
+                },
+                "arps": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "interface": {
+                                "type": "string"
+                            },
+                            "ipAddress": {
+                                "type": "string"
+                            },
+                            "physAddress": {
+                                "type": "string"
+                            },
+                            "static": {
+                                "type": "boolean"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "bridgeDomains": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "bridge domain name (can be any string)"
+                            },
+                            "flood": {
+                                "type": "boolean",
+                                "description": "enable/disable broadcast/multicast flooding in the BD"
+                            },
+                            "unknownUnicastFlood": {
+                                "type": "boolean",
+                                "description": "enable/disable unknown unicast flood in the BD"
+                            },
+                            "forward": {
+                                "type": "boolean",
+                                "description": "enable/disable forwarding on all interfaces in the BD"
+                            },
+                            "learn": {
+                                "type": "boolean",
+                                "description": "enable/disable learning on all interfaces in the BD"
+                            },
+                            "arpTermination": {
+                                "type": "boolean",
+                                "description": "enable/disable ARP termination in the BD"
+                            },
+                            "macAge": {
+                                "type": "integer",
+                                "description": "MAC aging time in min, 0 for disabled aging"
+                            },
+                            "interfaces": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "name": {
+                                            "type": "string",
+                                            "description": "interface name belonging to this bridge domain"
+                                        },
+                                        "bridgedVirtualInterface": {
+                                            "type": "boolean",
+                                            "description": "true if this is a BVI interface"
+                                        },
+                                        "splitHorizonGroup": {
+                                            "type": "integer",
+                                            "description": "VXLANs in the same BD need the same non-zero SHG"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array",
+                                "description": "list of interfaces"
+                            },
+                            "arpTerminationTable": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "ipAddress": {
+                                            "type": "string",
+                                            "description": "IP address"
+                                        },
+                                        "physAddress": {
+                                            "type": "string",
+                                            "description": "MAC address matching to the IP"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array",
+                                "description": "list of ARP termination entries"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "dhcpProxies": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "sourceIpAddress": {
+                                "type": "string"
+                            },
+                            "rxVrfId": {
+                                "type": "integer"
+                            },
+                            "servers": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "vrfId": {
+                                            "type": "integer"
+                                        },
+                                        "ipAddress": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "DHCP Proxy"
+                    },
+                    "type": "array"
+                },
+                "dnat44s": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                                "description": "Unique identifier for the DNAT configuration."
+                            },
+                            "stMappings": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "externalInterface": {
+                                            "type": "string",
+                                            "description": "Interface to use external IP from; preferred over external_ip."
+                                        },
+                                        "externalIp": {
+                                            "type": "string",
+                                            "description": "External address."
+                                        },
+                                        "externalPort": {
+                                            "type": "integer",
+                                            "description": "Port (do not set for address mapping)."
+                                        },
+                                        "localIps": {
+                                            "items": {
+                                                "$schema": "http://json-schema.org/draft-04/schema#",
+                                                "properties": {
+                                                    "vrfId": {
+                                                        "type": "integer",
+                                                        "description": "VRF (table) ID. Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)."
+                                                    },
+                                                    "localIp": {
+                                                        "type": "string",
+                                                        "description": "Local IP address)."
+                                                    },
+                                                    "localPort": {
+                                                        "type": "integer",
+                                                        "description": "Port (do not set for address mapping)."
+                                                    },
+                                                    "probability": {
+                                                        "type": "integer",
+                                                        "description": "Probability level for load-balancing mode."
+                                                    }
+                                                },
+                                                "additionalProperties": true,
+                                                "type": "object",
+                                                "description": "LocalIP defines a local IP addresses."
+                                            },
+                                            "type": "array",
+                                            "description": "List of local IP addresses. If there is more than one entry, load-balancing is enabled."
+                                        },
+                                        "protocol": {
+                                            "enum": [
+                                                "TCP",
+                                                0,
+                                                "UDP",
+                                                1,
+                                                "ICMP",
+                                                2
+                                            ],
+                                            "oneOf": [
+                                                {
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "type": "integer"
+                                                }
+                                            ],
+                                            "description": "Protocol used for static mapping."
+                                        },
+                                        "twiceNat": {
+                                            "enum": [
+                                                "DISABLED",
+                                                0,
+                                                "ENABLED",
+                                                1,
+                                                "SELF",
+                                                2
+                                            ],
+                                            "oneOf": [
+                                                {
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "type": "integer"
+                                                }
+                                            ],
+                                            "description": "Enable/disable (self-)twice NAT."
+                                        },
+                                        "twiceNatPoolIp": {
+                                            "type": "string",
+                                            "description": "IP address from Twice-NAT address pool that should be used as source IP in twice-NAT processing.\n This is override for default behaviour of choosing the first IP address from twice-NAT pool that\n has available at least one free port (NAT is tracking translation sessions and exhausts free ports\n for given IP address). This is needed for example in use cases when multiple twice-NAT\n translations need to use different IP Addresses as source IP addresses.\n This functionality works with VPP 20.09 and newer. It also needs to have twice_nat set to ENABLED.\n It doesn't work for load-balanced static mappings (=local_ips has multiple values)."
+                                        },
+                                        "sessionAffinity": {
+                                            "type": "integer",
+                                            "description": "Session affinity. 0 means disabled, otherwise client IP affinity sticky time in seconds."
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "description": "StaticMapping defines a list of static mappings in DNAT."
+                                },
+                                "type": "array",
+                                "description": "A list of static mappings in DNAT."
+                            },
+                            "idMappings": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "vrfId": {
+                                            "type": "integer",
+                                            "description": "VRF (table) ID. Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)."
+                                        },
+                                        "interface": {
+                                            "type": "string",
+                                            "description": "Name of the interface to use address from; preferred over ip_address."
+                                        },
+                                        "ipAddress": {
+                                            "type": "string",
+                                            "description": "IP address."
+                                        },
+                                        "port": {
+                                            "type": "integer",
+                                            "description": "Port (do not set for address mapping)."
+                                        },
+                                        "protocol": {
+                                            "enum": [
+                                                "TCP",
+                                                0,
+                                                "UDP",
+                                                1,
+                                                "ICMP",
+                                                2
+                                            ],
+                                            "oneOf": [
+                                                {
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "type": "integer"
+                                                }
+                                            ],
+                                            "description": "Protocol used for identity mapping."
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "description": "IdentityMapping defines an identity mapping in DNAT."
+                                },
+                                "type": "array",
+                                "description": "A list of identity mappings in DNAT."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "DNat44 defines destination NAT44 configuration."
+                    },
+                    "type": "array"
+                },
+                "fibs": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "physAddress": {
+                                "type": "string",
+                                "description": "unique destination MAC address"
+                            },
+                            "bridgeDomain": {
+                                "type": "string",
+                                "description": "name of bridge domain this FIB table entry belongs to"
+                            },
+                            "action": {
+                                "enum": [
+                                    "FORWARD",
+                                    0,
+                                    "DROP",
+                                    1
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "action to tke on matching frames"
+                            },
+                            "outgoingInterface": {
+                                "type": "string",
+                                "description": "outgoing interface for matching frames"
+                            },
+                            "staticConfig": {
+                                "type": "boolean",
+                                "description": "true if this is a statically configured FIB entry"
+                            },
+                            "bridgedVirtualInterface": {
+                                "type": "boolean",
+                                "description": "the MAC address is a bridge virtual interface MAC"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "interfaces": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Name is mandatory field representing logical name for the interface.\n It must be unique across all configured VPP interfaces."
+                            },
+                            "type": {
+                                "enum": [
+                                    "UNDEFINED_TYPE",
+                                    0,
+                                    "SUB_INTERFACE",
+                                    1,
+                                    "SOFTWARE_LOOPBACK",
+                                    2,
+                                    "DPDK",
+                                    3,
+                                    "MEMIF",
+                                    4,
+                                    "TAP",
+                                    5,
+                                    "AF_PACKET",
+                                    6,
+                                    "VXLAN_TUNNEL",
+                                    7,
+                                    "IPSEC_TUNNEL",
+                                    8,
+                                    "VMXNET3_INTERFACE",
+                                    9,
+                                    "BOND_INTERFACE",
+                                    10,
+                                    "GRE_TUNNEL",
+                                    11,
+                                    "GTPU_TUNNEL",
+                                    12,
+                                    "IPIP_TUNNEL",
+                                    13,
+                                    "WIREGUARD_TUNNEL",
+                                    14,
+                                    "RDMA",
+                                    15
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "Type represents the type of VPP interface and it must match the actual Link."
+                            },
+                            "enabled": {
+                                "type": "boolean",
+                                "description": "Enabled controls if the interface should be UP."
+                            },
+                            "physAddress": {
+                                "type": "string",
+                                "description": "PhysAddress represents physical address (MAC) of the interface.\n Random address will be assigned if left empty."
+                            },
+                            "ipAddresses": {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array",
+                                "description": "IPAddresses define list of IP addresses for the interface and must be\n defined in the following format: \u003cipAddress\u003e/\u003cipPrefix\u003e.\n Interface IP address can be also allocated via netalloc plugin and\n referenced here, see: api/models/netalloc/netalloc.proto"
+                            },
+                            "vrf": {
+                                "type": "integer",
+                                "description": "Vrf defines the ID of VRF table that the interface is assigned to.\n The VRF table must be explicitely configured (see api/models/vpp/l3/vrf.proto).\n When using unnumbered interface the actual vrf is inherited from\n the interface referenced by the numbered interface and this field is ignored."
+                            },
+                            "setDhcpClient": {
+                                "type": "boolean",
+                                "description": "SetDhcpClient enables DHCP client on interface."
+                            },
+                            "ip6Nd": {
+                                "properties": {
+                                    "addressAutoconfig": {
+                                        "type": "boolean",
+                                        "description": "Enable IPv6 ND address autoconfiguration."
+                                    },
+                                    "installDefaultRoutes": {
+                                        "type": "boolean",
+                                        "description": "Enable installing default routes."
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "mtu": {
+                                "type": "integer",
+                                "description": "Mtu sets MTU (Maximum Transmission Unit) for this interface.\n If set to zero, default MTU (usually 9216) will be used."
+                            },
+                            "unnumbered": {
+                                "properties": {
+                                    "interfaceWithIp": {
+                                        "type": "string",
+                                        "description": "InterfaceWithIp is the name of interface to inherit IP address from."
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "rxModes": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "queue": {
+                                            "type": "integer"
+                                        },
+                                        "mode": {
+                                            "enum": [
+                                                "UNKNOWN",
+                                                0,
+                                                "POLLING",
+                                                1,
+                                                "INTERRUPT",
+                                                2,
+                                                "ADAPTIVE",
+                                                3,
+                                                "DEFAULT",
+                                                4
+                                            ],
+                                            "oneOf": [
+                                                {
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "type": "integer"
+                                                }
+                                            ]
+                                        },
+                                        "defaultMode": {
+                                            "type": "boolean",
+                                            "description": "DefaultMode, if set to true, the \u003cqueue\u003e field will be ignored\n and the \u003cmode\u003e will be used as a default for all the queues."
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            "rxPlacements": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "queue": {
+                                            "type": "integer",
+                                            "description": "Select from interval \u003c0, number-of-queues)"
+                                        },
+                                        "worker": {
+                                            "type": "integer",
+                                            "description": "Select from interval \u003c0, number-of-workers)"
+                                        },
+                                        "mainThread": {
+                                            "type": "boolean",
+                                            "description": "Let the main thread to process the given queue\n  - if enabled, value of \u003cworker\u003e is ignored"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            "sub": {
+                                "properties": {
+                                    "parentName": {
+                                        "type": "string",
+                                        "description": "Name of the parent (super) interface"
+                                    },
+                                    "subId": {
+                                        "type": "integer",
+                                        "description": "SubInterface ID, used as VLAN"
+                                    },
+                                    "tagRwOption": {
+                                        "enum": [
+                                            "DISABLED",
+                                            0,
+                                            "PUSH1",
+                                            1,
+                                            "PUSH2",
+                                            2,
+                                            "POP1",
+                                            3,
+                                            "POP2",
+                                            4,
+                                            "TRANSLATE11",
+                                            5,
+                                            "TRANSLATE12",
+                                            6,
+                                            "TRANSLATE21",
+                                            7,
+                                            "TRANSLATE22",
+                                            8
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "VLAN tag rewrite rule applied for given tag for sub-interface"
+                                    },
+                                    "pushDot1q": {
+                                        "type": "boolean",
+                                        "description": "Set ether-type of the first tag to dot1q if true, dot1ad otherwise"
+                                    },
+                                    "tag1": {
+                                        "type": "integer",
+                                        "description": "First tag (required for PUSH1 and any TRANSLATE)"
+                                    },
+                                    "tag2": {
+                                        "type": "integer",
+                                        "description": "Second tag (required for PUSH2 and any TRANSLATE)"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "memif": {
+                                "properties": {
+                                    "mode": {
+                                        "enum": [
+                                            "ETHERNET",
+                                            0,
+                                            "IP",
+                                            1,
+                                            "PUNT_INJECT",
+                                            2
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ]
+                                    },
+                                    "master": {
+                                        "type": "boolean"
+                                    },
+                                    "id": {
+                                        "type": "integer",
+                                        "description": "Id is a 32bit integer used to authenticate and match opposite sides of the connection"
+                                    },
+                                    "socketFilename": {
+                                        "type": "string",
+                                        "description": "Filename of the socket used for connection establishment"
+                                    },
+                                    "secret": {
+                                        "type": "string"
+                                    },
+                                    "ringSize": {
+                                        "type": "integer",
+                                        "description": "The number of entries of RX/TX rings"
+                                    },
+                                    "bufferSize": {
+                                        "type": "integer",
+                                        "description": "Size of the buffer allocated for each ring entry"
+                                    },
+                                    "rxQueues": {
+                                        "type": "integer",
+                                        "description": "Number of rx queues (only valid for slave)"
+                                    },
+                                    "txQueues": {
+                                        "type": "integer",
+                                        "description": "Number of tx queues (only valid for slave)"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "afpacket": {
+                                "properties": {
+                                    "hostIfName": {
+                                        "type": "string",
+                                        "description": "Name of the host (Linux) interface to bind to.\n This type of reference is suitable for scenarios when the target interface\n is not managed (and should not be touched) by the agent. In such cases the interface\n does not have logical name in the agent's namespace and can only be referenced\n by the host interface name (i.e. the name used in the Linux network stack).\n Please note that agent learns about externally created interfaces through netlink\n notifications.\n If, however, the target interface is managed by the agent, then it is recommended\n to use the alternative reference \u003clinux_interface\u003e (see below), pointing to the interface\n by its logical name. One advantage of such approach is, that if AF-PACKET and the target\n Linux interface are requested to be created at the same time, then it can be done inside\n the same transaction because the agent does not rely on any notification from the Linux.\n It is mandatory to define either \u003chost_if_name\u003e or \u003clinux_interface\u003e."
+                                    },
+                                    "linuxInterface": {
+                                        "type": "string",
+                                        "description": "Logical name of the Linux interface to bind to.\n This is an alternative interface reference to \u003chost_if_name\u003e and preferred\n if the target interface is managed by the agent and not created externally\n (see comments for \u003chost_if_name\u003e for explanation).\n It is mandatory to define either \u003chost_if_name\u003e or \u003clinux_interface\u003e."
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "tap": {
+                                "properties": {
+                                    "version": {
+                                        "type": "integer",
+                                        "description": "1 / unset = use the original TAP interface; 2 = use a fast virtio-based TAP"
+                                    },
+                                    "hostIfName": {
+                                        "type": "string",
+                                        "description": "Name of the TAP interface in the host OS;\n if empty, it will be auto-generated (suitable for combination with TAP_TO_VPP\n interface from Linux ifplugin, because then this name is only temporary anyway)"
+                                    },
+                                    "toMicroservice": {
+                                        "type": "string",
+                                        "description": "If TAP connects VPP with microservice, fill this parameter with the target\n microservice name - should match with the namespace reference of the associated\n TAP_TO_VPP interface (it is still moved to the namespace by Linux-ifplugin but\n VPP-ifplugin needs to be aware of this dependency)"
+                                    },
+                                    "rxRingSize": {
+                                        "type": "integer",
+                                        "description": "Rx ring buffer size; must be power of 2; default is 256; only for TAP v.2"
+                                    },
+                                    "txRingSize": {
+                                        "type": "integer",
+                                        "description": "Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2"
+                                    },
+                                    "enableGso": {
+                                        "type": "boolean",
+                                        "description": "EnableGso enables GSO mode for TAP interface."
+                                    },
+                                    "enableTunnel": {
+                                        "type": "boolean",
+                                        "description": "EnableTunnel enables tunnel mode for TAP interface."
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "vxlan": {
+                                "properties": {
+                                    "srcAddress": {
+                                        "type": "string",
+                                        "description": "SrcAddress is source VTEP address"
+                                    },
+                                    "dstAddress": {
+                                        "type": "string",
+                                        "description": "DstAddress is destination VTEP address"
+                                    },
+                                    "vni": {
+                                        "type": "integer",
+                                        "description": "Vni stands for VXLAN Network Identifier"
+                                    },
+                                    "multicast": {
+                                        "type": "string",
+                                        "description": "Multicast defines name of multicast interface"
+                                    },
+                                    "gpe": {
+                                        "properties": {
+                                            "decapVrfId": {
+                                                "type": "integer"
+                                            },
+                                            "protocol": {
+                                                "enum": [
+                                                    "UNKNOWN",
+                                                    0,
+                                                    "IP4",
+                                                    1,
+                                                    "IP6",
+                                                    2,
+                                                    "ETHERNET",
+                                                    3,
+                                                    "NSH",
+                                                    4
+                                                ],
+                                                "oneOf": [
+                                                    {
+                                                        "type": "string"
+                                                    },
+                                                    {
+                                                        "type": "integer"
+                                                    }
+                                                ],
+                                                "description": "Protocol defines encapsulated protocol"
+                                            }
+                                        },
+                                        "additionalProperties": true,
+                                        "type": "object"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "ipsec": {
+                                "properties": {
+                                    "esn": {
+                                        "type": "boolean",
+                                        "description": "Extended sequence number"
+                                    },
+                                    "antiReplay": {
+                                        "type": "boolean",
+                                        "description": "Anti replay option"
+                                    },
+                                    "localIp": {
+                                        "type": "string",
+                                        "description": "Local IP address"
+                                    },
+                                    "remoteIp": {
+                                        "type": "string",
+                                        "description": "Remote IP address"
+                                    },
+                                    "localSpi": {
+                                        "type": "integer",
+                                        "description": "Local security parameter index"
+                                    },
+                                    "remoteSpi": {
+                                        "type": "integer",
+                                        "description": "Remote security parameter index"
+                                    },
+                                    "cryptoAlg": {
+                                        "enum": [
+                                            "NONE_CRYPTO",
+                                            0,
+                                            "AES_CBC_128",
+                                            1,
+                                            "AES_CBC_192",
+                                            2,
+                                            "AES_CBC_256",
+                                            3,
+                                            "AES_CTR_128",
+                                            4,
+                                            "AES_CTR_192",
+                                            5,
+                                            "AES_CTR_256",
+                                            6,
+                                            "AES_GCM_128",
+                                            7,
+                                            "AES_GCM_192",
+                                            8,
+                                            "AES_GCM_256",
+                                            9,
+                                            "DES_CBC",
+                                            10,
+                                            "DES3_CBC",
+                                            11
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "Cryptographic algorithm for encryption"
+                                    },
+                                    "localCryptoKey": {
+                                        "type": "string"
+                                    },
+                                    "remoteCryptoKey": {
+                                        "type": "string"
+                                    },
+                                    "integAlg": {
+                                        "enum": [
+                                            "NONE_INTEG",
+                                            0,
+                                            "MD5_96",
+                                            1,
+                                            "SHA1_96",
+                                            2,
+                                            "SHA_256_96",
+                                            3,
+                                            "SHA_256_128",
+                                            4,
+                                            "SHA_384_192",
+                                            5,
+                                            "SHA_512_256",
+                                            6
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "Cryptographic algorithm for authentication"
+                                    },
+                                    "localIntegKey": {
+                                        "type": "string"
+                                    },
+                                    "remoteIntegKey": {
+                                        "type": "string"
+                                    },
+                                    "enableUdpEncap": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object",
+                                "description": "Deprecated in VPP 20.01+. Use IPIP_TUNNEL + ipsec.TunnelProtection instead."
+                            },
+                            "vmxNet3": {
+                                "properties": {
+                                    "enableElog": {
+                                        "type": "boolean",
+                                        "description": "Turn on elog"
+                                    },
+                                    "rxqSize": {
+                                        "type": "integer",
+                                        "description": "Receive queue size (default is 1024)"
+                                    },
+                                    "txqSize": {
+                                        "type": "integer",
+                                        "description": "Transmit queue size (default is 1024)"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "bond": {
+                                "properties": {
+                                    "id": {
+                                        "type": "integer"
+                                    },
+                                    "mode": {
+                                        "enum": [
+                                            "UNKNOWN",
+                                            0,
+                                            "ROUND_ROBIN",
+                                            1,
+                                            "ACTIVE_BACKUP",
+                                            2,
+                                            "XOR",
+                                            3,
+                                            "BROADCAST",
+                                            4,
+                                            "LACP",
+                                            5
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ]
+                                    },
+                                    "lb": {
+                                        "enum": [
+                                            "L2",
+                                            0,
+                                            "L34",
+                                            1,
+                                            "L23",
+                                            2,
+                                            "RR",
+                                            3,
+                                            "BC",
+                                            4,
+                                            "AB",
+                                            5
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "Load balance is optional and valid only for XOR and LACP modes"
+                                    },
+                                    "bondedInterfaces": {
+                                        "items": {
+                                            "$schema": "http://json-schema.org/draft-04/schema#",
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "isPassive": {
+                                                    "type": "boolean"
+                                                },
+                                                "isLongTimeout": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "additionalProperties": true,
+                                            "type": "object"
+                                        },
+                                        "type": "array"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "gre": {
+                                "properties": {
+                                    "tunnelType": {
+                                        "enum": [
+                                            "UNKNOWN",
+                                            0,
+                                            "L3",
+                                            1,
+                                            "TEB",
+                                            2,
+                                            "ERSPAN",
+                                            3
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ]
+                                    },
+                                    "srcAddr": {
+                                        "type": "string"
+                                    },
+                                    "dstAddr": {
+                                        "type": "string"
+                                    },
+                                    "outerFibId": {
+                                        "type": "integer"
+                                    },
+                                    "sessionId": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "gtpu": {
+                                "properties": {
+                                    "srcAddr": {
+                                        "type": "string",
+                                        "description": "Source VTEP address"
+                                    },
+                                    "dstAddr": {
+                                        "type": "string",
+                                        "description": "Destination VTEP address"
+                                    },
+                                    "multicast": {
+                                        "type": "string",
+                                        "description": "Name of multicast interface"
+                                    },
+                                    "teid": {
+                                        "type": "integer",
+                                        "description": "Tunnel endpoint identifier - local"
+                                    },
+                                    "remoteTeid": {
+                                        "type": "integer",
+                                        "description": "Tunnel endpoint identifier - remote"
+                                    },
+                                    "encapVrfId": {
+                                        "type": "integer",
+                                        "description": "VRF id for the encapsulated packets"
+                                    },
+                                    "decapNext": {
+                                        "enum": [
+                                            "DEFAULT",
+                                            0,
+                                            "L2",
+                                            1,
+                                            "IP4",
+                                            2,
+                                            "IP6",
+                                            3
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "DEPRECATED - use decap_next_node"
+                                    },
+                                    "decapNextNode": {
+                                        "type": "integer",
+                                        "description": "Next VPP node after decapsulation"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "ipip": {
+                                "properties": {
+                                    "tunnelMode": {
+                                        "enum": [
+                                            "POINT_TO_POINT",
+                                            0,
+                                            "POINT_TO_MULTIPOINT",
+                                            1
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "Mode of the IPIP tunnel"
+                                    },
+                                    "srcAddr": {
+                                        "type": "string",
+                                        "description": "Source VTEP IP address"
+                                    },
+                                    "dstAddr": {
+                                        "type": "string",
+                                        "description": "Destination VTEP IP address"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "wireguard": {
+                                "properties": {
+                                    "privateKey": {
+                                        "type": "string",
+                                        "description": "Private-key base64"
+                                    },
+                                    "port": {
+                                        "type": "integer",
+                                        "description": "Listen UDP port"
+                                    },
+                                    "srcAddr": {
+                                        "type": "string",
+                                        "description": "Source IP address"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "rdma": {
+                                "properties": {
+                                    "hostIfName": {
+                                        "type": "string",
+                                        "description": "Linux interface name representing the RDMA-enabled network device to attach into."
+                                    },
+                                    "mode": {
+                                        "enum": [
+                                            "AUTO",
+                                            0,
+                                            "IBV",
+                                            1,
+                                            "DV",
+                                            2
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "Mode at which the RDMA driver operates."
+                                    },
+                                    "rxqNum": {
+                                        "type": "integer",
+                                        "description": "Number of receive queues.\n By default only one RX queue is used."
+                                    },
+                                    "rxqSize": {
+                                        "type": "integer",
+                                        "description": "The size of each RX queue.\n Default is 1024 bytes."
+                                    },
+                                    "txqSize": {
+                                        "type": "integer",
+                                        "description": "The size of each TX queue.\n Default is 1024 bytes."
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Interface defines a VPP interface."
+                    },
+                    "type": "array"
+                },
+                "ipfixFlowprobeParams": {
+                    "properties": {
+                        "activeTimer": {
+                            "type": "integer"
+                        },
+                        "passiveTimer": {
+                            "type": "integer"
+                        },
+                        "recordL2": {
+                            "type": "boolean"
+                        },
+                        "recordL3": {
+                            "type": "boolean"
+                        },
+                        "recordL4": {
+                            "type": "boolean"
+                        }
+                    },
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "ipfixFlowprobes": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "interface": {
+                                "type": "string"
+                            },
+                            "l2": {
+                                "type": "boolean"
+                            },
+                            "ip4": {
+                                "type": "boolean"
+                            },
+                            "ip6": {
+                                "type": "boolean"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "ipfixGlobal": {
+                    "properties": {
+                        "collector": {
+                            "properties": {
+                                "address": {
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "type": "integer"
+                                }
+                            },
+                            "additionalProperties": true,
+                            "type": "object"
+                        },
+                        "sourceAddress": {
+                            "type": "string"
+                        },
+                        "vrfId": {
+                            "type": "integer"
+                        },
+                        "pathMtu": {
+                            "type": "integer"
+                        },
+                        "templateInterval": {
+                            "type": "integer"
+                        }
+                    },
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "ipscanNeighbor": {
+                    "properties": {
+                        "mode": {
+                            "enum": [
+                                "DISABLED",
+                                0,
+                                "IPV4",
+                                1,
+                                "IPV6",
+                                2,
+                                "BOTH",
+                                3
+                            ],
+                            "oneOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "scanInterval": {
+                            "type": "integer"
+                        },
+                        "maxProcTime": {
+                            "type": "integer"
+                        },
+                        "maxUpdate": {
+                            "type": "integer"
+                        },
+                        "scanIntDelay": {
+                            "type": "integer"
+                        },
+                        "staleThreshold": {
+                            "type": "integer"
+                        }
+                    },
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "ipsecSas": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "index": {
+                                "type": "integer",
+                                "description": "Numerical security association index, serves as a unique identifier"
+                            },
+                            "spi": {
+                                "type": "integer",
+                                "description": "Security parameter index"
+                            },
+                            "protocol": {
+                                "enum": [
+                                    "AH",
+                                    0,
+                                    "ESP",
+                                    1
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ]
+                            },
+                            "cryptoAlg": {
+                                "enum": [
+                                    "NONE_CRYPTO",
+                                    0,
+                                    "AES_CBC_128",
+                                    1,
+                                    "AES_CBC_192",
+                                    2,
+                                    "AES_CBC_256",
+                                    3,
+                                    "AES_CTR_128",
+                                    4,
+                                    "AES_CTR_192",
+                                    5,
+                                    "AES_CTR_256",
+                                    6,
+                                    "AES_GCM_128",
+                                    7,
+                                    "AES_GCM_192",
+                                    8,
+                                    "AES_GCM_256",
+                                    9,
+                                    "DES_CBC",
+                                    10,
+                                    "DES3_CBC",
+                                    11
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "Cryptographic algorithm for encryption"
+                            },
+                            "cryptoKey": {
+                                "type": "string"
+                            },
+                            "cryptoSalt": {
+                                "type": "integer"
+                            },
+                            "integAlg": {
+                                "enum": [
+                                    "NONE_INTEG",
+                                    0,
+                                    "MD5_96",
+                                    1,
+                                    "SHA1_96",
+                                    2,
+                                    "SHA_256_96",
+                                    3,
+                                    "SHA_256_128",
+                                    4,
+                                    "SHA_384_192",
+                                    5,
+                                    "SHA_512_256",
+                                    6
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "Cryptographic algorithm for authentication"
+                            },
+                            "integKey": {
+                                "type": "string"
+                            },
+                            "useEsn": {
+                                "type": "boolean",
+                                "description": "Use extended sequence number"
+                            },
+                            "useAntiReplay": {
+                                "type": "boolean",
+                                "description": "Use anti replay"
+                            },
+                            "tunnelSrcAddr": {
+                                "type": "string"
+                            },
+                            "tunnelDstAddr": {
+                                "type": "string"
+                            },
+                            "enableUdpEncap": {
+                                "type": "boolean",
+                                "description": "Enable UDP encapsulation for NAT traversal"
+                            },
+                            "tunnelSrcPort": {
+                                "type": "integer"
+                            },
+                            "tunnelDstPort": {
+                                "type": "integer"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Security Association (SA)"
+                    },
+                    "type": "array"
+                },
+                "ipsecSpds": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "index": {
+                                "type": "integer",
+                                "description": "Numerical security policy database index, serves as a unique identifier"
+                            },
+                            "interfaces": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "name": {
+                                            "type": "string",
+                                            "description": "Name of the related interface"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array",
+                                "description": "List of interfaces belonging to this SPD"
+                            },
+                            "policyEntries": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "saIndex": {
+                                            "type": "integer",
+                                            "description": "Security association index"
+                                        },
+                                        "priority": {
+                                            "type": "integer"
+                                        },
+                                        "isOutbound": {
+                                            "type": "boolean"
+                                        },
+                                        "remoteAddrStart": {
+                                            "type": "string"
+                                        },
+                                        "remoteAddrStop": {
+                                            "type": "string"
+                                        },
+                                        "localAddrStart": {
+                                            "type": "string"
+                                        },
+                                        "localAddrStop": {
+                                            "type": "string"
+                                        },
+                                        "protocol": {
+                                            "type": "integer"
+                                        },
+                                        "remotePortStart": {
+                                            "type": "integer"
+                                        },
+                                        "remotePortStop": {
+                                            "type": "integer"
+                                        },
+                                        "localPortStart": {
+                                            "type": "integer"
+                                        },
+                                        "localPortStop": {
+                                            "type": "integer"
+                                        },
+                                        "action": {
+                                            "enum": [
+                                                "BYPASS",
+                                                0,
+                                                "DISCARD",
+                                                1,
+                                                "RESOLVE",
+                                                2,
+                                                "PROTECT",
+                                                3
+                                            ],
+                                            "oneOf": [
+                                                {
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "type": "integer"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array",
+                                "description": "List of policy entries belonging to this SPD.\n Deprecated and actually trying to use this will return an error.\n Use separate model for Security Policy (SP) defined below."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Security Policy Database (SPD)"
+                    },
+                    "type": "array"
+                },
+                "ipsecSps": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "spdIndex": {
+                                "type": "integer",
+                                "description": "Security policy database index"
+                            },
+                            "saIndex": {
+                                "type": "integer",
+                                "description": "Security association index"
+                            },
+                            "priority": {
+                                "type": "integer"
+                            },
+                            "isOutbound": {
+                                "type": "boolean"
+                            },
+                            "remoteAddrStart": {
+                                "type": "string"
+                            },
+                            "remoteAddrStop": {
+                                "type": "string"
+                            },
+                            "localAddrStart": {
+                                "type": "string"
+                            },
+                            "localAddrStop": {
+                                "type": "string"
+                            },
+                            "protocol": {
+                                "type": "integer"
+                            },
+                            "remotePortStart": {
+                                "type": "integer"
+                            },
+                            "remotePortStop": {
+                                "type": "integer"
+                            },
+                            "localPortStart": {
+                                "type": "integer"
+                            },
+                            "localPortStop": {
+                                "type": "integer"
+                            },
+                            "action": {
+                                "enum": [
+                                    "BYPASS",
+                                    0,
+                                    "DISCARD",
+                                    1,
+                                    "RESOLVE",
+                                    2,
+                                    "PROTECT",
+                                    3
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ]
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "ipsecTunnelProtections": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "interface": {
+                                "type": "string",
+                                "description": "Name of the interface to be protected with IPSec."
+                            },
+                            "saOut": {
+                                "items": {
+                                    "type": "integer"
+                                },
+                                "type": "array",
+                                "description": "Outbound security associations identified by SA index."
+                            },
+                            "saIn": {
+                                "items": {
+                                    "type": "integer"
+                                },
+                                "type": "array",
+                                "description": "Inbound security associations identified by SA index."
+                            },
+                            "nextHopAddr": {
+                                "type": "string",
+                                "description": "(Optional) Next hop IP address, used for multipoint tunnels."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "TunnelProtection allows enabling IPSec tunnel protection on an existing interface\n (only IPIP tunnel interfaces are currently supported)"
+                    },
+                    "type": "array"
+                },
+                "l3xconnects": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "interface": {
+                                "type": "string"
+                            },
+                            "protocol": {
+                                "enum": [
+                                    "IPV4",
+                                    0,
+                                    "IPV6",
+                                    1
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ]
+                            },
+                            "paths": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "outgoingInterface": {
+                                            "type": "string"
+                                        },
+                                        "nextHopAddr": {
+                                            "type": "string"
+                                        },
+                                        "weight": {
+                                            "type": "integer"
+                                        },
+                                        "preference": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "nat44Global": {
+                    "properties": {
+                        "forwarding": {
+                            "type": "boolean",
+                            "description": "Enable/disable forwarding. By default it is disabled."
+                        },
+                        "endpointIndependent": {
+                            "type": "boolean",
+                            "description": "Enable/disable endpoint-independent mode.\n In endpoint-independent (also known as \"simple\") mode the VPP NAT plugin holds\n less information for each session, but only works with outbound NAT and static mappings.\n In endpoint-dependent mode, which ligato selects as the default, the VPP NAT plugin uses\n more information to track each session, which in turn enables additional features\n such as out-to-in-only and twice-nat.\n In older versions of VPP (\u003c= 20.09) this field is ignored because mode at which the NAT44 plugin\n operates is given by the VPP startup configuration file (i.e. config created before VPP even starts,\n therefore not managed by ligato). The endpoint-independent mode is the default and the dependent mode\n is turned on with this config stanza (included in vpp.conf used by ligato for older VPPs):\n     nat {\n         endpoint-dependent\n     }"
+                        },
+                        "natInterfaces": {
+                            "items": {
+                                "$schema": "http://json-schema.org/draft-04/schema#",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "description": "Interface name (logical)."
+                                    },
+                                    "isInside": {
+                                        "type": "boolean",
+                                        "description": "Distinguish between inside/outside interface."
+                                    },
+                                    "outputFeature": {
+                                        "type": "boolean",
+                                        "description": "Enable/disable output feature."
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object",
+                                "description": "Interface defines a network interface enabled for NAT."
+                            },
+                            "type": "array",
+                            "description": "List of NAT-enabled interfaces. Deprecated - use separate Nat44Interface entries instead."
+                        },
+                        "addressPool": {
+                            "items": {
+                                "$schema": "http://json-schema.org/draft-04/schema#",
+                                "properties": {
+                                    "address": {
+                                        "type": "string",
+                                        "description": "IPv4 address."
+                                    },
+                                    "vrfId": {
+                                        "type": "integer",
+                                        "description": "VRF id of tenant, 0xFFFFFFFF means independent of VRF.\n Non-zero (and not all-ones) VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)."
+                                    },
+                                    "twiceNat": {
+                                        "type": "boolean",
+                                        "description": "Enable/disable twice NAT."
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object",
+                                "description": "Address defines an address to be used for source IP NAT."
+                            },
+                            "type": "array",
+                            "description": "Address pool used for source IP NAT. Deprecated - use separate Nat44AddressPool entries instead."
+                        },
+                        "virtualReassembly": {
+                            "properties": {
+                                "timeout": {
+                                    "type": "integer",
+                                    "description": "Reassembly timeout."
+                                },
+                                "maxReassemblies": {
+                                    "type": "integer",
+                                    "description": "Maximum number of concurrent reassemblies."
+                                },
+                                "maxFragments": {
+                                    "type": "integer",
+                                    "description": "Maximum number of fragments per reassembly."
+                                },
+                                "dropFragments": {
+                                    "type": "boolean",
+                                    "description": "If set to true fragments are dropped, translated otherwise."
+                                }
+                            },
+                            "additionalProperties": true,
+                            "type": "object",
+                            "description": "Virtual reassembly for IPv4."
+                        }
+                    },
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "nat44Interfaces": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Interface name (logical)."
+                            },
+                            "natInside": {
+                                "type": "boolean",
+                                "description": "Enable/disable NAT on inside."
+                            },
+                            "natOutside": {
+                                "type": "boolean",
+                                "description": "Enable/disable NAT on outside."
+                            },
+                            "outputFeature": {
+                                "type": "boolean",
+                                "description": "Enable/disable output feature."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Nat44Interface defines a local network interfaces enabled for NAT44."
+                    },
+                    "type": "array"
+                },
+                "nat44Pools": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Unique name for address pool"
+                            },
+                            "vrfId": {
+                                "type": "integer",
+                                "description": "VRF id of tenant, 0xFFFFFFFF means independent of VRF.\n Non-zero (and not all-ones) VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)."
+                            },
+                            "firstIp": {
+                                "type": "string",
+                                "description": "First IP address of the pool."
+                            },
+                            "lastIp": {
+                                "type": "string",
+                                "description": "Last IP address of the pool. Should be higher than first_ip or empty."
+                            },
+                            "twiceNat": {
+                                "type": "boolean",
+                                "description": "Enable/disable twice NAT."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Nat44AddressPool defines an address pool used for NAT44."
+                    },
+                    "type": "array"
+                },
+                "proxyArp": {
+                    "properties": {
+                        "interfaces": {
+                            "items": {
+                                "$schema": "http://json-schema.org/draft-04/schema#",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "type": "array",
+                            "description": "List of interfaces proxy ARP is enabled for."
+                        },
+                        "ranges": {
+                            "items": {
+                                "$schema": "http://json-schema.org/draft-04/schema#",
+                                "properties": {
+                                    "firstIpAddr": {
+                                        "type": "string"
+                                    },
+                                    "lastIpAddr": {
+                                        "type": "string"
+                                    },
+                                    "vrfId": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "puntExceptions": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "reason": {
+                                "type": "string",
+                                "description": "Name should contain reason name, e.g. `ipsec4-spi-0`."
+                            },
+                            "socketPath": {
+                                "type": "string",
+                                "description": "SocketPath defines path to unix domain socket\n used for punt packets to the host.\n In dumps, it will actually contain the socket\n defined in VPP config under punt section."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Exception allows specifying punt exceptions used for punting packets.\n The type of exception is defined by reason name."
+                    },
+                    "type": "array"
+                },
+                "puntIpredirects": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "l3Protocol": {
+                                "enum": [
+                                    "UNDEFINED_L3",
+                                    0,
+                                    "IPV4",
+                                    4,
+                                    "IPV6",
+                                    6,
+                                    "ALL",
+                                    10
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "L3 protocol to be redirected"
+                            },
+                            "rxInterface": {
+                                "type": "string",
+                                "description": "Receive interface name. Optional, only redirect traffic incoming from this interface"
+                            },
+                            "txInterface": {
+                                "type": "string",
+                                "description": "Transmit interface name"
+                            },
+                            "nextHop": {
+                                "type": "string",
+                                "description": "Next hop IP where the traffic is redirected"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "IPRedirect allows otherwise dropped packet which destination IP address\n matching some of the VPP addresses to redirect to the defined next hop address\n via the TX interface."
+                    },
+                    "type": "array"
+                },
+                "puntTohosts": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "l3Protocol": {
+                                "enum": [
+                                    "UNDEFINED_L3",
+                                    0,
+                                    "IPV4",
+                                    4,
+                                    "IPV6",
+                                    6,
+                                    "ALL",
+                                    10
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "L3 destination protocol a packet has to match in order to be punted."
+                            },
+                            "l4Protocol": {
+                                "enum": [
+                                    "UNDEFINED_L4",
+                                    0,
+                                    "TCP",
+                                    6,
+                                    "UDP",
+                                    17
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ],
+                                "description": "L4 destination protocol a packet has to match.\n Currently VPP only supports UDP."
+                            },
+                            "port": {
+                                "type": "integer",
+                                "description": "Destination port"
+                            },
+                            "socketPath": {
+                                "type": "string",
+                                "description": "SocketPath defines path to unix domain socket\n used for punt packets to the host.\n In dumps, it will actually contain the socket\n defined in VPP config under punt section."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "ToHost allows otherwise dropped packet which destination IP address matching\n some of the VPP interface IP addresses to be punted to the host.\n L3 and L4 protocols can be used for filtering */"
+                    },
+                    "type": "array"
+                },
+                "routes": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "type": {
+                                "enum": [
+                                    "INTRA_VRF",
+                                    0,
+                                    "INTER_VRF",
+                                    1,
+                                    "DROP",
+                                    2
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ]
+                            },
+                            "vrfId": {
+                                "type": "integer",
+                                "description": "VRF identifier, field required for remote client. This value should be\n consistent with VRF ID in static route key. If it is not, value from\n key will be preffered and this field will be overriden.\n Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)"
+                            },
+                            "dstNetwork": {
+                                "type": "string",
+                                "description": "Destination network defined by IP address and prefix (format: \u003caddress\u003e/\u003cprefix\u003e)."
+                            },
+                            "nextHopAddr": {
+                                "type": "string",
+                                "description": "Next hop address."
+                            },
+                            "outgoingInterface": {
+                                "type": "string",
+                                "description": "Interface name of the outgoing interface."
+                            },
+                            "weight": {
+                                "type": "integer",
+                                "description": "Weight is used for unequal cost load balancing."
+                            },
+                            "preference": {
+                                "type": "integer",
+                                "description": "Preference defines path preference. Lower preference is preferred.\n Only paths with the best preference contribute to forwarding (a poor man's primary and backup)."
+                            },
+                            "viaVrfId": {
+                                "type": "integer",
+                                "description": "Specifies VRF ID for the next hop lookup / recursive lookup"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "spans": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "interfaceFrom": {
+                                "type": "string"
+                            },
+                            "interfaceTo": {
+                                "type": "string"
+                            },
+                            "direction": {
+                                "enum": [
+                                    "UNKNOWN",
+                                    0,
+                                    "RX",
+                                    1,
+                                    "TX",
+                                    2,
+                                    "BOTH",
+                                    3
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ]
+                            },
+                            "isL2": {
+                                "type": "boolean"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "srv6Global": {
+                    "properties": {
+                        "encapSourceAddress": {
+                            "type": "string",
+                            "description": "IPv6 source address for sr encapsulated packets"
+                        }
+                    },
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "srv6Localsids": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "sid": {
+                                "type": "string",
+                                "description": "segment id (IPv6 Address)"
+                            },
+                            "installationVrfId": {
+                                "type": "integer",
+                                "description": "ID of IPv6 VRF table where to install LocalSID routing components\n(LocalSids with End.AD function ignore this setting due to missing setting\nin the API. The End.AD functionality is separated from the SRv6 functionality\nand have no binary API. It has only the CLI API and that doesn't have\nthe installation vrf id (in VPP API called FIB table) setting configurable.)\nNon-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)"
+                            },
+                            "baseEndFunction": {
+                                "properties": {
+                                    "psp": {
+                                        "type": "boolean",
+                                        "description": "use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH)"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "endFunctionX": {
+                                "properties": {
+                                    "psp": {
+                                        "type": "boolean",
+                                        "description": "use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH)"
+                                    },
+                                    "outgoingInterface": {
+                                        "type": "string",
+                                        "description": "name of cross-connected outgoing interface"
+                                    },
+                                    "nextHop": {
+                                        "type": "string",
+                                        "description": "IPv6 next hop address for cross-connected link"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "endFunctionT": {
+                                "properties": {
+                                    "psp": {
+                                        "type": "boolean",
+                                        "description": "use PSP (penultimate segment POP of the SRH) or by default use USP (Ultimate Segment Pop of the SRH)"
+                                    },
+                                    "vrfId": {
+                                        "type": "integer",
+                                        "description": "vrf index of IPv6 table that should be used for lookup.\nvrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side\nand FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes).\nNon-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "endFunctionDx2": {
+                                "properties": {
+                                    "vlanTag": {
+                                        "type": "integer",
+                                        "description": "Outgoing VLAN tag"
+                                    },
+                                    "outgoingInterface": {
+                                        "type": "string",
+                                        "description": "name of cross-connected outgoing interface"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "endFunctionDx4": {
+                                "properties": {
+                                    "outgoingInterface": {
+                                        "type": "string",
+                                        "description": "name of cross-connected outgoing interface"
+                                    },
+                                    "nextHop": {
+                                        "type": "string",
+                                        "description": "next hop address for cross-connected link"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "endFunctionDx6": {
+                                "properties": {
+                                    "outgoingInterface": {
+                                        "type": "string",
+                                        "description": "name of cross-connected outgoing interface"
+                                    },
+                                    "nextHop": {
+                                        "type": "string",
+                                        "description": "next hop address for cross-connected link"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "endFunctionDt4": {
+                                "properties": {
+                                    "vrfId": {
+                                        "type": "integer",
+                                        "description": "vrf index of IPv4 table that should be used for lookup.\nvrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side\nand FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes).\nNon-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "endFunctionDt6": {
+                                "properties": {
+                                    "vrfId": {
+                                        "type": "integer",
+                                        "description": "vrf index of IPv6 table that should be used for lookup.\nvrf_index and fib_table_id should refer to the same routing table. VRF index refer to it from client side\nand FIB table id from VPP-internal side (index of memory allocated structure from pool)(source: https://wiki.fd.io/view/VPP/Per-feature_Notes).\nNon-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "endFunctionAd": {
+                                "properties": {
+                                    "outgoingInterface": {
+                                        "type": "string",
+                                        "description": "name of interface on segment routing proxy side sending data to segment routing unaware service"
+                                    },
+                                    "incomingInterface": {
+                                        "type": "string",
+                                        "description": "name of interface on segment routing proxy side receiving data from segment routing unaware service"
+                                    },
+                                    "l3ServiceAddress": {
+                                        "type": "string",
+                                        "description": "IPv6/IPv4 address of L3 SR-unaware service (address type depends whether service is IPv4 or IPv6 service), in case of L2 service it must be empty"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "srv6Policies": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "bsid": {
+                                "type": "string",
+                                "description": "binding SID (IPv6 Address)"
+                            },
+                            "installationVrfId": {
+                                "type": "integer",
+                                "description": "ID of IPv6 VRF table where to install Policy routing components (for loadbalancing/spray are used VPP features that are using VRF table)\nNon-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)"
+                            },
+                            "srhEncapsulation": {
+                                "type": "boolean",
+                                "description": "are SR headers handled by encapsulation? (no means insertion of SR headers)"
+                            },
+                            "sprayBehaviour": {
+                                "type": "boolean",
+                                "description": "spray(multicast) to all policy segments? (no means to use PolicySegment.weight to loadbalance traffic)"
+                            },
+                            "segmentLists": {
+                                "items": {
+                                    "$schema": "http://json-schema.org/draft-04/schema#",
+                                    "properties": {
+                                        "weight": {
+                                            "type": "integer",
+                                            "description": "used for loadbalancing in case of multiple policy segments in routing process (ignored in case of spray policies)"
+                                        },
+                                        "segments": {
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "type": "array",
+                                            "description": "list of sids creating one segmented road"
+                                        }
+                                    },
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "description": "Model for SRv6 Segment List"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Model for SRv6 policy (policy without at least one policy segment is only cached in ligato and not written to VPP)"
+                    },
+                    "type": "array"
+                },
+                "srv6Steerings": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "globally unique steering identification (used in keys when is steering stored in key-value stores(i.e. ETCD))"
+                            },
+                            "policyBsid": {
+                                "type": "string",
+                                "description": "BSID identifier for policy to which we want to steer routing into (policyBSID and policyIndex are mutual exclusive)"
+                            },
+                            "policyIndex": {
+                                "type": "integer",
+                                "description": "(vpp-internal)Index identifier for policy to which we want to steer routing into (policyBSID and policyIndex are mutual exclusive)"
+                            },
+                            "l2Traffic": {
+                                "properties": {
+                                    "interfaceName": {
+                                        "type": "string",
+                                        "description": "name of interface with incoming traffic that should be steered to SR policy"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            "l3Traffic": {
+                                "properties": {
+                                    "installationVrfId": {
+                                        "type": "integer",
+                                        "description": "ID of IPv4/IPv6 VRF table where to install L3 Steering routing components (VRF table type (IPv4/IPv6) is decided by prefix_address value)\nNon-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)"
+                                    },
+                                    "prefixAddress": {
+                                        "type": "string",
+                                        "description": "IPv4/IPv6 prefix address(CIRD format) of traffic destination. All traffic with given destination will be steered to given SR policy"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Model for steering traffic to SRv6 policy"
+                    },
+                    "type": "array"
+                },
+                "teibEntries": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "interface": {
+                                "type": "string",
+                                "description": "Interface references a tunnel interface this TEIB entry is linked to."
+                            },
+                            "peerAddr": {
+                                "type": "string",
+                                "description": "IP address of the peer."
+                            },
+                            "nextHopAddr": {
+                                "type": "string",
+                                "description": "Next hop IP address."
+                            },
+                            "vrfId": {
+                                "type": "integer",
+                                "description": "VRF ID used to reach the next hop."
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "TeibEntry represents an tunnel endpoint information base entry."
+                    },
+                    "type": "array"
+                },
+                "vrfs": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "description": "ID is mandatory identification for VRF table.\n NOTE: do not confuse with fib index (shown by some VPP CLIs),\n which is VPP's internal offset in the vector of allocated tables."
+                            },
+                            "protocol": {
+                                "enum": [
+                                    "IPV4",
+                                    0,
+                                    "IPV6",
+                                    1
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "integer"
+                                    }
+                                ]
+                            },
+                            "label": {
+                                "type": "string",
+                                "description": "Label is an optional description for the table.\n - maximum allowed length is 63 characters\n - included in the output from the VPP CLI command \"show ip fib\"\n - if undefined, then VPP will generate label using the template \"\u003cprotocol\u003e-VRF:\u003cid\u003e\""
+                            },
+                            "flowHashSettings": {
+                                "properties": {
+                                    "useSrcIp": {
+                                        "type": "boolean"
+                                    },
+                                    "useDstIp": {
+                                        "type": "boolean"
+                                    },
+                                    "useSrcPort": {
+                                        "type": "boolean"
+                                    },
+                                    "useDstPort": {
+                                        "type": "boolean"
+                                    },
+                                    "useProtocol": {
+                                        "type": "boolean"
+                                    },
+                                    "reverse": {
+                                        "type": "boolean"
+                                    },
+                                    "symmetric": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "additionalProperties": true,
+                                "type": "object"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "wgPeers": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "publicKey": {
+                                "type": "string",
+                                "description": "Public-key base64"
+                            },
+                            "port": {
+                                "type": "integer",
+                                "description": "Peer UDP port"
+                            },
+                            "persistentKeepalive": {
+                                "type": "integer",
+                                "description": "Keepalive interval (sec)"
+                            },
+                            "endpoint": {
+                                "type": "string",
+                                "description": "Endpoint IP"
+                            },
+                            "wgIfName": {
+                                "type": "string",
+                                "description": "The name of the wireguard interface to which this peer belongs"
+                            },
+                            "flags": {
+                                "type": "integer",
+                                "description": "Flags\n WIREGUARD_PEER_STATUS_DEAD = 0x1"
+                            },
+                            "allowedIps": {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array",
+                                "description": "Allowed IPs"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "xconnectPairs": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "receiveInterface": {
+                                "type": "string"
+                            },
+                            "transmitInterface": {
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object"
+        }
+    },
+    "additionalProperties": true,
+    "type": "object",
+    "description": "Configuration root wrapping all models supported by StoneWork.",
+    "definitions": {
+        "ligato.linux.namespace.NetNamespace": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "properties": {
+                "type": {
+                    "enum": [
+                        "UNDEFINED",
+                        0,
+                        "NSID",
+                        1,
+                        "PID",
+                        2,
+                        "FD",
+                        3,
+                        "MICROSERVICE",
+                        4
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ]
+                },
+                "reference": {
+                    "type": "string",
+                    "description": "Reference defines reference specific\n to the namespace type:\n  * namespace ID (NSID)\n  * PID number (PID)\n  * file path (FD)\n  * microservice label (MICROSERVICE)"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "id": "ligato.linux.namespace.NetNamespace"
+        },
+        "ligato.vpp.acl.ACL.Rule.IpRule.Icmp.Range": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "properties": {
+                "first": {
+                    "type": "integer"
+                },
+                "last": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "id": "ligato.vpp.acl.ACL.Rule.IpRule.Icmp.Range"
+        },
+        "ligato.vpp.acl.ACL.Rule.IpRule.PortRange": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "properties": {
+                "lowerPort": {
+                    "type": "integer"
+                },
+                "upperPort": {
+                    "type": "integer",
+                    "description": "If upper port is set, it must\n be greater or equal to lower port"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "description": "Inclusive range representing destination ports to be used. When\n only lower-port is present, it represents a single port.",
+            "id": "ligato.vpp.acl.ACL.Rule.IpRule.PortRange"
+        }
+    }
+}

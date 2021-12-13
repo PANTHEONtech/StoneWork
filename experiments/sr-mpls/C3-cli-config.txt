@@ -1,0 +1,28 @@
+create memif socket id 13 filename /var/run/sr-mpls/memif-13.sock
+create interface memif id 13 socket-id 13 slave hw-addr c3:13:00:00:00:00
+set interface ip address memif13/13 10.0.1.2/24
+set interface state memif13/13 up
+
+create memif socket id 23 filename /var/run/sr-mpls/memif-23.sock
+create interface memif id 23 socket-id 23 slave hw-addr c3:23:00:00:00:00
+set interface ip address memif23/23 10.0.2.2/24
+set interface state memif23/23 up
+
+create memif socket id 34 filename /var/run/sr-mpls/memif-34.sock
+create interface memif id 34 socket-id 34 master hw-addr c3:34:00:00:00:00
+set interface ip address memif34/34 10.0.3.1/24
+set interface state memif34/34 up
+
+comment { knowing neighbors before setting MPLS is necessary, probably VPP bug }
+set ip neighbor memif13/13 10.0.1.1 c1:13:00:00:00:00
+set ip neighbor memif23/23 10.0.2.1 c2:23:00:00:00:00
+set ip neighbor memif34/34 10.0.3.2 c4:34:00:00:00:00
+
+comment { SR-MPLS settings }
+mpls table add 0
+set interface mpls memif23/23 enable
+set interface mpls memif13/13 enable
+mpls local-label add 103 non-eos via mpls-lookup-in-table 0
+mpls local-label add 103 eos via ip4-lookup-in-table 0
+mpls local-label add 104 non-eos via 10.0.3.2 memif34/34 out-labels 104
+mpls local-label add 104 eos via 10.0.3.2 memif34/34 out-labels 104

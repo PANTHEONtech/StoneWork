@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: Apache-2.0
+
+// Copyright 2021 PANTHEON.tech
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package bfd;
+
+option go_package = "go.pantheon.tech/stonework/proto/bfd;bfd";
+
+// Single-hop UDP-based bidirectional forwarding detection session
+message BFD {
+    // Name of the interface the BFD session is attached to.
+    string interface = 1;
+
+    // Local IP address. The interface must have the same address configured.
+    string local_ip = 2;
+
+    // IP address of the peer, must be the same IP version as the local address.
+    string peer_ip = 3;
+
+    // Desired minimum TX interval in milliseconds.
+    uint32 min_tx_interval = 4;
+    // Required minimum RX interval in milliseconds.
+    uint32 min_rx_interval = 5;
+
+    // Detect multiplier, must be non-zero value.
+    uint32 detect_multiplier = 6;
+}
+
+// BFDEvent is generated whenever a BFD state changes.
+message BFDEvent {
+    string interface = 1;
+    string local_ip = 2;
+    string peer_ip = 3;
+    enum SessionState {
+        Unknown = 0;
+        Down = 1;
+        Init = 2;
+        Up = 3;
+    }
+    SessionState session_state = 4;
+}
+
+// Request message for the WatchBFDEvents method.
+message WatchBFDEventsRequest {
+    string subscription_label = 1;
+}
+
+// BFDWatcher provides API to watch for BFD events.
+service BFDWatcher {
+    // WatchBFDEvents allows to subscribe for BFD events.
+    rpc WatchBFDEvents(WatchBFDEventsRequest) returns (stream BFDEvent) {};
+}

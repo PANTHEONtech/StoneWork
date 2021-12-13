@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2021 PANTHEON.tech
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Initial configuration applied automatically during the agent startup.
+---
+vppConfig:
+  interfaces:
+    - name: loop1
+      type: SOFTWARE_LOOPBACK
+      enabled: true
+      vrf: 1
+      ipAddresses:
+        - 172.16.1.1/27
+    - name: loop2
+      type: SOFTWARE_LOOPBACK
+      enabled: true
+      vrf: 2
+      ipAddresses:
+        - 172.17.1.1/27
+  vrfs:
+    - id: 1
+      protocol: IPV4
+    - id: 2
+      protocol: IPV4
+
+linuxConfig:
+
+mock1Config:
+  MockCnf1_list:
+    - ipProtocol: 89
+      vppInterface: loop1
+      vrf: 1
+      waitForInterface: loop2
+
+mock2Config:
+  MockCnf2_list:
+    - vppInterface: loop1
+      vrf: 1

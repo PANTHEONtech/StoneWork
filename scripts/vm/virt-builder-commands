@@ -1,0 +1,11 @@
+hostname stonework
+root-password password:root
+install docker.io,docker-compose,lshw,vim,curl
+copy-in build/stonework-docker-img.tar:/root/
+copy-in scripts/vm/vpp.conf:/root/
+copy-in scripts/vm/firstboot.sh:/root/
+copy-in scripts/vm/config:/root/
+append-line /root/.bashrc:alias stonework='docker exec -it stonework'
+# use good old ethX names for interfaces to be consistent with GNS3
+edit /etc/default/grub:s/^GRUB_CMDLINE_LINUX="/GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0 /
+run-command update-grub

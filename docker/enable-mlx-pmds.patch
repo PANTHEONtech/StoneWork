@@ -1,0 +1,49 @@
+diff --git a/build-data/platforms/vpp.mk b/build-data/platforms/vpp.mk
+index 83d0fe584..56c11d807 100644
+--- a/build-data/platforms/vpp.mk
++++ b/build-data/platforms/vpp.mk
+@@ -27,3 +27,6 @@ vpp_TAG_BUILD_TYPE = release
+ vpp_clang_TAG_BUILD_TYPE = release
+ vpp_gcov_TAG_BUILD_TYPE = gcov
+ vpp_coverity_TAG_BUILD_TYPE = coverity
++
++vpp_uses_dpdk_mlx4_pmd = yes
++vpp_uses_dpdk_mlx5_pmd = yes
+diff --git a/build/external/packages/dpdk.mk b/build/external/packages/dpdk.mk
+index c35ac84c2..f7e86fa5e 100644
+--- a/build/external/packages/dpdk.mk
++++ b/build/external/packages/dpdk.mk
+@@ -14,9 +14,9 @@
+ DPDK_PKTMBUF_HEADROOM        ?= 128
+ DPDK_USE_LIBBSD              ?= n
+ DPDK_DEBUG                   ?= n
+-DPDK_MLX4_PMD                ?= n
+-DPDK_MLX5_PMD                ?= n
+-DPDK_MLX5_COMMON_PMD         ?= n
++DPDK_MLX4_PMD                := y
++DPDK_MLX5_PMD                := y
++DPDK_MLX5_COMMON_PMD         := y
+ DPDK_TAP_PMD                 ?= n
+ DPDK_FAILSAFE_PMD            ?= n
+ DPDK_MACHINE                 ?= default
+diff --git a/build/external/packages/rdma-core.mk b/build/external/packages/rdma-core.mk
+index 65c9c8aa6..960a2ffa1 100644
+--- a/build/external/packages/rdma-core.mk
++++ b/build/external/packages/rdma-core.mk
+@@ -39,6 +39,7 @@ define  rdma-core_config_cmds
+ 	  $(CMAKE) -G Ninja $(rdma-core_src_dir) \
+ 	    -DENABLE_STATIC=1 -DENABLE_RESOLVE_NEIGH=0 -DNO_PYVERBS=1 -DENABLE_VALGRIND=0\
+ 	    -DCMAKE_BUILD_TYPE=$(RDMA_BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(rdma-core_install_dir) \
++	    -DCMAKE_INSTALL_LIBDIR=lib \
+ 	    -DCMAKE_C_FLAGS='-fPIC -fvisibility=hidden' > $(rdma-core_config_log)
+ endef
+ 
+@@ -52,6 +53,8 @@ define  rdma-core_install_cmds
+ 	find $(rdma-core_install_dir) -name '*.a' -exec mv -v {} $(rdma-core_install_dir)/lib \; >> $(rdma-core_install_log)
+ 	rmdir -v $(rdma-core_install_dir)/util $(rdma-core_install_dir)/lib/statics >> $(rdma-core_install_log)
+ 	sed '/Libs.private:/ s/$$/ -lrdma_util -lccan/' -i $(rdma-core_install_dir)/lib/pkgconfig/libibverbs.pc
++	sed '/Libs.private:/ s/ \S*\(rdmav25\)\S*//g'   -i $(rdma-core_install_dir)/lib/pkgconfig/libibverbs.pc
++	sed '/Libs.private:/ s/-lefa//g'                -i $(rdma-core_install_dir)/lib/pkgconfig/libibverbs.pc
+ endef
+ 
+ $(eval $(call package,rdma-core))

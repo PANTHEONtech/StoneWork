@@ -1,0 +1,3 @@
+[submodule "submodule/vpp-agent"]
+	path = submodule/vpp-agent
+	url = https://github.com/ligato/vpp-agent

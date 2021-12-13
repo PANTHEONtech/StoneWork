@@ -1,0 +1,109 @@
+{
+    "types": [
+        [
+            "nat_timeouts",
+            [
+                "u32",
+                "udp"
+            ],
+            [
+                "u32",
+                "tcp_established"
+            ],
+            [
+                "u32",
+                "tcp_transitory"
+            ],
+            [
+                "u32",
+                "icmp"
+            ]
+        ]
+    ],
+    "messages": [],
+    "unions": [],
+    "enums": [
+        [
+            "nat_log_level",
+            [
+                "NAT_LOG_NONE",
+                0
+            ],
+            [
+                "NAT_LOG_ERROR",
+                1
+            ],
+            [
+                "NAT_LOG_WARNING",
+                2
+            ],
+            [
+                "NAT_LOG_NOTICE",
+                3
+            ],
+            [
+                "NAT_LOG_INFO",
+                4
+            ],
+            [
+                "NAT_LOG_DEBUG",
+                5
+            ],
+            {
+                "enumtype": "u8"
+            }
+        ],
+        [
+            "nat_config_flags",
+            [
+                "NAT_IS_NONE",
+                0
+            ],
+            [
+                "NAT_IS_TWICE_NAT",
+                1
+            ],
+            [
+                "NAT_IS_SELF_TWICE_NAT",
+                2
+            ],
+            [
+                "NAT_IS_OUT2IN_ONLY",
+                4
+            ],
+            [
+                "NAT_IS_ADDR_ONLY",
+                8
+            ],
+            [
+                "NAT_IS_OUTSIDE",
+                16
+            ],
+            [
+                "NAT_IS_INSIDE",
+                32
+            ],
+            [
+                "NAT_IS_STATIC",
+                64
+            ],
+            [
+                "NAT_IS_EXT_HOST_VALID",
+                128
+            ],
+            {
+                "enumtype": "u8"
+            }
+        ]
+    ],
+    "enumflags": [],
+    "services": {},
+    "options": {
+        "version": "0.0.1"
+    },
+    "aliases": {},
+    "vl_api_version": "0x2ca9110f",
+    "imports": [],
+    "counters": [],
+    "paths": []
+}

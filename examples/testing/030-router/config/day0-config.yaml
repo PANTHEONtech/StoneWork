@@ -1,0 +1,94 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2021 PANTHEON.tech
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+vppConfig:
+  interfaces:
+    - name: vpp-tap1
+      type: TAP
+      enabled: true
+      ipAddresses:
+        - 10.10.1.2/24
+      tap:
+        version: 2
+        toMicroservice: tester1
+    - name: vpp-tap2
+      type: TAP
+      enabled: true
+      ipAddresses:
+        - 10.10.2.1/24
+      tap:
+        version: 2
+        toMicroservice: tester2
+  routes:
+    - dstNetwork: 10.10.3.0/24
+      nextHopAddr: 10.10.2.2
+      outgoingInterface: vpp-tap2
+
+linuxConfig:
+  interfaces:
+    - name: linux-tap1
+      type: TAP_TO_VPP
+      namespace:
+        type: MICROSERVICE
+        reference: tester1
+      enabled: true
+      ipAddresses:
+        - 10.10.1.1/24
+      tap:
+        vppTapIfName: vpp-tap1
+    - name: linux-tap2
+      type: TAP_TO_VPP
+      namespace:
+        type: MICROSERVICE
+        reference: tester2
+      enabled: true
+      ipAddresses:
+        - 10.10.2.2/24
+      tap:
+        vppTapIfName: vpp-tap2
+    - name: veth1
+      type: VETH
+      namespace:
+        type: MICROSERVICE
+        reference: tester2
+      enabled: true
+      ipAddresses:
+        - 10.10.3.1/24
+      veth:
+        peerIfName: veth2
+    - name: veth2
+      type: VETH
+      namespace:
+        type: MICROSERVICE
+        reference: tester3
+      enabled: true
+      ipAddresses:
+        - 10.10.3.2/24
+      veth:
+        peerIfName: veth1
+  routes:
+    - outgoingInterface: linux-tap1
+      scope: GLOBAL
+      dstNetwork: 0.0.0.0/0
+      gwAddr: 10.10.1.2
+    - outgoingInterface: linux-tap2
+      scope: GLOBAL
+      dstNetwork: 10.10.1.0/24
+      gwAddr: 10.10.2.1
+    - outgoingInterface: veth2
+      scope: GLOBAL
+      dstNetwork: 0.0.0.0/0
+      gwAddr: 10.10.3.1

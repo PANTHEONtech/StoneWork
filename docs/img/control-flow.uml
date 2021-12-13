@@ -1,0 +1,47 @@
+@startuml
+
+title "StoneWork <-> CNF integration"
+
+actor agentctl
+participant StoneWork
+database "/run/stonework" as sharedfs
+participant CNF1
+participant CNF2
+
+== Initialization ==
+
+StoneWork->StoneWork: wait for CNFs to start
+CNF1->sharedfs: Write pid file
+CNF2->sharedfs: Write pid file
+StoneWork->sharedfs: discover CNFs
+StoneWork->CNF1: Get models
+StoneWork->CNF2: Get models
+StoneWork->StoneWork: init proxy for CNF models
+
+== Running ==
+
+agentctl->StoneWork: Configure CNF1 model\n(e.g. enable BGP for interface Gbe1)
+activate StoneWork
+StoneWork->CNF1: need packet punting?
+activate CNF1
+CNF1->StoneWork: requested punt description
+StoneWork o<->o CNF1: configure punt with CNF1\n(e.g. TAP interconnect with ABX)
+StoneWork->CNF1: punt metadata\n(e.g. interface name)
+deactivate CNF1
+StoneWork->CNF1: Proxy 'Create' over gRPC
+activate CNF1
+CNF1->CNF1: Apply config\n(against punted interface)\n(e.g. start&configure GoBGP)
+CNF1->StoneWork: done
+deactivate CNF1
+StoneWork->agentctl: done
+deactivate StoneWork
+
+...CNF1 event (e.g. new route learned over BGP)...
+CNF1->StoneWork: Configure something on VPP\n(e.g. add route)
+activate StoneWork
+StoneWork->CNF1: done
+deactivate StoneWork
+
+
+
+@enduml

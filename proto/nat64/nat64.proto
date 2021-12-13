@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: Apache-2.0
+
+// Copyright 2021 PANTHEON.tech
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package nat64;
+
+option go_package = "go.pantheon.tech/stonework/proto/nat64;nat64";
+
+// IPv4-Embedded IPv6 Address Prefix used for NAT64.
+// If no prefix is configured (at all or for a given VRF), then the well-known prefix (64:ff9b::/96) is used.
+message Nat64IPv6Prefix {
+	// VRF id of tenant.
+	// At most one IPv6 prefix can be configured for a given VRF (that's why VRF is part of the key but prefix is not).
+	// Non-zero (and not all-ones) VRF has to be explicitly created (see proto/ligato/vpp/l3/vrf.proto).
+	uint32 vrf_id = 1;
+	// NAT64 prefix in the <IPv6-Address>/<IPv6-Prefix> format.
+	string prefix = 2;
+}
+
+// Nat64Interface defines a local network interfaces enabled for NAT64.
+message Nat64Interface {
+	// Interface name (logical).
+	string name = 1;
+	enum Type {
+		// Interface connecting inside/local network with IPv6 endpoints.
+		IPV6_INSIDE = 0;
+		// Interface connecting outside/external network with IPv4 endpoints.
+		IPV4_OUTSIDE = 1;
+	};
+	Type type = 2;
+}
+
+// Nat44AddressPool defines an address pool used for NAT64.
+message Nat64AddressPool {
+	// VRF id of tenant, 0xFFFFFFFF means independent of VRF.
+	// Non-zero (and not all-ones) VRF has to be explicitly created (see proto/ligato/vpp/l3/vrf.proto).
+	uint32 vrf_id = 1;
+	// First IP address of the pool.
+	string first_ip = 2;
+	// Last IP address of the pool. Should be higher than first_ip or empty.
+	string last_ip = 3;
+}
+
+// Static NAT64 binding allowing IPv4 host from the outside to access IPv6 host from the inside.
+message Nat64StaticBIB {
+	// VRF (table) ID. Non-zero VRF has to be explicitly created (see proto/ligato/vpp/l3/vrf.proto).
+	uint32 vrf_id = 1;
+
+	// IPv6 host from the inside/local network.
+	string inside_ipv6_address = 2;
+
+	// Inside port number (of the IPv6 host).
+	uint32 inside_port = 3;
+
+	// IPv4 host from the outside/external network.
+	string outside_ipv4_address = 4;
+
+	// Outside port number (of the IPv4 host).
+	uint32 outside_port = 5;
+
+	// Protocol to which the binding applies.
+	enum Protocol {
+		TCP = 0;
+		UDP = 1;
+		ICMP = 2;
+	};
+	Protocol protocol = 6;
+}

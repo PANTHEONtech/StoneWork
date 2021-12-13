@@ -1,0 +1,9 @@
+.idea
+build/
+cmd/stonework/stonework
+cmd/stonework-init/stonework-init
+cmd/mockcnf/mockcnf
+cmd/proto-rootgen/proto-rootgen
+.*-test
+examples/**/example.log
+examples/getting-started/config/new-config.yaml

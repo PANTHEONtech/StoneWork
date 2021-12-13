@@ -1,0 +1,103 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2021 PANTHEON.tech
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+vppConfig:
+  interfaces:
+    - name: vpp-tap1
+      type: TAP
+      enabled: true
+      ipAddresses:
+        - 2001:0:0:1::2/64
+      tap:
+        version: 2
+        toMicroservice: tester1
+    - name: vpp-tap2
+      type: TAP
+      enabled: true
+      ipAddresses:
+        - 2001:0:0:2::1/64
+      tap:
+        version: 2
+        toMicroservice: tester2
+  routes:
+    - dstNetwork: 2001:0:0:3::/64
+      nextHopAddr: 2001:0:0:2::2
+      outgoingInterface: vpp-tap2
+
+linuxConfig:
+  interfaces:
+    - name: linux-tap1
+      type: TAP_TO_VPP
+      namespace:
+        type: MICROSERVICE
+        reference: tester1
+      enabled: true
+      ipAddresses:
+        - 2001:0:0:1::1/64
+      tap:
+        vppTapIfName: vpp-tap1
+    - name: linux-tap2
+      type: TAP_TO_VPP
+      namespace:
+        type: MICROSERVICE
+        reference: tester2
+      enabled: true
+      ipAddresses:
+        - 2001:0:0:2::2/64
+      tap:
+        vppTapIfName: vpp-tap2
+    - name: veth1
+      type: VETH
+      namespace:
+        type: MICROSERVICE
+        reference: tester2
+      enabled: true
+      ipAddresses:
+        - 2001:0:0:3::1/64
+      veth:
+        peerIfName: veth2
+    - name: veth2
+      type: VETH
+      namespace:
+        type: MICROSERVICE
+        reference: tester3
+      enabled: true
+      ipAddresses:
+        - 2001:0:0:3::2/64
+      veth:
+        peerIfName: veth1
+  routes:
+    - outgoingInterface: linux-tap1
+      scope: GLOBAL
+      dstNetwork: ::/0
+      gwAddr: 2001:0:0:1::2
+      # Set metric to avoid bug
+      # There is a bug in vpp-agent that causes StoneWork to be out-of-sync if
+      # metric is not defined (the function check_in_sync in test-stonework.sh
+      # fails).
+      metric: 1024
+    - outgoingInterface: linux-tap2
+      scope: GLOBAL
+      dstNetwork: 2001:0:0:1::/64
+      gwAddr: 2001:0:0:2::1
+      # Set metric to avoid bug
+      metric: 1024
+    - outgoingInterface: veth2
+      scope: GLOBAL
+      dstNetwork: ::/0
+      gwAddr: 2001:0:0:3::1
+      # Set metric to avoid bug
+      metric: 1024

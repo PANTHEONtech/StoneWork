@@ -1,0 +1,29 @@
+create memif socket id 12 filename /var/run/sr-mpls/memif-12.sock
+create interface memif id 12 socket-id 12 master hw-addr c1:12:00:00:00:00
+set interface ip address memif12/12 10.0.0.1/24
+set interface state memif12/12 up
+
+create memif socket id 13 filename /var/run/sr-mpls/memif-13.sock
+create interface memif id 13 socket-id 13 master hw-addr c1:13:00:00:00:00
+set interface ip address memif13/13 10.0.1.1/24
+set interface state memif13/13 up
+
+comment { tap1 is c1 interface to clients }
+create tap id 1 hw-addr c1:00:00:00:00:00 host-ip4-addr 1.1.1.1/24 host-if-name tap-c1
+set interface ip address tap1 1.1.1.2/24
+set interface state tap1 up
+
+comment { knowing neighbors before setting MPLS is necessary, probably VPP bug }
+set ip neighbor memif12/12 10.0.0.2 c2:12:00:00:00:00
+set ip neighbor memif13/13 10.0.1.2 c3:13:00:00:00:00
+
+comment { SR-MPLS settings }
+mpls table 0
+mpls local-label add 102 non-eos via 10.0.0.2 memif12/12 out-labels 102
+mpls local-label add 102 eos via 10.0.0.2 memif12/12 out-labels 102
+mpls local-label add 103 non-eos via 10.0.1.2 memif13/13 out-labels 103
+mpls local-label add 103 eos via 10.0.1.2 memif13/13 out-labels 103
+mpls local-label add 104 eos via 10.0.1.2 memif13/13 out-labels 104
+mpls local-label add 104 non-eos via 10.0.1.2 memif13/13 out-labels 104
+sr mpls policy add bsid 999 next 102 next 104
+sr mpls steer l3 2.2.2.0/24 via sr policy bsid 999

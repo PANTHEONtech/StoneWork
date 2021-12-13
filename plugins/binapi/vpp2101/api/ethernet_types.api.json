@@ -1,0 +1,21 @@
+{
+    "types": [],
+    "messages": [],
+    "unions": [],
+    "enums": [],
+    "enumflags": [],
+    "services": {},
+    "options": {
+        "version": "1.0.0"
+    },
+    "aliases": {
+        "mac_address": {
+            "type": "u8",
+            "length": 6
+        }
+    },
+    "vl_api_version": "0xf24103d6",
+    "imports": [],
+    "counters": [],
+    "paths": []
+}

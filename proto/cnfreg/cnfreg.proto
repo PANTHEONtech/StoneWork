@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: Apache-2.0
+
+// Copyright 2021 PANTHEON.tech
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cnfreg;
+
+option go_package = "go.pantheon.tech/stonework/proto/cnfreg;cnfreg";
+
+import "puntmgr/puntmgr.proto";
+import "go.ligato.io/vpp-agent/v3/proto/ligato/generic/manager.proto";
+
+// Mode in which the CNF operates wrt. the other CNFs.
+enum CnfMode {
+    // CNF runs both data-plane (typically VPP) and control-plane inside its container
+    // and with other CNFs is integrated through CNF chaining (i.e. packets are copied between CNFs).
+    STANDALONE = 0;
+    // CNF runs as a module for StoneWork (All-in-one VPP). It means that it does not run data-plane inside
+    // its container, but instead is integrated with the single shared VPP and potentially also shares
+    // the same Linux network namespace with some other CNFs.
+    STONEWORK_MODULE = 1;
+    // Mode in which the agent of StoneWork operates.
+    STONEWORK = 2;
+};
+
+// DiscoverCnfReq is sent by CNFRegistry of STONEWORK to discover a SW-Module CNF.
+message DiscoverCnfReq {
+    // Management IP address of StoneWork.
+    string sw_ip_address = 1;
+    // gRPC port on which StoneWork (client of this request) listens.
+    uint32 sw_grpc_port = 2;
+    // HTTP port on which StoneWork (client of this request) listens.
+    uint32 sw_http_port = 3;
+}
+
+// DiscoverCnfResp is returned by STONEWORK_MODULE with information about CNF configuration models.
+message DiscoverCnfResp {
+    // Microservice label of the discovered CNF.
+    string cnf_ms_label = 1;
+
+    message ConfigModel {
+        // ProtoName is a name of protobuf message representing the model.
+        string proto_name = 1;
+        bool with_punt = 2;
+        bool with_retrieve = 3;
+        bool with_deps = 4;
+    }
+    repeated ConfigModel config_models = 4;
+}
+
+// ConfigItemDependency stores information about a single dependency of a configuration item.
+message ConfigItemDependency {
+    message Key {
+        string key = 1;
+    }
+    message AnyOf {
+        repeated string key_prefixes = 1;
+    }
+    string label = 1;
+    oneof dep {
+        string key = 2;
+        AnyOf anyof = 3;
+    }
+}
+
+// GetDependenciesResp is returned by STONEWORK_MODULE to inform about dependencies
+// of a given configuration item.
+message GetDependenciesResp {
+    repeated ConfigItemDependency dependencies = 1;
+}
+
+// CnfDiscovery is implemented by CNFRegistry plugin in the STONEWORK_MODULE mode.
+// It is used internally by the plugin to exchange information about CNF NB API between the CNF
+// and StoneWork.
+service CnfDiscovery {
+    // DiscoverCnf is served by the CNFRegistry of each SW-Module CNF.
+    // It is called by StoneWork during Init of CNFRegistry.
+    rpc DiscoverCnf(DiscoverCnfReq) returns (DiscoverCnfResp);
+
+    // GetPuntRequests is served by CNFRegistry of a SW-Module CNF and returns the set of packet punt
+    // requests corresponding to the given configuration item.
+    rpc GetPuntRequests(ligato.generic.Item) returns (puntmgr.PuntRequests);
+
+    // GetItemDependencies is served by CNFRegistry of a SW-Module CNF and returns
+    // the set of dependencies of the given configuration item (apart from punt deps which are determined
+    // from punt requests).
+    rpc GetItemDependencies(ligato.generic.Item) returns (GetDependenciesResp);
+}

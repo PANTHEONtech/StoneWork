@@ -1,0 +1,230 @@
+// SPDX-License-Identifier: Apache-2.0
+
+// Copyright 2021 PANTHEON.tech
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package puntmgr;
+
+option go_package = "go.pantheon.tech/stonework/proto/puntmgr;puntmgr";
+
+import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl/acl.proto";
+import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt/punt.proto";
+
+message PuntRequest {
+    // Label identifies punt request among all the requests for a given configuration item (key-value pair).
+    string label = 1;
+    enum PuntType {
+        // Punt is not required.
+        NO_PUNT = 0;
+        // Create an L2 "hairpin x-connect" using TAPs or MEMIFs:
+        //   vpp_interface1 <-> vpp tap/memif 1 <-> linux tap/memif 1 -- CNF -- linux tap/memif 2 <-> vpp tap/memif 2 <-> vpp_interface2
+        // (i.e. hairpinning over linux network stack or via memif-enabled CNF)
+        HAIRPIN_XCONNECT = 1;
+        // Like HAIRPIN x-connect except that while one side is attached to an existing L2 VPP interface, the other side
+        // is created as memif or TAP with given attributes. Basically it is like a feature attached to VPP interface
+        // (in the form of a new interface linked with an existing one, just like tunnel interfaces), which causes all
+        // traffic arriving/leaving via that interface to also flow through a CNF/Linux network stack before
+        // entering/exiting VPP. Unlike HAIRPIN x-connect it is therefore possible to attach further processing
+        // to this traffic (x-connect just forwards it through VPP unprocessed).
+        HAIRPIN = 2;
+        // Copy traffic arriving and/or leaving via L2/L3 interface and send it to Linux or memif-enabled CNF.
+        SPAN = 3;
+        // Effectively replicate L3 VPP interface in Linux using ACL-based xConnect as follows:
+        //   vpp-interface with IP  <-- ABX --> unnumbered vpp memif/tap interface <-> Linux Tap / CNF memif
+        ABX = 4;
+        // Punt traffic matching given conditions (received through any interface) and punt it over a AF_UNIX socket.
+        PUNT_TO_SOCKET = 5;
+        // Proxy DHCP requests for a given (L3) VRF into the Linux network stack or into a memif-enabled CNF.
+        DHCP_PROXY = 6;
+        // Effectively replicate L3 VPP interface in Linux for ISIS protocol packets using xConnect as follows:
+        //   vpp-interface with IP  <-- ISISX --> unnumbered vpp memif/tap interface <-> Linux Tap / CNF memif
+        // Basically it has the same goal as ABX, but ABX can't be used for ISIS protocol packets as packets
+        // for this protocol get dropped in VPP before reaching ACL VPP node.
+        ISISX = 7;
+    };
+    // Ligato/VPP supports multiple ways of packet punting between VPP and a CNF.
+    PuntType punt_type = 2;
+    // Type of the interconnection between VPP and Linux/CNF.
+    enum InterconnectType {
+        // Interconnect VPP with the Linux network stack using TAP.
+        TAP = 0;
+        // Interconnect VPP with a CNF using memif.
+        MEMIF = 1;
+        // Exchange packets between VPP and a CNF over AF-UNIX socket.
+        AF_UNIX = 2;
+    }
+    InterconnectType interconnect_type = 3;
+
+    // Type-specific configuration to use for the punt.
+    message HairpinXConnect {
+        string vpp_interface1 = 1;
+        string vpp_interface2 = 2;
+    }
+    message Hairpin {
+        // Existing VPP interface that will have its traffic hairpinned over CNF/Linux.
+        string vpp_interface = 1;
+        message Interface {
+            // Logical name of the newly created VPP interface.
+            string name = 1;
+            // PhysAddress represents physical address (MAC) of the interface.
+            // Random address will be assigned if left empty.
+            string phys_address = 2;
+            // IPAddresses define list of IP addresses for the interface and must be
+            // defined in the following format: <ipAddress>/<ipPrefix>.
+            repeated string ip_addresses = 3;
+            // ID of VRF table that the interface is assigned to.
+            uint32 vrf = 4;
+            // Enable DHCP client on interface.
+            bool with_dhcp_client = 5;
+            // Maximum transmission unit.
+            uint32 mtu = 6;
+        }
+        // Newly created TAP/memif interface adding "hairpin" feature to an existing VPP interface.
+        Interface hairpin_interface = 2;
+    }
+    message Span {
+        string vpp_interface = 1;
+    }
+    message Abx {
+        string vpp_interface = 1;
+        // VPP interface is expected to be inside this VRF.
+        // Punt will not be configured until this dependency is satisfied.
+        uint32 vrf = 2;
+        // Enable if VRF is not used on the CNF side.
+        bool without_cnf_vrf = 3;
+        // DestinationNetwork and SourceNetwork are allowed to contain special constants:
+        //  - "any": match any source/destination IPv4/IPv6 address
+        //  - "" (empty string): same as "any"
+        //  - "local": match traffic destined to one of the IP addresses assigned to vpp_interface
+        repeated ligato.vpp.acl.ACL.Rule.IpRule ingress_acl_rules = 4;
+        repeated ligato.vpp.acl.ACL.Rule.IpRule egress_acl_rules = 5;
+    }
+    message PuntToSocket {
+        oneof config {
+            ligato.vpp.punt.ToHost toHost = 1;
+            ligato.vpp.punt.Exception exception = 2;
+        }
+    }
+    message DhcpProxy {
+        uint32 vrf = 1;
+        // Enable if VRF is not used on the CNF side.
+        bool without_cnf_vrf = 3;
+    }
+    message Isisx {
+        // Interface in VPP that is used to communicate ISIS protocol packets with outside world.
+        // This interface gets by this configuration ISIS enabled.
+        string vpp_interface = 1;
+        // VPP interface is expected to be inside this VRF.
+        // Punt will not be configured until this dependency is satisfied.
+        uint32 vrf = 2;
+        // Enable if VRF is not used on the CNF side.
+        bool without_cnf_vrf = 3;
+    }
+    oneof config {
+        HairpinXConnect hairpinXConnect = 10;
+        Hairpin hairpin = 11;
+        Span span = 12;
+        Abx abx = 13;
+        PuntToSocket puntToSocket = 14;
+        DhcpProxy dhcpProxy = 15;
+        Isisx isisx = 16;
+    };
+}
+
+// A list of punt requests.
+message PuntRequests {
+    repeated PuntRequest punt_requests = 1;
+}
+
+// Unique identifier for a punt instance.
+message PuntID {
+    // Microservice label of the CNF with which the packet punting is established.
+    string cnf_ms_label = 1;
+    // Key of the configuration item for which this punt has been created.
+    string key = 2;
+    // With multiple punt requests for a single key, labels are used to distinguish between them.
+    string label = 3;
+}
+
+// Metadata associated with a configured packet punting.
+message PuntMetadata {
+    PuntID id = 1;
+
+    // VPP or CNF interface metadata.
+    message Interface {
+        // For Linux interface the host name is the same as the logical one.
+        string name = 1;
+        string phys_address = 2;
+        repeated string ip_addresses = 3;
+        uint32 vrfRT = 4;
+        string vrfName = 5; // not used in VPP
+    }
+
+    message InterconnectID {
+        // What/where packets are punted on the VPP side using this interconnect.
+        // Each punt handler (there is one for each PuntRequest.Type) defines its own selectors.
+        string vpp_selector = 1;
+        // What/where packets are punted on the CNF side using this interconnect.
+        // Generated by PuntManager. Outside manager only useful in combination with vpp_selector to obtain
+        // unique id for the interconnect.
+        string cnf_selector = 2;
+    }
+
+    // Interface based VPP<->CNF interconnects.
+    // Not used with PUNT_TO_SOCKET.
+    message Interconnect {
+        InterconnectID id = 1;
+        // VPP side of the interconnect.
+        // Nil for interconnect based on AF-UNIX socket.
+        Interface vpp_interface = 2;
+        // CNF/Linux side of the interconnect.
+        // Nil for interconnect based on AF-UNIX socket.
+        Interface cnf_interface = 3;
+        // Enabled if more than one punt is using this interconnect.
+        bool shared = 4;
+    }
+    repeated Interconnect interconnects = 2;
+}
+
+// Lifecycle of a punt.
+enum PuntState {
+    // The state of the punt is not known.
+    UNKNOWN = 0;
+    // Punt is initialized (metadata are available) but not yet configured.
+    INIT = 1;
+    // Punt is configured between VPP and CNF/Linux.
+    CREATED = 2;
+    // Punt is removed and no longer available (including the metadata).
+    DELETED = 3;
+}
+
+// UpdatePuntStateReq encapsulates input arguments to UpdatePuntState gRPC.
+message UpdatePuntStateReq {
+    PuntMetadata metadata = 1;
+    PuntState state = 2;
+}
+
+// UpdatePuntStateResp is empty. UpdatePuntState returns only SUCCESS/FAILURE.
+message UpdatePuntStateResp {
+}
+
+// PuntManager is implemented by puntmgr plugin.
+// It is used internally by the plugin to exchange information needed to establish packet punt between the VPP
+// of StoneWork and the CNF.
+service PuntManager {
+    // UpdatePuntState is called by Punt Manager of StoneWork to notify SW-Module about state change of a punt.
+    rpc UpdatePuntState(UpdatePuntStateReq) returns (UpdatePuntStateResp);
+}

@@ -1,0 +1,42 @@
+{
+    "name": "StoneWork",
+    "category": "router",
+    "description": "StoneWork, high-performance dataplane, modular control-plane solution",
+    "vendor_name": "PANTEHON.tech",
+    "vendor_url": "https://pantheon.tech/",
+    "documentation_url": "https://pantheon.tech/documentation-stonework-gns3/",
+    "product_name": "VPP",
+    "registry_version": 4,
+    "status": "experimental",
+    "maintainer": "PANTEHON.tech",
+    "maintainer_email": "info@cdnf.io",
+    "usage": "Login: root , pass: root. This appliance requires >2 vCPUs and 4GB of RAM to run",
+    "port_name_format": "eth{0}",
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 5,
+        "ram": 4096,
+        "hda_disk_interface": "ide",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "boot_priority": "c",
+        "kvm": "require",
+        "options": "-nographic -cpu host -smp 2"
+    },
+    "images": [
+        {
+            "filename": "<FILENAME>",
+            "version": "<VERSION>",
+            "md5sum": "<IMAGE_MD5SUM>",
+            "filesize": <IMAGE_SIZE>
+        }
+    ],
+    "versions": [
+        {
+            "name": "<VERSION>",
+            "images": {
+                "hda_disk_image": "<FILENAME>"
+            }
+        }
+    ]
+}

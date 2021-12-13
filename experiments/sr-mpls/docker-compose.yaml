@@ -1,0 +1,140 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Copyright 2021 PANTHEON.tech
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+version: '3.5'
+
+volumes:
+  memif-sock: {}
+
+# routers C1 to C4 represent segment routing domain, where C1 and C4 are PE
+# routers, i.e. adjacent to customer networks
+# and C2, C3 are P routers, i.e. service provider internal routers
+services:
+  # this container serves as network namespace for client side,
+  # i.e. C1 which is PE router and clients
+  client-ns:
+    container_name: client-ns
+    image: "busybox:1.29.3"
+    privileged: true
+    command: tail -f /dev/null
+
+  C1:
+    container_name: C1
+    image: "ligato/vpp-base:21.01"
+    depends_on:
+      - client-ns
+    privileged: true
+    pid: "host"
+    environment:
+      MICROSERVICE_LABEL: "C1"
+    network_mode: "service:client-ns"
+    volumes:
+      - ./vpp-startup.conf:/etc/vpp/startup.conf
+      - ./C1-cli-config.txt:/etc/vpp/vpp-cli-conf.txt
+      - memif-sock:/var/run/sr-mpls
+
+  ip4-client:
+    container_name: ip4-client
+    image: "ubuntu:18.04"
+    depends_on:
+      - client-ns
+    privileged: true
+    pid: "host"
+    environment:
+      MICROSERVICE_LABEL: "ip4-client"
+    network_mode: "service:client-ns"
+    command: >
+      bash -c "apt update &&
+               apt install -y iproute2 iputils-ping tcpdump &&
+               ip neigh add 2.2.2.2 lladdr c1:00:00:00:00:00 dev tap-c1 &&
+               exec tail -f /dev/null"
+
+  # this container serves as network namespace for provider (P) internal
+  # routers
+  p-ns:
+    container_name: p-ns
+    image: "busybox:1.29.3"
+    privileged: true
+    command: tail -f /dev/null
+
+  C2:
+    container_name: C2
+    image: "ligato/vpp-base:21.01"
+    depends_on:
+      - p-ns
+    privileged: true
+    pid: "host"
+    environment:
+      MICROSERVICE_LABEL: "C2"
+    network_mode: "service:p-ns"
+    volumes:
+      - ./vpp-startup.conf:/etc/vpp/startup.conf
+      - ./C2-cli-config.txt:/etc/vpp/vpp-cli-conf.txt
+      - memif-sock:/var/run/sr-mpls
+
+  C3:
+    container_name: C3
+    image: "ligato/vpp-base:21.01"
+    depends_on:
+      - p-ns
+    privileged: true
+    pid: "host"
+    environment:
+      MICROSERVICE_LABEL: "C3"
+    network_mode: "service:p-ns"
+    volumes:
+      - ./vpp-startup.conf:/etc/vpp/startup.conf
+      - ./C3-cli-config.txt:/etc/vpp/vpp-cli-conf.txt
+      - memif-sock:/var/run/sr-mpls
+
+  # this container serves as network namespace for server side,
+  # i.e. C4 which is PE router and servers
+  server-ns:
+    container_name: server-ns
+    image: "busybox:1.29.3"
+    privileged: true
+    command: tail -f /dev/null
+
+  C4:
+    container_name: C4
+    image: "ligato/vpp-base:21.01"
+    depends_on:
+      - server-ns
+    privileged: true
+    pid: "host"
+    environment:
+      MICROSERVICE_LABEL: "C4"
+    network_mode: "service:server-ns"
+    volumes:
+      - ./vpp-startup.conf:/etc/vpp/startup.conf
+      - ./C4-cli-config.txt:/etc/vpp/vpp-cli-conf.txt
+      - memif-sock:/var/run/sr-mpls
+
+  ip4-server:
+    container_name: ip4-server
+    image: "ubuntu:18.04"
+    depends_on:
+      - server-ns
+    privileged: true
+    pid: "host"
+    environment:
+      MICROSERVICE_LABEL: "ip4-server"
+    network_mode: "service:server-ns"
+    command: >
+      bash -c "apt update &&
+               apt install -y iproute2 iputils-ping tcpdump &&
+               exec tail -f /dev/null"
+

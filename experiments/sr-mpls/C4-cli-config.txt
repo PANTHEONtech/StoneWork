@@ -1,0 +1,18 @@
+create memif socket id 34 filename /var/run/sr-mpls/memif-34.sock
+create interface memif id 34 socket-id 34 slave hw-addr c4:34:00:00:00:00
+set interface ip address memif34/34 10.0.3.2/24
+set interface state memif34/34 up
+
+comment { tap4 is c4 interface to servers }
+create tap id 4 host-ip4-addr 2.2.2.2/24 host-if-name tap-c4
+set interface ip address tap4 2.2.2.1/24
+set interface state tap4 up
+
+comment { knowing neighbors before setting MPLS is necessary, probably VPP bug }
+set ip neighbor memif34/34 10.0.3.1 c3:34:00:00:00:00
+
+comment { SR-MPLS settings }
+mpls table add 0
+set interface mpls memif34/34 enable
+mpls local-label add 104 non-eos via mpls-lookup-in-table 0
+mpls local-label add 104 eos via ip4-lookup-in-table 0
