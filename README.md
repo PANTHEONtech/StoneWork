@@ -6,9 +6,9 @@ StoneWork is used by PANTHEON.tech to integrate [its cloud-native network functi
 [FD.io VPP][VPP] data plane instance, to achieve the *best possible* resource
 utilization. 
 
-This network appliance, however, is not a step back from
-distributed chained/meshed microservices, to monolithic architecture. Instead,
-the integration is:
+This network appliance, however, is not a step back from distributed chained/meshed microservices, to monolithic architecture. 
+
+Instead, the integration is:
 - Dynamic 
 - Based on container orchestration
 - CNF discovery
@@ -337,7 +337,7 @@ Development
 [ligato-vpp-agent]: https://github.com/ligato/vpp-agent
 [cdnf-io]: https://cdnf.io/cnf_list/
 [examples]: examples/INDEX.md
-[getting-started]: examples/getting-started/EXAMPLE.md
+[getting-started]: examples/getting-started/README.md
 [agentctl]: https://docs.ligato.io/en/latest/user-guide/agentctl/
 [vpp-pci]: https://wiki.fd.io/view/VPP/How_To_Connect_A_PCI_Interface_To_VPP
 [vfio]: https://www.kernel.org/doc/Documentation/vfio.txt
