@@ -1,7 +1,7 @@
 StoneWork Deployment Examples
 =============================
 
-Start here
+Start Here
 --------------------
 
 * [Getting Started](./getting-started/EXAMPLE.md) - **Recommended starting point**
@@ -10,17 +10,17 @@ Start here
 More examples, covered by automated testing
 ----------------------------
 
-* [Cross-connect](./testing/010-xconnect/EXAMPLE.md)
+* [Cross-Connect](./testing/010-xconnect/EXAMPLE.md)
 * [Switch](./testing/020-switch/EXAMPLE.md)
 * [Router](./testing/030-router/EXAMPLE.md)
-* [Router IPv6](./testing/040-router6/EXAMPLE.md)
-* [StoneWork integrated with mock CNF](./testing/100-mock-cnf-module/EXAMPLE.md)
-* [Standalone mock CNF](./testing/110-mock-cnf-standalone/EXAMPLE.md)
+* [IPv6 Router](./testing/040-router6/EXAMPLE.md)
+* [StoneWork w/ Mock CNF](./testing/100-mock-cnf-module/EXAMPLE.md)
+* [Standalone Mock CNF](./testing/110-mock-cnf-standalone/EXAMPLE.md)
 
 
-Looking for more ?
+Get In Touch
 ----------------------------
 
-Please let us know:
+Submit issues on GitHub and questions via our contact form:
 * [Github issue](https://github.com/PANTHEONtech/StoneWork/issues/new/choose)
 * [Contact form](https://cdnf.io/contact/)

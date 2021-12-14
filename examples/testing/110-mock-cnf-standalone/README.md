@@ -1,21 +1,23 @@
-Standalone CNF (running its own VPP instance)
+[Example] Standalone CNF (running its own VPP instance)
 =============================================
 
 Prerequisites
 --------------
 
-Make sure that testing-only image `mockcnf` is already built.
-In the top-level directory of the repository, trigger makefile target `images`:
+Make sure that the testing-only image, `mockcnf`, is already built.
+In the top-level directory of the repository, trigger the makefile target `images`:
 ```
 $ make images
 ```
 
-Run the example
+Run The Example
 ---------------
 
-The example can be easily controlled using the provided Makefile. Run `make start-example` to deploy the container
-and apply the startup configuration, then trigger `make test-cnf` to verify that the CNF operates in the standalone
-mode without any issues and finally shutdown and clean up everything with `make stop-example`.
+The example can be easily controlled using the provided Makefile. 
+
+1. Run `make start-example` to deploy the containers and apply the startup configuration
+2. Trigger `make test-stonework` to verify that the dynamic integration of mock CNF with StoneWork works as expected
+3. Shutdown and clean everything up with `make stop-example`.
 
 Manual Verification
 -------------------
@@ -40,8 +42,8 @@ Change the initial configuration with:
 $ agentctl config update --replace ./config/running-config.yaml
 ```
 
-Use command provided by `agentctl` and also study logs collected by docker for the CNF to verify
-that CNFs operates in the standalone mode without any issues.
+Use command provided by `agentctl` and also study logs collected by docker for the CNF to verify that the CNFs operates in the standalone mode, without any issues.
+
 Automated checks can be found in `test-cnf.sh`.
 
 Bring the deployment down with:

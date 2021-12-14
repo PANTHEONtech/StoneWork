@@ -1,22 +1,26 @@
-Example: StoneWork as NAT Gateway
+[Example] StoneWork as a NAT Gateway
 =================================
 
-Ths document describes example configuration for StoneWork used as a NAT
-gateway. Here we assume that StoneWork runs on a bare-metal server or a VM with
-two (data-plane) DPDK-supported physical interfaces `PCI:0000:00:08.0` and
+Ths document describes an example configuration for StoneWork, used as a NAT
+gateway. 
+
+Here, we assume that StoneWork runs on a **bare-metal server** or a VM with
+two (data-plane) DPDK-supported physical interfaces, `PCI:0000:00:08.0` and
 `PCI:0000:00:09.0` connected to the private and public network, respectively.
-The private network is configured with the `192.168.1.0/24` IP subnet, while the
-GW is assigned the `192.168.1.1` IP address. The public network is configured
-with `80.80.80.0/24` IP subnet while the GW is assigned `80.80.80.1` IP address.
-Traffic initiated from the private side is S-NATed by StoneWork to `80.80.80.1`
-before it is sent out to the public network.
+
+- The **private** network is configured with the `192.168.1.0/24` IP subnet
+- The GW is assigned the `192.168.1.1` IP address
+- The **public** network is configured with `80.80.80.0/24` IP subnet 
+- The GW is assigned `80.80.80.1` IP address
+
+Traffic initiated from the private side is S-NATed by StoneWork to `80.80.80.1`, before it is sent to the public network.
 
 
 Custom Configuration
 --------------------
 
 You will need to change the provided example configuration to adapt it to your
-target environment as described below.
+target environment, as described below.
 
 - First, the PCI addresses of the physical interfaces should be listed in the
   attached `vpp-startup.conf`, section `dpdk { ... }`.
@@ -36,11 +40,12 @@ example to the actual values.
 - Next, the IP addresses of the interfaces need to be edited in
   `./config/day0-config.yaml` to match the target environment. Replace
   `80.80.80.1/24` with the actual external IP subnet and `192.168.1.1/24`
-  with the actual IP subnet of the private network. Next hop of the default
-  route has to be updated accordingly.
+  with the actual IP subnet of the private network. 
+  
+  Next, the hop of the default route has to be updated accordingly.
 
 
-- Finally, open `config/add-nat-config.yaml` and change IP pool used by S-NAT
+- Finally, open `config/add-nat-config.yaml` and change the IP pool used by S-NAT
   from `80.80.80.1` (`/32`) to the actual IP address of the StoneWork
   deployment on the public side.
 
@@ -75,15 +80,20 @@ Explore the CLI provided by StoneWork:
 $ docker-compose exec stonework agentctl --help
 ```
 
-For example, to add and enable NAT configuration, run:
+## Add & Enable NAT Config
+
+For example, to **add and enable NAT configuration**, run:
 ```
 $ docker-compose exec stonework agentctl config update /etc/stonework/config/add-nat-config.yaml
 ```
 `add-nat-config.yaml` is mounted from `./config/add-nat-config.yaml`.
 
-Feel free to experiment and make some configuration changes on your own. Once
-applied, the NAT gateway should be operational and clients from the private
+Feel free to experiment and make some configuration changes on your own. 
+
+Once applied, the NAT gateway should be operational and clients from the private
 network should be able to access servers in the public network(s).
+
+## Observing NAT / Packet Tracing
 
 Observe the NAT in process using packet tracing on VPP (only `SYN` packet shown):
 ```
