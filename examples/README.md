@@ -22,5 +22,5 @@ Get In Touch
 ----------------------------
 
 Submit issues on GitHub and questions via our contact form:
-* [Github issue](https://github.com/PANTHEONtech/StoneWork/issues/new/choose)
-* [Contact form](https://cdnf.io/contact/)
+* [GitHub Issue](https://github.com/PANTHEONtech/StoneWork/issues/new/choose)
+* [Contact Form](https://cdnf.io/contact/)
