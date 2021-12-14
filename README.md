@@ -336,7 +336,7 @@ Development
 [vpp]: https://wiki.fd.io/view/VPP
 [ligato-vpp-agent]: https://github.com/ligato/vpp-agent
 [cdnf-io]: https://cdnf.io/cnf_list/
-[examples]: examples/INDEX.md
+[examples]: examples/README.md
 [getting-started]: examples/getting-started/README.md
 [agentctl]: https://docs.ligato.io/en/latest/user-guide/agentctl/
 [vpp-pci]: https://wiki.fd.io/view/VPP/How_To_Connect_A_PCI_Interface_To_VPP
