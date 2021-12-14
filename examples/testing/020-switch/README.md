@@ -1,4 +1,4 @@
-StoneWork as a switch
+[Example] StoneWork as a Switch
 =====================
 
 This example demonstrates how to use StoneWork as a switch.
@@ -16,9 +16,9 @@ The interfaces attached to `stonework` are connected using a bridge domain.
 +---------+                  +-----------+                  +---------+
 ```
 
-Running the example
+Running The Example
 -------------------
 
-Prerequisities and instructions for running the example are the same as those for [cross-connect example][cross-connect example].
+Prerequisities and instructions for running the example are the same as those for the [cross-connect example][cross-connect example].
 
 [cross-connect example]: ../010-xconnect/EXAMPLE.md

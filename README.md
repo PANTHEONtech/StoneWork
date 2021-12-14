@@ -1,75 +1,83 @@
-StoneWork, high-performance dataplane, modular control-plane solution
-=====================================================================
+# StoneWork
 
-StoneWork is used by PANTHEON.tech to integrate its CNFs on top of a single shared
-[FD.io VPP][VPP] data-plane instance to achieve the best possible resource
-utilization. This network appliance, however, is not a step back from
-distributed chained/meshed microservices to the monolith architecture. Instead,
-the integration is dynamic, based on container orchestration, CNF discovery,
-sharing of network namespaces and re-use of data paths for packet punting
-between CNFs.
+A **high-performance** data plane, **modular** control plane solution.
+
+StoneWork is used by PANTHEON.tech to integrate [its cloud-native network functions][cdnf-io] on top of a single shared
+[FD.io VPP][VPP] data plane instance, to achieve the *best possible* resource
+utilization. 
+
+This network appliance, however, is not a step back from distributed chained/meshed microservices, to monolithic architecture. 
+
+Instead, the integration is:
+- Dynamic 
+- Based on container orchestration
+- CNF discovery
+- Sharing of network namespaces and 
+- Re-use of data paths for packet punting between CNFs
 
 
 Features
 --------
 
-* High-performance [VPP][VPP]-based data-plane
+* High-performance [VPP][VPP]-based **data plane**
 * Management agent build on top of [Ligato VPP-Agent][ligato-vpp-agent]
-* Suitable for both cloud and bare-metal deployments
-* Can be deployed as either multiple interconnected instances (service function
-  chaining), or a set of control/management plane microservices that use a
+* Suitable for both **cloud & bare-metal** deployments
+* Can be deployed as either *multiple* interconnected instances (service function
+  chaining), or *a set* of control/management plane microservices that use a
   single VPP instance for data plane (this is a trade-off between flexibility
   and resource utilization)
-* Northbound APIs are modeled with protobuf and accessible over `gRPC`, `REST`,
+* **Northbound APIs** are modeled with protobuf and accessible over `gRPC`, `REST`,
   `K8s CRD`or through a key-value DB (`etcd`, `redis`, ...)
-* Wide-range of networking features natively implemented in VPP, e.g.:
+* Wide-range of **networking features**, natively implemented in VPP, e.g.:
     * High-performance device drivers (DPDK, RDMA, virtio)
     * Routing, switching
     * Tunneling (VXLAN, GRE, IP-IP)
     * ACL-based filtering and routing
     * NAT44, NAT64
     * Segment routing
-    * VPN (wireguard, IPSec)
+    * VPN (Wireguard, IPSec)
     * Bridge domains, VRFs (multi-tenancy)
-* Management of features provided by the Linux network stack:
+* **Management features** provided by the Linux network stack:
     * Routes, ARPs
     * iptables
     * Namespaces, VRFs (multi-tenancy)
-* Dynamically (at run-time) extensible with additional features provided by
-  [CNFs from our offering][cdnf-io]
-
+* Dynamically (at run-time) **extensible** with additional features provided by
+  [CNFs from PANTHEON.tech][cdnf-io]
 
 Examples
 --------
 
-Before using StoneWork we recommend reading in this README and related
-documentation in the StoneWork distribution folder about how to install and
-configure StoneWork. If you are new to StoneWork, it may be easier to first
+Before using StoneWork, we recommend reading this README and related
+documentation in the StoneWork [distribution folder][docs]. 
+
+If you are **new to StoneWork**, it may be easier to first
 explore and run the provided examples, rather than trying to create deployment
 manifests from scratch.
 
-Examples of deployment manifests and configurations for various use-cases can be
-found under the [examples sub-directory][examples].\ The [Getting Started]
-[getting-started] example will guide you through your first StoneWork
+Examples of deployment manifests and configurations for various use-cases can be found under the [examples sub-directory][examples].
+
+The [Getting Started][getting-started] example will guide you through your first StoneWork
 deployment.
 
 
 Configuration
 -------------
 
-Configuration for StoneWork is twofold:
+Configuration for StoneWork consists of two tasks:
 
 #### 1. VPP Startup Configuration
 
-The VPP Startup Configuration comprises configuration options which are set
-before VPP is started. They cannot be changed at the run-time, either by a
+The VPP Startup Configuration comprises configuration options, which are set
+before VPP is started. They *cannot* be changed at the run-time, either by a
 management plane API or the VPP CLI). For StoneWork, the default VPP startup
-configuration file is packaged in the image under `/etc/vpp/vpp.conf`. Some of
-the [examples][examples] override the default configuration with a customized
+configuration file is packaged in the image, under `/etc/vpp/vpp.conf`. 
+
+Some of the [examples][examples] override the default configuration with a customized
 version of `vpp.conf`mounted into the container using volumes. Typically, the
 only configuration section that may require customization is the `dpdk` stanza,
-where PCI addresses of NICs to be used by VPP should be listed. Run the
-`lshw-class network -businfo` command to obtain the available network devices
+where PCI addresses of NICs, used by VPP, should be listed. 
+
+Run the `lshw-class network -businfo` command to view the available network devices
 and their respective PCI addresses. For example, if the PCI addresses of
 interfaces were `0000:00:08.0` and `0000:00:09.0` (e.g. inside and outside
 network), then the `dpdk` configuration would be:
@@ -83,7 +91,7 @@ dpdk {
     }
 }
 ```
-Interface names can be selected arbitrarily, for example as `eth0` and `eth1`'
+Interface names can be selected arbitrarily, for example `eth0` and `eth1`'
 in the above example.
 
 More information about attaching physical interfaces into VPP can be found
@@ -92,59 +100,72 @@ More information about attaching physical interfaces into VPP can be found
 #### 2. Protobuf-modeled Network Configuration
 
 StoneWork's network configuration (VPP, Linux, CNFs) is modeled using
-Google Protocol Buffers. A summary of all configuration items and their
-attributes with descriptions can be found [here][config] (in markdown; also
-available as a single [PDF document][config-pdf]). Provided is also a
-[JSON Schema][config-jsonschema] that can be used to validate input
-configuration before it is submitted. Some text editors, for example
+Google Protocol Buffers. 
+
+A summary of all configuration items and their
+attributes, with descriptions, can be found [here][config] (in markdown; also
+available as a single [PDF document][config-pdf]). 
+
+A [JSON Schema][config-jsonschema] is provided as well, and can be used to validate input
+configuration before it is submitted. 
+
+Some text editors, for example
 [VS Code][vscode-jsonschema], can even load the Schema and provide
 autocomplete suggestions based on it, thus making the process of preparing
-input configuration a lot easier. The original protobuf files from which the
-documentation and schema were generated can be found in the `/api` folder inside
+input configuration a lot easier. 
+
+The original protobuf files, from which the
+documentation and schema were generated, can be found in the `/api` folder inside
 the StoneWork distribution. There is also the `/api/models.spec.yaml` file,
-which contains one yaml document with metadata for every configuration model.
-These metadata are used to associate configuration model with corresponding
+which contains one ZAML document with metadata for every configuration model.
+
+These metadata are used to associate a configuration model with the corresponding
 protobuf definitions.
 
-Network configuration is submitted into the control-plane agent either via
-[CLI][agentctl] (yaml formatted), written into a key-value datastore (e.g.
-`etcd`; JSON-formatted) or applied programmatically over gRPC (serialized by
+Network configuration is submitted into the control-plane agent either via:
+
+- a **[CLI][agentctl]** (YAML formatted), written into a key-value datastore (e.g.
+`etcd`; JSON-formatted) 
+
+- or applied programmatically over **gRPC** (serialized by
 protobuf) or REST (JSON) APIs. The initial configuration that should be applied
 immediately after StoneWork starts up can be mounted into the container under
 `/etc/stonework/config/day0-config.yaml` (YAML formatted).
 
 Each of the attached [examples][examples] has a sub-directory named `config`,
 where you can find configuration stanzas to learn from. Each example contains
-the startup configuration `day0-config.yaml`. Additional attached `*.yaml` files
-are used to show how run-time configuration can be modified over CLI. Please
-refer to each example's `EXAMPLE.md` file for more information.
+the startup configuration `day0-config.yaml`. 
+
+Additional `*.yaml` files are used to show how run-time configuration can be modified over CLI. Please
+refer to each examples `EXAMPLE.md` file for more information.
 
 
 Installation
 ------------
 
-The following steps will guide you through the StoneWork installation process.
-The distribution package contains the StoneWork docker image (`stonework.image`),
+The following steps will guide you through the StoneWork **installation process**.
+The distribution package contains the **StoneWork Docker image** (`stonework.image`),
 documentation (`*.md`) and some examples to get you started.
 
 #### Requirements
 
-1. StoneWork requires a Ubuntu VM or a bare-metal server running Ubuntu,
-   preferably version 18.04 (Bionic Beaver).
+1. StoneWork requires an *Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **18.04 (Bionic Beaver)**.
 
 
-2. Next, Docker and Docker-compose must be installed.
+2. Next, Docker and docker-compose must be installed.
 
    Install with:
    ```
    $ apt-get install docker.io docker-compose
    ```
 
-3. **[For DPDK only]**\
+3. **(DPDK Only)** Install/Enable Drivers
+   
    Depending on the type of NICs that VPP of StoneWork should bind to, you may
-   have to install/enable the corresponding drivers. For example, in a VM
-   environment, the [Virtual Function I/O (VFIO)][vfio] is preferred over the
-   UIO framework for better performance and more security. In order to load VFIO
+   have to install/enable the corresponding drivers. 
+   
+   For example, in a VM environment, the [Virtual Function I/O (VFIO)][vfio] is preferred over the
+   UIO framework for better performance and more security. In order to load a VFIO
    driver, run:
    ```
    $ modprobe vfio-pci
@@ -159,7 +180,8 @@ documentation (`*.md`) and some examples to get you started.
    DPDK (used by VPP), can be found [here][dpdk-linux-drivers].
 
 
-4. **[For DPDK only]**\
+4. **(DPDK Only)** Check Network Interfaces
+   
    Make sure that the network interfaces are not already used by the Linux
    kernel, or else VPP/DPDK will not be able to grab them. Run `ip link set
    dev {device} down` for each device to un-configure it from Linux. Preferably
@@ -167,7 +189,8 @@ documentation (`*.md`) and some examples to get you started.
    persistent (e.g. inside `/etc/network/interfaces`).
 
 
-5. **[For DPDK only]**\
+5. **(DPDK Only)** Huge Pages
+   
    In order to optimize memory access, VPP/DPDK uses [Huge Pages][hugepages],
    which have to be allocated before deploying StoneWork.
    For example, to allocate 512 Huge Pages (1024MiB memory for default 2M
@@ -181,7 +204,7 @@ documentation (`*.md`) and some examples to get you started.
 
 
 6. Finally, the StoneWork image has to be loaded so that
-   Docker/DockerCompose/K8s is able to provision a container instance. Run:
+   Docker/docker-compose/K8s is able to provision a container instance. Run:
    ```
    $ docker load <./stonework.image
    ```
@@ -192,12 +215,15 @@ Deployment
 
 StoneWork is deployed using [Docker Compose][docker-compose] version 3.3 or
 newer. StoneWork itself is only a single container (with VPP and StoneWork agent
-inside), but every CNF that is deployed alongside it runs in a separate
-container, hence the use of Compose. The following is a template of
+inside), but every CNF that is deployed alongside it runs in a **separate
+container**, hence the use of Compose. 
+
+The following is a template for the
 `docker-compose.yaml` file, used to describe deployment in the language of
-Docker Compose. The template contains detailed comments that explain the meaning
-of attributes contained in the template and how they relate to StoneWork. Angle
-brackets are used to mark placeholders that have to be replaced with appropriate
+Docker Compose. The template contains detailed comments, that explain the meaning
+of attributes contained in the template and how they work in StoneWork. 
+
+Angle brackets are used to mark placeholders that have to be replaced with appropriate
 actual values in the target deployment.
 
 ```yaml
@@ -294,11 +320,10 @@ services:
 Development
 -----------
 
-Build instruction for StoneWork can be found [here][build].\
-Architecture of StoneWork is described in detail [here][architecture].\
-A guide on how to make CNF compatible with StoneWork can be found [here][cnf-how-to].\
-Documentation about StoneWork GNS3 VM development is [here][gns3-vm-docs].
-
+- **Build**: Build instruction for StoneWork can be found [here][build].
+- **Architecture**: StoneWork architecture is described in detail [here][architecture].
+- **CNF Compatibility**: A guide on how to make CNF compatible with StoneWork can be found [here][cnf-how-to].
+- **GNS3 & StoneWork**: StoneWork GNS3 VM development documentation is [here][gns3-vm-docs].
 
 [architecture]: docs/ARCHITECTURE.md
 [build]: docs/BUILD.md
@@ -311,8 +336,8 @@ Documentation about StoneWork GNS3 VM development is [here][gns3-vm-docs].
 [vpp]: https://wiki.fd.io/view/VPP
 [ligato-vpp-agent]: https://github.com/ligato/vpp-agent
 [cdnf-io]: https://cdnf.io/cnf_list/
-[examples]: examples/INDEX.md
-[getting-started]: examples/getting-started/EXAMPLE.md
+[examples]: examples/README.md
+[getting-started]: examples/getting-started/README.md
 [agentctl]: https://docs.ligato.io/en/latest/user-guide/agentctl/
 [vpp-pci]: https://wiki.fd.io/view/VPP/How_To_Connect_A_PCI_Interface_To_VPP
 [vfio]: https://www.kernel.org/doc/Documentation/vfio.txt

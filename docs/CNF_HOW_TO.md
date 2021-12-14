@@ -1,29 +1,41 @@
-How to make CNF compatible with StoneWork
+[How-To] Make CNFs Compatible w/ StoneWork
 =========================================
 
-This guide explains how to develop CNF using ligato framework and make
+This guide explains how to develop a CNF using the Ligato framework, make
 it interoperable and dynamically loadable by StoneWork.
-For more information about how CNFs and StoneWork interact with each other
-see [StoneWork Architecture][architecture].
+
+For more information about how CNFs and StoneWork interact with each other,
+see the [StoneWork Architecture][architecture].
 
 
-1. Firstly, for CNF to be able to talk to StoneWork it has to load and init two plugins from the
-   StoneWork repository: [CNF Registry][cnf-registry-plugin] and [Punt Manager][punt-manager-plugin].
-   Since these plugins have to be imported and because StoneWork is inside a private gerrit repository,
+1. Firstly, for a CNF to be able to talk to StoneWork, it has to load and init two plugins from the
+   StoneWork repository: 
+   
+   - [CNF Registry][cnf-registry-plugin]
+   - [Punt Manager][punt-manager-plugin]
+
+   Since these plugins have to be imported, and because StoneWork is inside a private gerrit repository,
    it is necessary to add StoneWork as a git submodule into the CNF repository:
+   
    ```
    cnf-repo$ git submodule add https://github.com/PANTHEONtech/StoneWork submodule/stonework
    ```
-   Then add into go.mod replace directive:
+   
+   Then add into go.mod a replacement directory:
+   
    ```
    replace go.pantheon.tech/stonework => ./submodule/stonework
    ```
 
 2. Add [CNF Registry][cnf-registry-plugin] and [Punt Manager][punt-manager-plugin] into the list
    of plugins to load by the CNF agent. Some dependencies of these plugins are not injected by default
-   and have to be set explicitly as shown below. For example, the CNF Registry requires `CnfIndex` - a CNF
-   integer identifier unique among all CNFs (that might be deployed alongside the same StoneWork instance).
-   For PANTHEON.tech CNFs, table with CnfIndex assignments can be found [here][cnf-index].
+   and have to be set explicitly as shown below. 
+   
+   For example, the CNF Registry requires `CnfIndex` - a CNF
+   integer identifier, unique among all CNFs (that might be deployed alongside the same StoneWork instance).
+   
+   For PANTHEON.tech CNFs, the table with CnfIndex assignments can be found [here][cnf-index].
+
    ```go
    package app
 
@@ -73,25 +85,31 @@ see [StoneWork Architecture][architecture].
    }  
    ```
 
-3. When CNF runs in the Standalone mode (without StoneWork), it should run its own instance
-   of VPP inside the container and manage it by its own CNF agent (i.e. VPP plugins for VPP features
-   that are being used have to be initialized by CNF agent). Conversely, CNF running alongside
-   StoneWork should not start another instance of VPP (to save resources) and therefore the CNF
+3. When a CNF runs in the Standalone mode (without StoneWork), it should run its own instance
+   of VPP inside the container and manage it by its own CNF agent (i.e. VPP plugins for VPP features,
+   that are being used have to be initialized by CNF agent). 
+   
+   Conversely, CNF running alongside StoneWork should not start another instance of VPP (to save resources) and therefore the CNF
    agent should not initialize any VPP plugins (or else `govppmux` plugin fails to connect
-   to VPP and the agent will terminate). Using `cnfreg_plugin.DefaultPlugin.GetCnfMode()`
-   it is possible to determine the mode at which CNF was started (as shown by the code snippet above).
-   This information is determined by the environment variable `CNF_MODE`, which has either
+   to VPP and the agent will terminate).
+   
+    Using `cnfreg_plugin.DefaultPlugin.GetCnfMode()`, it is possible to determine the mode at which CNF was started (as shown by the code snippet above).
+   This information is determined by the environment variable `CNF_MODE`, which has either the
    value `STANDALONE` (default if variable not defined) or `STONEWORK_MODULE`.
-   See section `Deployment` from the top-level README.md of StoneWork to learn how to set
+   
+   See the section [`Deployment`, from the top-level README.md](/README.md#Deployment) of StoneWork, to learn how to set
    the variable.
 
-4. In order to use the same CNF image regardless of the mode at which it is deployed,
-   it is recommended to create two separate config directories - one for the Standalone
-   mode and one for the StoneWork-module mode. The most obvious difference in configuration
-   is in `supervisor.conf`, which should not include VPP entry unless CNF is running
-   in the Standalone mode. Also `initfileregistry.conf` should not enable init-file as
-   a configuration source when all input configuration is submitted over StoneWork.
-   To select config directory based on the CNF mode, use the following CMD for docker image:
+4. In order to use the same CNF image, **regardless** of the mode at which it is deployed, it is recommended to create two separate config directories:
+   - One for the Standalone mode
+   - One for the StoneWork-module mode. 
+   
+   The most obvious difference in configuration is in `supervisor.conf`, which should not include a VPP entry, unless a CNF is running
+   in the Standalone mode. 
+   
+   Also, `initfileregistry.conf` should not enable the init-file, as a configuration source with all input configuration is submitted over StoneWork.
+   
+   To select config directory based on the CNF mode, use the following CMD for the Docker image:
    ```
    CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
        mkdir -p /run/vpp /run/stonework/vpp && \
@@ -102,8 +120,10 @@ see [StoneWork Architecture][architecture].
    (instead of `/etc/cnf` and `/etc/cnf-novpp` use something more descriptive, e.g. `/etc/dhcp` and `/etc/dhcp-novpp`)
 
 5. CNF Plugins (implementing CRUD operations over CNF config models) will have to depend on the CNF Registry
-   plugin and potentially even on the Punt Manager if some packets need to be punted between VPP and CNF/Linux
-   (over memif or TAP). Dependency on the CNF Registry is due to a requirement to register all config models
+   plugin and potentially even on the Punt Manager, if some packets need to be punted between VPP and CNF/Linux
+   (over memif or TAP). 
+   
+   Dependency on the CNF Registry is due to a requirement to register all config models
    implemented by the CNF using the method `RegisterCnfModel` as shown below:
    ```go
    type Plugin struct {
@@ -130,13 +150,14 @@ see [StoneWork Architecture][architecture].
        }
    }
    ```
-   `RegisterCnfModel` takes reference to the model, its descriptor and optionally also callbacks that define
-   dependencies and requirements for packet punting. More information can be found in the API interfaces
+   `RegisterCnfModel` takes the reference to the model, its descriptor and optionally also callbacks that define
+   dependencies and requirements for packet punting. More information can be found in the API interfaces,
    `PuntManagerAPI` and `CnfAPI`.
 
-6. Descriptor corresponding to a CNF model will have to behave slightly differently based on the mode
-   at which the CNF is deployed (Standalone vs. StoneWork-module).\
-   In Standalone mode:
+6. A descriptor corresponding to a CNF model will have to behave slightly differently, based on the mode
+   in which the CNF is deployed (Standalone vs. StoneWork-module).\
+   
+   **In Standalone mode:**
     - If packet punting is required, `Create`/`Delete` methods should call `AddPunt`/`DelPunt` methods of Punt Manager.
       However, interconnect (`memif-memif` or `TAP-TAP`) for punting will not be created just yet, only 
       transaction will be prepared and scheduled for execution. Any operation that depends on the interconnection
@@ -148,34 +169,43 @@ see [StoneWork Architecture][architecture].
     - If packet punting is required, `Dependencies` should return dependencies determined by `GetPuntDependencies`
       of Punt Manager
 
-   In StoneWork-module mode:
+   **In StoneWork-module mode:**
     - If packet punting was required (in `RegisterCnfModel`), at the moment when `Create` is called the punting
       is already established, and `Create` can call `GetPuntMetadata` of Punt Manager to learn metadata about
       the interconnection configured for punting (e.g. memif/TAP interface names, interface IP/MAC addresses, etc.)
 
-7. Additionally to `CNF_MODE` env. variable that was already discussed, one may also need to define variable
+7. Additionally to `CNF_MODE`, where the env. variable that was already discussed, one may also need to define variable
    `CNF_MGMT_INTERFACE` or `CNF_MGMT_SUBNET` - these are used by CNF Registry to determine which network interface
-   to use to talk to StoneWork (i.e. management interface). `CNF_MGMT_INTERFACE` has higher priority and can be used
-   to enter the management interface (host) name directly. `CNF_MGMT_SUBNET` can be used to inform CNF Registry what
+   to use to talk to StoneWork (i.e. management interface). 
+   
+   `CNF_MGMT_INTERFACE` has higher priority and can be used
+   to enter the management interface (host) name directly. 
+   
+   `CNF_MGMT_SUBNET` can be used to inform CNF Registry what
    network subnet is used by the management network. Based on that the plugin will be able to determine which interface
    is inside the mgmt network.
 
 8. Another deployment requirement is to mount `/run/stonework/` between StoneWork and every CNF.
-   Sub-directory `/run/stonework/discovery` will be created and used by StoneWork and CNFs to discover each other.
-   Sub-directory `/run/stonework/memif` will be created and used by Punt Manager for memif sockets.
+   
+   - Sub-directory `/run/stonework/discovery` will be created and used by StoneWork and CNFs to discover each other.
+   - Sub-directory `/run/stonework/memif` will be created and used by Punt Manager for memif sockets.
 
-9. Last requirement targeted for CNF docker image, is that it should have `/api` directory with all the proto files
-   that define CNF models (do not include ligato models from upstream, even if used). Directory structure inside `/api`
-   should be the same as in the repository (under the `/proto` directory).
+9. The last requirement targeted for CNF Docker image, is that it should have an `/api` directory with all the proto files
+   that define CNF models (do not include Ligato models from upstream, even if used). 
+   
+   The directory structure inside `/api` should be the same as in the repository (under the `/proto` directory).
+   
    Consider using these commands:
    ```
    RUN mkdir /api
    RUN rsync -v --recursive --chmod=D2775,F444 --exclude '*.go'  proto/ /api/
    ```
-   Lastly, api directory should contain file `/api/models.spec.yaml` that contains `ModelDetail` of every
-   CNF model (one yaml document per model, separated by "---" with newlines).
-   Content of this file can be generated using the `pkg/printspec` package from StoneWork repository.
-   Since your CNF already probably has an init process (~supervisor), consider extending it to:
+   Lastly, an API directory should contain the file `/api/models.spec.yaml`, which contains the `ModelDetail` of every
+   CNF model (one YAML document per model, separated by "---" with newlines).
+
+   The content of this file can be generated using the `pkg/printspec` package from StoneWork repository.
+
+   Since your CNF probably already has an init process (~supervisor), consider extending it to:
    ```go
    package main
 
@@ -213,7 +243,7 @@ see [StoneWork Architecture][architecture].
        }
    }
    ```
-   Then inside dockerfile call (replace `cnf-init` with the name of your init command):
+   Then, inside dockerfile, call (replace `cnf-init` with the name of your init command):
    ```
    RUN /usr/local/bin/cnf-init --print-spec > /api/models.spec.yaml
    ```
@@ -230,12 +260,13 @@ see [StoneWork Architecture][architecture].
    ```
 
 
-*Please note that StoneWork repository contains a reference "mock" CNF implementation
+**Important**: Please note that StoneWork repository contains a reference "mock" CNF implementation.
  While it is not a real CNF doing something useful, it certainly acts as one
  and can be deployed either standalone (i.e. running its own copy
  of VPP as data-plane), or it can be discovered and loaded by StoneWork (i.e. share VPP data-plane
- with StoneWork and potentially other CNFs). The mock CNF entry point can be found under
- `cmd/mockcnf`, configuration mock model in `proto/mockcnf/mockcnf.proto` and plugin implementing
+ with StoneWork and potentially other CNFs). 
+ 
+ The mock CNF entry point can be found under `cmd/mockcnf`, the configuration mock model in `proto/mockcnf/mockcnf.proto` and plugin implementing
  CRUD operations over the model is inside the `plugins/mockcnf` directory.*
 
 
