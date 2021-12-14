@@ -1,0 +1,42 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - run: go mod tidy -v
+      - name: "Check for changes in go.mod"
+        run: |
+          git diff --name-only --exit-code go.mod || ( git diff && echo "Run go tidy to update go.mod" && false )
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - run: go mod download
+      - name: "Compile Go code"
+        run: |
+          go build -v ./...
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Enable VRF kernel module"
+        run: sudo apt-get update && sudo apt-get install -y linux-modules-extra-$(uname -r) && sudo modprobe -v vrf
+      - name: "Build images"
+        run: make images
+      - name: "Run Tests"
+        run: make test
