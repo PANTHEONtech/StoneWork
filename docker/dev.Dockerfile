@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_IMAGE=vpp:20.09
+ARG VPP_IMAGE=vpp:21.06
 # TODO replace with stable VPP-Agent version containing https://github.com/ligato/vpp-agent/pull/1763 (probably v3.3.0+)
 ARG VPPAGENT_IMAGE=ligato/vpp-agent:latest
 

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_VERSION=21.01
+ARG VPP_VERSION=21.06
 ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE}
@@ -33,7 +33,7 @@ RUN cd vpp && \
 
 #----------------------
 # build & install external plugins (ABX, ISISX)
-ARG VPP_VERSION=21.01
+ARG VPP_VERSION=21.06
 COPY vpp/abx /tmp/abx
 COPY vpp/isisx /tmp/isisx
 
