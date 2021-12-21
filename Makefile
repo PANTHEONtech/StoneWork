@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2021 PANTHEON.tech
+# Copyright 2022 PANTHEON.tech
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,17 +28,29 @@ LDFLAGS = -w -s \
 	-X $(CNINFRA).CommitHash=$(COMMIT) \
 	-X $(CNINFRA).BuildDate=$(DATE)
 
+RELEASE_TAG ?= $(shell git describe --always --tags --dirty --exact-match 2>/dev/null)
+
+TAG_FORMAT="^v([0-9]+\.){2}[0-9]+.*"
+RELEASE_TAG_CHECKED = $(shell echo $(RELEASE_TAG) | grep -v "\-dirty" | grep -E ${TAG_FORMAT})
+ifneq ($(RELEASE_TAG_CHECKED),)
+RELEASE_VERSION_FULL = $(shell echo $(RELEASE_TAG_CHECKED) | cut -c 2-)
+RELEASE_VERSION_MAJOR_MINOR = $(shell echo $(RELEASE_VERSION_FULL) | cut -d '.' -f 1-2)
+endif
+
 ifeq ($(VPP_VERSION),)
 VPP_VERSION="21.06"
 endif
+ifeq ($(DEV_VERSION),) # for tagging in-development images
+DEV_VERSION="21.06"
+endif
 REPO="ghcr.io/pantheontech/"
-STONEWORK_VPP_IMAGE=${REPO}"vpp"
-STONEWORK_VPP_TEST_IMAGE=${REPO}"vpp-test"
-STONEWORK_DEV_IMAGE=${REPO}"stonework-dev"
-STONEWORK_PROD_IMAGE=${REPO}"stonework"
-TESTER_IMAGE=${REPO}"stonework-tester"
-MOCK_CNF_IMAGE=${REPO}"stonework-mockcnf"
-PROTO_ROOTGEN_IMAGE=${REPO}"proto-rootgen"
+STONEWORK_VPP_IMAGE="stonework-vpp"
+STONEWORK_VPP_TEST_IMAGE="stonework-vpp-test"
+STONEWORK_DEV_IMAGE="stonework-dev"
+STONEWORK_PROD_IMAGE="stonework"
+TESTER_IMAGE="stonework-tester"
+MOCK_CNF_IMAGE="stonework-mockcnf"
+PROTO_ROOTGEN_IMAGE="stonework-proto-rootgen"
 
 help:
 	@echo "List of make targets:"
@@ -69,70 +81,78 @@ install-proto-rootgen:
 # -------------------------------
 
 vpp-image:
-	@echo "=> building VPP image -- version=${VPP_VERSION}"
-	IMAGE_TAG=${STONEWORK_VPP_IMAGE} \
-	VERSION=${VPP_VERSION} \
+	@echo "=> building VPP image"
+	VPP_VERSION=${VPP_VERSION} \
+	IMAGE_TAG="${STONEWORK_VPP_IMAGE}:${VPP_VERSION}" \
 	./scripts/build.sh vpp
 
 vpp-test-image:
-	@echo "=> building VPP test image -- version=${VPP_VERSION}"
-	IMAGE_TAG=${STONEWORK_VPP_TEST_IMAGE} \
-	VERSION=${VPP_VERSION} \
+	@echo "=> building VPP test image"
+	VPP_IMAGE="${STONEWORK_VPP_IMAGE}:${VPP_VERSION}" \
+	IMAGE_TAG="${STONEWORK_VPP_TEST_IMAGE}:${VPP_VERSION}" \
 	./scripts/build.sh vpp-test
 
 dev-image:
-	@echo "=> building development image, VPP version=${VPP_VERSION}"
+	@echo "=> building development image"
 	VPP_IMAGE="${STONEWORK_VPP_IMAGE}:${VPP_VERSION}" \
-	IMAGE_TAG=${STONEWORK_DEV_IMAGE} \
-	VERSION=${VPP_VERSION} \
+	VPP_VERSION=${VPP_VERSION} \
+	IMAGE_TAG="${STONEWORK_DEV_IMAGE}:${DEV_VERSION}" \
 	./scripts/build.sh dev
 
 prod-image:
-	@echo "=> building production image, VPP version=${VPP_VERSION}"
+	@echo "=> building production image"
 	VPP_IMAGE="${STONEWORK_VPP_IMAGE}:${VPP_VERSION}" \
-	IMAGE_TAG=${STONEWORK_PROD_IMAGE} \
-	DEV_IMAGE_TAG=${STONEWORK_DEV_IMAGE} \
-	VERSION=${VPP_VERSION} \
+	DEV_IMAGE="${STONEWORK_DEV_IMAGE}:${DEV_VERSION}" \
+	IMAGE_TAG="${STONEWORK_PROD_IMAGE}:${DEV_VERSION}" \
 	./scripts/build.sh prod
 
 tester-image:
 	@echo "=> building image with network tools for testing"
-	IMAGE_TAG=${TESTER_IMAGE} \
+	IMAGE_TAG="${TESTER_IMAGE}:${DEV_VERSION}" \
 	./scripts/build.sh tester
 
 mockcnf-image:
-	@echo "=> building mock CNF, VPP version=${VPP_VERSION}"
+	@echo "=> building mock CNF"
 	VPP_IMAGE="${STONEWORK_VPP_IMAGE}:${VPP_VERSION}" \
-	IMAGE_TAG=${MOCK_CNF_IMAGE} \
-	VERSION=${VPP_VERSION} \
+	IMAGE_TAG="${MOCK_CNF_IMAGE}:${DEV_VERSION}" \
 	./scripts/build.sh mockcnf
 
 proto-rootgen-image:
 	@echo "=> building image for building proto file with the config root message"
-	IMAGE_TAG=${PROTO_ROOTGEN_IMAGE} \
+	IMAGE_TAG="${PROTO_ROOTGEN_IMAGE}:${DEV_VERSION}" \
 	./scripts/build.sh proto-rootgen
 
 images: vpp-image dev-image prod-image tester-image mockcnf-image
-	# tag latest images
-	docker tag ${STONEWORK_PROD_IMAGE}:${VPP_VERSION} ${STONEWORK_PROD_IMAGE}
-	docker tag ${MOCK_CNF_IMAGE}:${VPP_VERSION} ${MOCK_CNF_IMAGE}
+ifneq ($(RELEASE_TAG_CHECKED),)
+	# tag release images
+	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}:${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
+	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}:${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_MAJOR_MINOR}
+	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}:${STONEWORK_PROD_IMAGE}
+endif
 
 push-images:
-	docker push ${STONEWORK_PROD_IMAGE}:${VPP_VERSION}
-	docker push ${STONEWORK_PROD_IMAGE}
-	docker push ${TESTER_IMAGE}
+ifneq ($(RELEASE_TAG_CHECKED),)
+	docker push ${REPO}:${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
+	docker push ${REPO}:${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_MAJOR_MINOR}
+	docker push ${REPO}:${STONEWORK_PROD_IMAGE}
+else
+	@echo "Release tag is empty or has incorrect format."
+	@echo "Supplied release tag: ${RELEASE_TAG}"
+	@echo 'Expected format: ${TAG_FORMAT} ; must not contain "-dirty"'
+	@false
+endif
 
 cleanup-images:
-	docker rmi ${STONEWORK_DEV_IMAGE}:${VPP_VERSION} || \:
-	docker rmi ${MOCK_CNF_IMAGE}:${VPP_VERSION} || \:
+	docker rmi ${STONEWORK_DEV_IMAGE}:${DEV_VERSION} || \:
+	docker rmi ${MOCK_CNF_IMAGE}:${DEV_VERSION} || \:
 	docker rmi ${STONEWORK_VPP_IMAGE}:${VPP_VERSION} || \:
-	docker rmi ${TESTER_IMAGE} || \:
+	docker rmi ${TESTER_IMAGE}:${DEV_VERSION} || \:
 
 # -------------------------------
 #  VM image
 # -------------------------------
 
-vm-image: images
+vm-image: images # unmaintained
 	@echo "=> building stonework VM image"
 ifdef CNFS_SPEC
 	VERSION=${VPP_VERSION} \
@@ -150,12 +170,19 @@ md-to-pdf:
 	pandoc README.md -o README.pdf "-fmarkdown-implicit_figures -o" --from=markdown -V geometry:margin=.6in -V colorlinks --toc --highlight-style=espresso
 
 generate-config-docs:
-	echo "${STONEWORK_PROD_IMAGE}:${VPP_VERSION}" | bash -x ./scripts/gen-docs.sh
+	echo "${STONEWORK_PROD_IMAGE}:${DEV_VERSION}" | bash -x ./scripts/gen-docs.sh
 
-release: dev-image prod-image
-	RELEASE_TAG=$(VPP_VERSION) \
-	STONEWORK_IMAGE="$(STONEWORK_PROD_IMAGE):$(VPP_VERSION)" \
+release:
+ifneq ($(RELEASE_TAG_CHECKED),)
+	RELEASE_TAG=$(RELEASE_VERSION_FULL) \
+	STONEWORK_IMAGE="$(REPO):$(STONEWORK_PROD_IMAGE):$(RELEASE_VERSION_FULL)" \
 	./scripts/release.sh
+else
+	@echo "Release tag is empty or has incorrect format."
+	@echo "Supplied release tag: ${RELEASE_TAG}"
+	@echo 'Expected format: ${TAG_FORMAT} ; must not contain "-dirty"'
+	@false
+endif
 
 # -------------------------------
 #  Testing
@@ -167,7 +194,7 @@ unit-tests:
 	go test ./...
 
 e2e-tests:
-	./scripts/e2e-test.sh
+	STONEWORK_IMAGE="${STONEWORK_PROD_IMAGE}:${DEV_VERSION}" ./scripts/e2e-test.sh
 
 test-vpp-plugins: vpp-image vpp-test-image
 

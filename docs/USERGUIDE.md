@@ -20,7 +20,7 @@ StoneWork images are publicly available and can be pulled, [as described here](h
 ## Run
 To try out the StoneWork, we can simply run it as a Docker container:
 ```
-$ docker run -d --rm --name stonework -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework
+$ docker run -d --rm --name stonework -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework:21.06
 ```
 This will run a Docker container named *stonework* in the background. 
 
@@ -129,7 +129,7 @@ TAP Interface
 
 To create tap interface, we need to make the StoneWork container privileged, so running it as:
 ```
-$ docker run -d --rm --name stonework --privileged -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework
+$ docker run -d --rm --name stonework --privileged -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework:21.06
 ```
 
 Then we will use the configuration as:
@@ -167,7 +167,7 @@ But this tap interface is present only inside our StoneWork container. What if w
 
 Then we need to use host network mode in our docker run one liner:
 ```
-$ docker run -it --rm --name stonework --privileged --network="host" -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework
+$ docker run -it --rm --name stonework --privileged --network="host" -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework:21.06
 ```
 For more details about tap interfaces and VPP, take a look [at this example][tap-example].
 
@@ -178,7 +178,7 @@ As our Docker run one-liner grows, it becomes better to use docker-compose, in t
 
 Lets rewrite the above mentioned docker run command, i.e.:
 ```
-$ docker run -it --rm --name stonework --privileged --network="host" -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework
+$ docker run -it --rm --name stonework --privileged --network="host" -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework:21.06
 ```
 into *docker-compose.yaml*:
 ```
@@ -187,7 +187,7 @@ version: '3.3'
 services:
   stonework:
     container_name: stonework
-    image: "ghcr.io/pantheontech/stonework"
+    image: "ghcr.io/pantheontech/stonework:21.06"
     privileged: true
     network_mode: "host"
     environment:
@@ -258,7 +258,7 @@ version: '3.3'
 services:
   stonework:
     container_name: stonework
-    image: "ghcr.io/pantheontech/stonework:21.01"
+    image: "ghcr.io/pantheontech/stonework:21.06"
     privileged: true
     network_mode: "host"
     environment:
@@ -435,7 +435,7 @@ volumes:                                    # new
 services:
   stonework:
     container_name: stonework
-    image: "ghcr.io/pantheontech/stonework:21.01"
+    image: "ghcr.io/pantheontech/stonework:21.06"
     privileged: true
     network_mode: "host"
     environment:

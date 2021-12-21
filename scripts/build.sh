@@ -19,24 +19,24 @@
 case $1 in
 dev)
   docker build --build-arg VPP_IMAGE="${VPP_IMAGE}" \
-    --build-arg VPP_VERSION="${VERSION}" \
-    -t ${IMAGE_TAG}:${VERSION} \
+    --build-arg VPP_VERSION="${VPP_VERSION}" \
+    -t ${IMAGE_TAG} \
     -f ./docker/dev.Dockerfile .
   ;;
 prod)
   docker build --build-arg VPP_IMAGE="${VPP_IMAGE}" \
-    --build-arg DEV_IMAGE="${DEV_IMAGE_TAG}:${VERSION}" \
-    -t ${IMAGE_TAG}:${VERSION} \
+    --build-arg DEV_IMAGE="${DEV_IMAGE}" \
+    -t ${IMAGE_TAG} \
     -f ./docker/prod.Dockerfile .
   ;;
 vpp)
-  docker build --build-arg VPP_VERSION="${VERSION}"\
-    -t ${IMAGE_TAG}:${VERSION}\
+  docker build --build-arg VPP_VERSION="${VPP_VERSION}" \
+    -t ${IMAGE_TAG} \
     -f ./docker/vpp.Dockerfile .
   ;;
 vpp-test)
-  docker build --build-arg VPP_VERSION="${VERSION}"\
-    -t ${IMAGE_TAG}:${VERSION}\
+  docker build --build-arg VPP_IMAGE="${VPP_IMAGE}" \
+    -t ${IMAGE_TAG} \
     -f ./docker/vpp-test.Dockerfile .
   ;;
 tester)
@@ -46,7 +46,7 @@ tester)
   ;;
 mockcnf)
   docker build --build-arg VPP_IMAGE="${VPP_IMAGE}" \
-    -t ${IMAGE_TAG}:${VERSION} \
+    -t ${IMAGE_TAG} \
     -f ./docker/mockcnf/Dockerfile .
   ;;
 proto-rootgen)

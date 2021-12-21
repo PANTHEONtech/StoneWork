@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2021 PANTHEON.tech
+# Copyright 2022 PANTHEON.tech
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 # limitations under the License.
 
 ARG VPP_IMAGE=vpp:21.06
-ARG DEV_IMAGE=ghcr.io/pantheontech/stonework-dev:21.06
+ARG DEV_IMAGE=stonework-dev:21.06
 
 FROM $VPP_IMAGE as vpp
 FROM $DEV_IMAGE as dev
