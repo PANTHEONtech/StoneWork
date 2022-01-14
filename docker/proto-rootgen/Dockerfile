@@ -45,19 +45,24 @@ RUN set -eux; \
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
+## enabling go modules for proper building and downloading
+ENV GO111MODULE=on
 
 # Install protoc and some plugins to generate docs
 ARG PROTOC_VERSION=3.12.4
+## protoc-gen-doc of version >1.5.0 use golang "embed" feature -> for that we must use newer golang version
+ARG PROTOC_GEN_DOC_VERSION=1.5.0
+## has version tagging but without "v" prefix -> need to use prefix of commit hash (f5fcc60 = tag 1.3.5,  dc9f108=1.0.2)
+ARG PROTOC_GEN_JSONSCHEMA_PSEUDO_VERSION=dc9f108
 WORKDIR /tmp
 RUN curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-$(uname -m).zip -o protoc.zip
 RUN unzip protoc.zip && mv bin/protoc /usr/local/bin/protoc && mv include/google /usr/local/include/google
-RUN go get -v github.com/chrusty/protoc-gen-jsonschema/cmd/protoc-gen-jsonschema
-RUN go get -v github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc
+RUN go get -v github.com/chrusty/protoc-gen-jsonschema/cmd/protoc-gen-jsonschema@${PROTOC_GEN_JSONSCHEMA_PSEUDO_VERSION}
+RUN go get -v github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v${PROTOC_GEN_DOC_VERSION}
 COPY docker/proto-rootgen/markdown.tmpl /gendoc/markdown.tmpl
 COPY docker/proto-rootgen/pandoc-preamble.tex /gendoc/pandoc-preamble.tex
 
 # Build proto-rootgen
-ENV GO111MODULE=on
 RUN mkdir -p $GOPATH/src/pantheon.tech/StoneWork
 WORKDIR $GOPATH/src/pantheon.tech/StoneWork
 COPY . ./
