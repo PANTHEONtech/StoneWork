@@ -17,7 +17,7 @@
 package puntmgr
 
 import (
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"

@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/vpp-agent/v3/client"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	"google.golang.org/protobuf/proto"
 
 	pb "go.pantheon.tech/stonework/proto/puntmgr"
 )

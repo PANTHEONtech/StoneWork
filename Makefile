@@ -14,12 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+SHELL := /usr/bin/env bash -o pipefail
+
+PROJECT := StoneWork
+
 VERSION ?= $(shell git describe --always --tags --dirty)
 COMMIT  ?= $(shell git rev-parse HEAD)
 DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA := go.ligato.io/cn-infra/v2/agent
-LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
+LDFLAGS = -w -s \
+	-X $(CNINFRA).BuildVersion=$(VERSION) \
+	-X $(CNINFRA).CommitHash=$(COMMIT) \
+	-X $(CNINFRA).BuildDate=$(DATE)
 
 ifeq ($(VPP_VERSION),)
 VPP_VERSION="21.06"
@@ -34,8 +41,15 @@ MOCK_CNF_IMAGE=${REPO}"stonework-mockcnf"
 PROTO_ROOTGEN_IMAGE=${REPO}"proto-rootgen"
 
 # Go.mod unrelated version locking
-BINAPI_GENERATOR_COMMIT="4c1cccf48cd144414c7233f167087aff770ef67b" # no actual tag, newest tag is "0.3.5" and it is older commit and it is incompatible
+GOVPP_VERSION="4c1cccf48cd144414c7233f167087aff770ef67b" # no actual tag, newest tag is "0.3.5" and it is older commit and it is incompatible
 
+help:
+	@echo "List of make targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?(## .*)?$$' $(MAKEFILE_LIST) | sed 's/^[^:]*://g' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+.DEFAULT = help
+
+-include scripts/make/proto.make
 
 build:
 	@cd cmd/stonework && go build -v -ldflags "${LDFLAGS}"
@@ -44,8 +58,8 @@ build:
 	@cd cmd/proto-rootgen && go build -v -ldflags "${LDFLAGS}"
 
 install:
-	@cd cmd/stonework && go install -v -ldflags "${LDFLAGS}"
-	@cd cmd/stonework-init && go install -v -ldflags "${LDFLAGS}"
+	go install -v -ldflags "${LDFLAGS}" ./cmd/stonework
+	go install -v -ldflags "${LDFLAGS}" ./cmd/stonework-init
 
 install-mockcnf:
 	@cd cmd/mockcnf && go install -v -ldflags "${LDFLAGS}"
@@ -171,23 +185,18 @@ test-vpp-plugins-prebuilt: # For running VPP tests repeatedly (saves time by ski
 # -------------------------------
 
 get-binapi-generator:
-	@# temp directory is "go install" fix for <go1.16 (go.mod in root is changed but shouldn't)
-	@# when upgraded to >=go1.16 use "go install" as is instead of "go get" + temp directory
 	@echo "# installing binary API generator"
-	$(eval TMP_DIR := $(shell mktemp -d))
-	cd $(TMP_DIR);GO111MODULE=on go get git.fd.io/govpp.git/cmd/binapi-generator@$(BINAPI_GENERATOR_COMMIT)
-	rm -rf $(TMP_DIR)
+	go install git.fd.io/govpp.git/cmd/binapi-generator
 
 get-descriptor-adapter-generator:
 	@echo "# installing descriptor adapter generator"
-	cd submodule/vpp-agent;go install ./plugins/kvscheduler/descriptor-adapter
+	go install go.ligato.io/vpp-agent/v3/plugins/kvscheduler/descriptor-adapter
+
 
 dep-install:
 	@go mod download
 
-generate-proto:
-	@echo "=> generating proto files"
-	./scripts/gen-proto.sh
+generate-proto: protocgengo ## Generate Protobuf files
 
 generate-binapi: get-binapi-generator
     # generated from vpp json api files copied into Stonework repository (plugins/binapi/vppXXXX/api)

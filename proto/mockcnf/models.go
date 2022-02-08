@@ -21,8 +21,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"google.golang.org/protobuf/proto"
 )
 
 var (

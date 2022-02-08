@@ -26,6 +26,7 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+
 	"go.pantheon.tech/stonework/plugins/isisx/descriptor/adapter"
 	"go.pantheon.tech/stonework/plugins/isisx/vppcalls"
 	isisx "go.pantheon.tech/stonework/proto/isisx"

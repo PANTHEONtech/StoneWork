@@ -19,14 +19,15 @@ package descriptor
 import (
 	"context"
 	"errors"
-	"github.com/golang/protobuf/proto"
+
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
 	vpp_acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 
 	"go.pantheon.tech/stonework/plugins/cnfreg"
