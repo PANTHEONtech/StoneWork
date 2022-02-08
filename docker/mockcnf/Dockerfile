@@ -39,7 +39,7 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.14.1
+ENV GOLANG_VERSION 1.17.6
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -80,11 +80,9 @@ COPY --from=vpp \
 COPY --from=vppagent /bin/agentctl /usr/local/bin/agentctl
 
 # Build agent
-ENV GO111MODULE=on
-RUN mkdir -p $GOPATH/src/pantheon.tech/StoneWork
-WORKDIR $GOPATH/src/pantheon.tech/StoneWork
-COPY go.mod go.sum Makefile ./
-RUN make dep-install
+WORKDIR /src/
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . ./
 RUN make install # stonework-init
 RUN make install-mockcnf

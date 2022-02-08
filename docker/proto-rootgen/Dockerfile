@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.14.1
+ENV GOLANG_VERSION 1.17.6
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -45,8 +45,6 @@ RUN set -eux; \
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
-## enabling go modules for proper building and downloading
-ENV GO111MODULE=on
 
 # Install protoc and some plugins to generate docs
 ARG PROTOC_VERSION=3.12.4
@@ -63,8 +61,8 @@ COPY docker/proto-rootgen/markdown.tmpl /gendoc/markdown.tmpl
 COPY docker/proto-rootgen/pandoc-preamble.tex /gendoc/pandoc-preamble.tex
 
 # Build proto-rootgen
-RUN mkdir -p $GOPATH/src/pantheon.tech/StoneWork
-WORKDIR $GOPATH/src/pantheon.tech/StoneWork
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . ./
-RUN make dep-install
 RUN make install-proto-rootgen
