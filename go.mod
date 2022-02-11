@@ -12,8 +12,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df
-	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220120170329-049260adfdff
-	go.ligato.io/vpp-agent/v3 v3.3.0-beta
+	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
+	go.ligato.io/vpp-agent/v3 v3.4.0-alpha.0.20220211112037-35a237b2a9a6
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.27.1
 )
