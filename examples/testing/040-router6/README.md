@@ -1,5 +1,5 @@
 [Example] StoneWork as an IPv6 Router
-===========================
+=====================================
 
 This example demonstrates how to use StoneWork as an **IPv6 router**.
 
@@ -34,11 +34,12 @@ via 2001:0:0:1::2           via 2001:0:0:2::2             via 2001:0:0:2::1     
 Running The Example
 -------------------
 
-Prerequisities and instructions for running the example are the same as those for the [cross-connect example][cross-connect example].
+Prerequisities and instructions for running the example can be found in the
+[README.md][readme-testing-examples] in `testing` directory.
 
-**Note:** to use the alternate configuration file, run
+**Note:** to use the alternate configuration file, start the example as usual and then run
 ```
 $ docker exec stonework agentctl config update --replace /etc/stonework/config/config-with-arps.yaml
 ```
 
-[cross-connect example]: ../010-xconnect/EXAMPLE.md
+[readme-testing-examples]: ../README.md

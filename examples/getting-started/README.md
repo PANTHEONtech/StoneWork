@@ -1,5 +1,5 @@
 StoneWork: Getting Started
-==============================
+==========================
 
 If you are new to StoneWork, this is a minimalistic example of the StoneWork
 deployment manifest that you can **try right away**, without having to make any
@@ -126,7 +126,10 @@ tap0                              1      up          9000/0/0/0     rx packets  
                                                                     ip4                           23
                                                                     ip6                           19
 ```
-Use CTRL-C to exit from the VPP shell.
+Use `q` to exit from the VPP shell:
+```
+vpp# q
+```
 
 ## StoneWork Config & CLI
 
@@ -136,7 +139,7 @@ such as `gRPC` and `REST`. It is also possible to push configuration over a
 key-value datastore, such as etcd, that acts as a persistent storage for the
 desired configuration state (just like in K8s).
 
-Note, that this is **not covered** in this simple example.
+Note, that using key-value datastore is **not covered** in this simple example.
 
 Let's try the StoneWork CLI. It doesn't come with its own shell. Instead, every
 command is a separate execution of the `agentctl` binary, installed inside the

@@ -1,5 +1,5 @@
 [Example] StoneWork as a NAT Gateway
-=================================
+====================================
 
 Ths document describes an example configuration for StoneWork, used as a NAT
 gateway. 
