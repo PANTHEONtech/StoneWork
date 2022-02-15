@@ -40,9 +40,6 @@ TESTER_IMAGE=${REPO}"stonework-tester"
 MOCK_CNF_IMAGE=${REPO}"stonework-mockcnf"
 PROTO_ROOTGEN_IMAGE=${REPO}"proto-rootgen"
 
-# Go.mod unrelated version locking
-GOVPP_VERSION="4c1cccf48cd144414c7233f167087aff770ef67b" # no actual tag, newest tag is "0.3.5" and it is older commit and it is incompatible
-
 help:
 	@echo "List of make targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?(## .*)?$$' $(MAKEFILE_LIST) | sed 's/^[^:]*://g' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

@@ -15,9 +15,10 @@
 # limitations under the License.
 
 ARG VPP_IMAGE=vpp:21.06
+ARG VPPAGENT_IMAGE=ligato/vpp-agent:v3.3.0
 
 FROM $VPP_IMAGE as vpp
-FROM ligato/vpp-agent:latest as vppagent
+FROM $VPPAGENT_IMAGE as vppagent
 FROM ubuntu:18.04 as base
 
 RUN apt-get update && apt-get install -y \
