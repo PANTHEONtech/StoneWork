@@ -3,10 +3,10 @@
 package adapter
 
 import (
-	"github.com/golang/protobuf/proto"
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.pantheon.tech/stonework/plugins/abx/abxidx"
 	"go.pantheon.tech/stonework/proto/abx"
+	"google.golang.org/protobuf/proto"
 )
 
 ////////// type-safe key-value pair with metadata //////////

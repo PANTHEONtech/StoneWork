@@ -19,9 +19,10 @@ package descriptor
 import (
 	"context"
 	"errors"
-	"github.com/golang/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/client"
 	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -92,9 +93,9 @@ func (d *MockCnf2Descriptor) Create(key string, config *mockcnf.MockCnf2) (metad
 	go func() {
 		err = client.LocalClient.ChangeRequest().Update(
 			&linux_l3.ARPEntry{
-				Interface:  puntMeta.Interconnects[0].CnfInterface.Name,
-				IpAddress:  mockIpAddr,
-				HwAddress:  mockHwAddr,
+				Interface: puntMeta.Interconnects[0].CnfInterface.Name,
+				IpAddress: mockIpAddr,
+				HwAddress: mockHwAddr,
 			}).Send(context.Background())
 	}()
 	d.config = config
@@ -112,9 +113,9 @@ func (d *MockCnf2Descriptor) Delete(key string, config *mockcnf.MockCnf2, metada
 	go func() {
 		err = client.LocalClient.ChangeRequest().Delete(
 			&linux_l3.ARPEntry{
-				Interface:  puntMeta.Interconnects[0].CnfInterface.Name,
-				IpAddress:  mockIpAddr,
-				HwAddress:  mockHwAddr,
+				Interface: puntMeta.Interconnects[0].CnfInterface.Name,
+				IpAddress: mockIpAddr,
+				HwAddress: mockHwAddr,
 			}).Send(context.Background())
 	}()
 	d.config = nil

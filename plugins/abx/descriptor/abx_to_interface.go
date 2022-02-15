@@ -20,16 +20,15 @@ import (
 	"fmt"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
-
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	"google.golang.org/protobuf/proto"
 
 	"go.pantheon.tech/stonework/plugins/abx/abxidx"
 	"go.pantheon.tech/stonework/plugins/abx/vppcalls"
-	"go.pantheon.tech/stonework/proto/abx"
+	vpp_abx "go.pantheon.tech/stonework/proto/abx"
 )
 
 const (

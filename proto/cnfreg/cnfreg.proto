@@ -21,7 +21,7 @@ package cnfreg;
 option go_package = "go.pantheon.tech/stonework/proto/cnfreg;cnfreg";
 
 import "puntmgr/puntmgr.proto";
-import "go.ligato.io/vpp-agent/v3/proto/ligato/generic/manager.proto";
+import "ligato/generic/manager.proto";
 
 // Mode in which the CNF operates wrt. the other CNFs.
 enum CnfMode {
