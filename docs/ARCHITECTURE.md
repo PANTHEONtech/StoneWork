@@ -57,7 +57,7 @@ as well as during run-time when a (CNF) configuration change is requested:
 [ligato-vpp-agent]: https://github.com/ligato/vpp-agent
 [stonework-diagram]: img/stonework.png
 [control-flow-diagram]: img/control-flow.png
-[punt-manager-plugin]: plugins/puntmgr/README.md
-[cnf-registry-plugin]: plugins/cnfreg/README.md
+[punt-manager-plugin]: ../plugins/puntmgr/README.md
+[cnf-registry-plugin]: ../plugins/cnfreg/README.md
 
 
