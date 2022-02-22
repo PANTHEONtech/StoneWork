@@ -100,4 +100,4 @@ When you are done, bring the deployment down with
 $ docker-compose down
 ```
 
-[getting-started]: ../../getting-started/EXAMPLE.md
+[getting-started]: ../../getting-started/README.md

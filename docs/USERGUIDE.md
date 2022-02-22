@@ -538,6 +538,6 @@ So the `cnf-bgp` introduces new root level entry called bgpConfig, to describe i
 [ligato-link]: https://ligato.io/
 [conf-model]: config/STONEWORK-CONFIG.md
 [vpp-cli-guide]: https://wiki.fd.io/view/VPP/Command-line_Interface_(CLI)_Guide
-[tap-example]: ../examples/getting-started/EXAMPLE.md
+[tap-example]: ../examples/getting-started/README.md
 [dpdk]: https://www.dpdk.org/
 [readme]: ../README.md

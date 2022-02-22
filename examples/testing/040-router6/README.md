@@ -41,4 +41,4 @@ Prerequisities and instructions for running the example are the same as those fo
 $ docker exec stonework agentctl config update --replace /etc/stonework/config/config-with-arps.yaml
 ```
 
-[cross-connect example]: ../010-xconnect/EXAMPLE.md
+[cross-connect example]: ../010-xconnect/README.md

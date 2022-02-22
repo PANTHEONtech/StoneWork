@@ -32,4 +32,4 @@ Running The Example
 
 Prerequisities and instructions for running the example are the same as those for the [cross-connect example][cross-connect example].
 
-[cross-connect example]: ../010-xconnect/EXAMPLE.md
+[cross-connect example]: ../010-xconnect/README.md
