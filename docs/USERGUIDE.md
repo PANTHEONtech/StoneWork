@@ -13,7 +13,7 @@ First of all we need to install Docker and *docker-compose*:
 $ apt-get install docker.io docker-compose
 ```
 First Steps w/ StoneWork
-==========================
+========================
 
 StoneWork images are publicly available and can be pulled, [as described here](https://github.com/orgs/PANTHEONtech/packages/container/package/stonework).
 
@@ -43,7 +43,7 @@ $ docker exec -it stonework bash
 ```
 
 Working w/ agentctl
-=====================
+===================
 
 Now, when we are inside the container, we can manage StoneWork using [agentctl tool][agentctl-link]. This tool comes
 from [ligato][ligato-link] and is the main tool for StoneWork management, using CLI.
@@ -101,7 +101,7 @@ To remove the configuration, simply delete it or part of it from the configurati
 update command.
 
 Working w/ vppctl
-===================
+=================
 
 Next we may want to check the state even in our data plane.
 To access it use:
@@ -414,7 +414,7 @@ subtrees, which can be followed in the same manner.
 You can use this method for both navigating through the StoneWork configuration and creation of custom one.
 
 StoneWork Enterprise
-===========
+====================
 
 With StoneWork Enterprise you'll get access to additional control plane features. Enterprise features are packaged
 as container images. To use them you need a valid license. 
@@ -538,6 +538,6 @@ So the `cnf-bgp` introduces new root level entry called bgpConfig, to describe i
 [ligato-link]: https://ligato.io/
 [conf-model]: config/STONEWORK-CONFIG.md
 [vpp-cli-guide]: https://wiki.fd.io/view/VPP/Command-line_Interface_(CLI)_Guide
-[tap-example]: ../examples/getting-started/EXAMPLE.md
+[tap-example]: ../examples/getting-started/README.md
 [dpdk]: https://www.dpdk.org/
 [readme]: ../README.md
