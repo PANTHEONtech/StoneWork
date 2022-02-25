@@ -65,8 +65,8 @@ $ docker-compose up -d
 The StoneWork container should be present almost immediately:
 ```
 $ docker ps
-CONTAINER ID        IMAGE                                            COMMAND                  CREATED             STATUS              PORTS               NAMES
-d2f8298b1524        ghcr.io/pantheontech/stonework         "/bin/sh -c 'rm -f /…"   41 minutes ago      Up 41 minutes                           stonework
+CONTAINER ID   IMAGE                                  COMMAND                  CREATED         STATUS         PORTS     NAMES
+83f034b16cd8   ghcr.io/pantheontech/stonework:21.06   "/bin/sh -c 'rm -f /…"   6 seconds ago   Up 5 seconds             stonework
 ```
 
 It shouldn't take too long for StoneWork to initialize and apply the "day0"

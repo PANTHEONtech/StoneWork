@@ -237,7 +237,7 @@ volumes:
 services:
   stonework:
     container_name: stonework
-    image: "ghcr.io/pantheontech/stonework"
+    image: "ghcr.io/pantheontech/stonework:21.06"
     # StoneWork runs in the privileged mode to be able to perform administrative network operations.
     privileged: true
     # StoneWork runs in the PID namespace of the host so that it can read PIDs of CNF processes.

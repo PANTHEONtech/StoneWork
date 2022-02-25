@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2021 PANTHEON.tech
+# Copyright 2022 PANTHEON.tech
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_VERSION=21.06
-ARG VPP_IMAGE=ghcr.io/pantheontech/vpp:$VPP_VERSION
+ARG VPP_IMAGE=vpp:21.06
 
 FROM ${VPP_IMAGE}
 
