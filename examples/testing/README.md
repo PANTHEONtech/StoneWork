@@ -23,7 +23,7 @@ Prerequisities
    **Optional**: StoneWork can be managed through `agentctl`, a CLI provided by the Ligato framework.
    You can install it with
    ```
-   $ go get go.ligato.io/vpp-agent/v3/cmd/agentctl
+   $ go install go.ligato.io/vpp-agent/v3/cmd/agentctl
    ```
    This will enable you to use `agentctl` to access StoneWork directly from the host machine.
 
