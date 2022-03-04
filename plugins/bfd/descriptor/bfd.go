@@ -22,8 +22,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	vppif "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"

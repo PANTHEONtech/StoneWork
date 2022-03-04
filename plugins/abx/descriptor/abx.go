@@ -18,17 +18,16 @@ package descriptor
 
 import (
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/logging"
-
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/descriptor"
 	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
 	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.pantheon.tech/stonework/plugins/abx/abxidx"
 	"go.pantheon.tech/stonework/plugins/abx/descriptor/adapter"
@@ -177,7 +176,7 @@ func (d *ABXDescriptor) DerivedValues(key string, value *abx.ABX) (derived []api
 	for _, attachedIf := range value.GetAttachedInterfaces() {
 		derived = append(derived, api.KeyValuePair{
 			Key:   abx.ToInterfaceKey(value.Index, attachedIf.InputInterface),
-			Value: &empty.Empty{},
+			Value: &emptypb.Empty{},
 		})
 	}
 	return derived

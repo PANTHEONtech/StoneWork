@@ -1,5 +1,5 @@
-[Example]StoneWork deployment based on Docker-Compose
-============================================
+[Example] StoneWork deployment based on Docker-Compose
+======================================================
 
 Prerequisites
 --------------

@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2021 PANTHEON.tech
+# Copyright 2022 PANTHEON.tech
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -54,17 +54,17 @@ while IFS= read -r line; do
 done
 
 # generate root proto message
-docker run --rm -v ${TMPDIR}:/api ghcr.io/pantheontech/proto-rootgen proto-rootgen --cnf-name ${CNFNAME}
+docker run --rm -v ${TMPDIR}:/api stonework-proto-rootgen:21.06 proto-rootgen --cnf-name ${CNFNAME}
 
 # generate json schema
-docker run --rm -v ${TMPDIR}:/api ghcr.io/pantheontech/proto-rootgen \
+docker run --rm -v ${TMPDIR}:/api stonework-proto-rootgen:21.06 \
   protoc \
     --jsonschema_out="json_fieldnames:/api" \
     --proto_path=/api /api/${CNFNAME,,}-root.proto
 cp ${TMPDIR}/Root.jsonschema ${OUTDIR}/${CNFNAME^^}-CONFIG.jsonschema
 
 # generate docs (as markdown & pdf)
-docker run --rm -v ${TMPDIR}:/api ghcr.io/pantheontech/proto-rootgen \
+docker run --rm -v ${TMPDIR}:/api stonework-proto-rootgen:21.06 \
   bash -x -c "\
     sed -i 's/{{.CnfName}}/${CNFNAME}/g' /gendoc/markdown.tmpl &&
     protos=\$(find /api -name \"*.proto\" | grep -vF \"/api/${CNFNAME,,}-root.proto\") &&

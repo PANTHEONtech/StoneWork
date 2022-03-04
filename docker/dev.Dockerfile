@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2021 PANTHEON.tech
+# Copyright 2022 PANTHEON.tech
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
 # limitations under the License.
 
 ARG VPP_IMAGE=vpp:21.06
-# TODO replace with stable VPP-Agent version containing https://github.com/ligato/vpp-agent/pull/1763 (probably v3.3.0+)
-ARG VPPAGENT_IMAGE=ligato/vpp-agent:latest
+ARG VPPAGENT_IMAGE=ligato/vpp-agent:v3.3.0
 
 FROM $VPP_IMAGE as vpp
 FROM $VPPAGENT_IMAGE as vppagent
@@ -41,7 +40,7 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.14.1
+ENV GOLANG_VERSION 1.17.6
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -79,11 +78,9 @@ COPY --from=vpp \
     /usr/lib/x86_64-linux-gnu/vpp_plugins/
 
 # Build agent
-ENV GO111MODULE=on
-RUN mkdir -p $GOPATH/src/pantheon.tech/StoneWork
-WORKDIR $GOPATH/src/pantheon.tech/StoneWork
-COPY go.mod go.sum Makefile ./
-RUN make dep-install
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . ./
 RUN make install
 RUN cp $GOPATH/bin/stonework /usr/local/bin/stonework

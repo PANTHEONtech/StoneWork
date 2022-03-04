@@ -1,5 +1,5 @@
 [Example] StoneWork as an IPv4 Router
-===========================
+=====================================
 
 This example demonstrates how to use StoneWork as an **IPv4 router**.
 
@@ -30,6 +30,7 @@ via 10.10.1.2            via 10.10.2.2              via 10.10.2.1            via
 Running The Example
 -------------------
 
-Prerequisities and instructions for running the example are the same as those for the [cross-connect example][cross-connect example].
+Prerequisities and instructions for running the example can be found in the
+[README.md][readme-testing-examples] in `testing` directory.
 
-[cross-connect example]: ../010-xconnect/README.md
+[readme-testing-examples]: ../README.md

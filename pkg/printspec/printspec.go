@@ -20,27 +20,22 @@ import (
 	"io"
 
 	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/jsonpb"
-
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-// Print specification of all known models.
+// AllKnownModels prints specification of all known models.
 func AllKnownModels(writer io.Writer) error {
 	return SelectedModels(writer, models.DefaultRegistry.RegisteredModels()...)
 }
 
-// Print specification of only selected subset of models.
+// SelectedModels prints specification of only selected subset of models.
 func SelectedModels(writer io.Writer, models ...models.KnownModel) error {
 	for i, model := range models {
 		if model.Spec().Class != "config" {
 			continue
 		}
-		m := jsonpb.Marshaler{Indent: "  "}
-		jsonOut, err := m.MarshalToString(model.ModelDetail())
-		if err != nil {
-			return err
-		}
+		jsonOut := protojson.Format(model.ModelDetail())
 		yamlOut, err := yaml.JSONToYAML([]byte(jsonOut))
 		if err != nil {
 			return err

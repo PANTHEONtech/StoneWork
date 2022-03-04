@@ -117,7 +117,7 @@ input configuration a lot easier.
 The original protobuf files, from which the
 documentation and schema were generated, can be found in the `/api` folder inside
 the StoneWork distribution. There is also the `/api/models.spec.yaml` file,
-which contains one ZAML document with metadata for every configuration model.
+which contains one YAML document with metadata for every configuration model.
 
 These metadata are used to associate a configuration model with the corresponding
 protobuf definitions.
@@ -137,7 +137,7 @@ where you can find configuration stanzas to learn from. Each example contains
 the startup configuration `day0-config.yaml`. 
 
 Additional `*.yaml` files are used to show how run-time configuration can be modified over CLI. Please
-refer to each examples `EXAMPLE.md` file for more information.
+refer to each examples `README.md` file for more information.
 
 
 Installation
@@ -149,7 +149,7 @@ documentation (`*.md`) and some examples to get you started.
 
 #### Requirements
 
-1. StoneWork requires an *Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **18.04 (Bionic Beaver)**.
+1. StoneWork requires an **Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **18.04 (Bionic Beaver)**.
 
 
 2. Next, Docker and docker-compose must be installed.
@@ -237,7 +237,7 @@ volumes:
 services:
   stonework:
     container_name: stonework
-    image: "ghcr.io/pantheontech/stonework"
+    image: "ghcr.io/pantheontech/stonework:21.06"
     # StoneWork runs in the privileged mode to be able to perform administrative network operations.
     privileged: true
     # StoneWork runs in the PID namespace of the host so that it can read PIDs of CNF processes.

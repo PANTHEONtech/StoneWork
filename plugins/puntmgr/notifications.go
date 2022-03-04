@@ -18,11 +18,12 @@ package puntmgr
 
 import (
 	"fmt"
-	"go.ligato.io/cn-infra/v2/logging"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
+	"go.ligato.io/cn-infra/v2/logging"
+
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
@@ -74,7 +75,7 @@ func (d *puntNotifDescriptor) notify(puntId puntID, removed bool) {
 	var value proto.Message
 	if !removed {
 		// empty == created, nil == not created
-		value = &prototypes.Empty{}
+		value = &emptypb.Empty{}
 	}
 	err := d.kvScheduler.PushSBNotification(kvs.KVWithMetadata{
 		Key:   NotificationKey(puntId.cnfMsLabel, puntId.key, puntId.label),

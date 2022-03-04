@@ -23,8 +23,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/cn-infra/v2/infra"
 	grpc_plugin "go.ligato.io/cn-infra/v2/rpc/grpc"

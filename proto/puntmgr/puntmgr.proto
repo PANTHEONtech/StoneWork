@@ -20,8 +20,8 @@ package puntmgr;
 
 option go_package = "go.pantheon.tech/stonework/proto/puntmgr;puntmgr";
 
-import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl/acl.proto";
-import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt/punt.proto";
+import "ligato/vpp/acl/acl.proto";
+import "ligato/vpp/punt/punt.proto";
 
 message PuntRequest {
     // Label identifies punt request among all the requests for a given configuration item (key-value pair).

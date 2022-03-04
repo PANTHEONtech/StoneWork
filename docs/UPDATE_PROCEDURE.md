@@ -65,18 +65,41 @@ Now, you just need to apply your patches (or track remote branch) to this vpp-ag
 Run `make test`. If tests fail, you have most probably done some mistake in 2.2
 and not all containers started successfully, especially those containing VPP and vpp-agent.
 
-In that case, execute the command `cd examples/testing/100-mock-cnf-module && make start-example`
+In that case, execute the command
+`cd examples/testing/100-mock-cnf-module && STONEWORK_IMAGE=stonework:<version> make start-example`
 and check whether all containers are running, or some of them exited prematurely.
 
 In latter case, take a look at Docker logs of a particular container and ensure
 its *vpp-agent* and all of its plugins support the newly added version, i.e. it
 found a compatible API.
 
-## 2.5 Upload new tagged version of the StoneWork to image repository
+## 2.5 Upload new tag for the StoneWork to image repository
 
-Create a tag in repository to trigger update of the image in repository.
+StoneWork docker images are present on [GitHub Container Registry][ghcr].
+
+To update images, create and push a git tag into image repository according to
+the following convention:
+`v<VPP-major>.<VPP-minor>.<patch><optional-identifier>` (for example
+`v21.06.0`), where `<patch>` may increase if VPP is updated by its patch version
+or if some change is submitted into the control-plane.
+
+This triggers build of the images in repository and tags StoneWork production
+image as `ghcr.io/pantheontech/stonework` with the following version tags:
+1. Full git tag as-it-is, with trimmed leading '`v`', for example
+   `ghcr.io/pantheontech/stonework:21.06.0`. This tag is fixed
+   and should never be changed.
+2. `<VPP-major>.<VPP-minor>`, for example
+   `ghcr.io/pantheontech/stonework:21.06`. This tag points to the
+   latest version with the same major and minor version number.
+3. `latest`, for example `ghcr.io/pantheontech/stonework:latest`.
+
+This convention allows to keep track of all the patches of the StoneWork
+while keeping the `latest` and `<VPP-major>.<VPP-minor>` tags still updated.
+
+After that, all three tagged images are automatically pushed into GitHub
+Container Registry.
 
 [dockerhub-tags]: https://hub.docker.com/r/ligato/vpp-base/tags?page=1&ordering=last_updated&name=21.06
 [inspiration-pr]: https://github.com/ligato/vpp-base/pull/18
 [agent-instructions]: https://github.com/ligato/vpp-agent/wiki/Guide-for-adding-new-VPP-version
-
+[ghcr]: https://github.com/orgs/PANTHEONtech/packages/container/package/stonework

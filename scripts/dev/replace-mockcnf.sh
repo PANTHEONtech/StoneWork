@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2021 PANTHEON.tech
+# Copyright 2022 PANTHEON.tech
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,6 @@ set -e
 cp ../../cmd/mockcnf/mockcnf .
 
 # rebuild the production image with replaced agent binary
-docker build -f mockcnf.Dockerfile -t ghcr.io/pantheontech/stonework-mockcnf --no-cache --force-rm=true .
+docker build -f mockcnf.Dockerfile -t stonework-mockcnf:21.06 --no-cache --force-rm=true .
 
 rm -f ./mockcnf

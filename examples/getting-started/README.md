@@ -1,5 +1,5 @@
 StoneWork: Getting Started
-==============================
+==========================
 
 If you are new to StoneWork, this is a minimalistic example of the StoneWork
 deployment manifest that you can **try right away**, without having to make any
@@ -65,8 +65,8 @@ $ docker-compose up -d
 The StoneWork container should be present almost immediately:
 ```
 $ docker ps
-CONTAINER ID        IMAGE                                            COMMAND                  CREATED             STATUS              PORTS               NAMES
-d2f8298b1524        ghcr.io/pantheontech/stonework         "/bin/sh -c 'rm -f /…"   41 minutes ago      Up 41 minutes                           stonework
+CONTAINER ID   IMAGE                                  COMMAND                  CREATED         STATUS         PORTS     NAMES
+83f034b16cd8   ghcr.io/pantheontech/stonework:21.06   "/bin/sh -c 'rm -f /…"   6 seconds ago   Up 5 seconds             stonework
 ```
 
 It shouldn't take too long for StoneWork to initialize and apply the "day0"
@@ -126,7 +126,10 @@ tap0                              1      up          9000/0/0/0     rx packets  
                                                                     ip4                           23
                                                                     ip6                           19
 ```
-Use CTRL-C to exit from the VPP shell.
+Use `q` to exit from the VPP shell:
+```
+vpp# q
+```
 
 ## StoneWork Config & CLI
 
@@ -136,7 +139,7 @@ such as `gRPC` and `REST`. It is also possible to push configuration over a
 key-value datastore, such as etcd, that acts as a persistent storage for the
 desired configuration state (just like in K8s).
 
-Note, that this is **not covered** in this simple example.
+Note, that using key-value datastore is **not covered** in this simple example.
 
 Let's try the StoneWork CLI. It doesn't come with its own shell. Instead, every
 command is a separate execution of the `agentctl` binary, installed inside the
