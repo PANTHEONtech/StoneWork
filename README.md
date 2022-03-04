@@ -343,5 +343,5 @@ Development
 [vfio]: https://www.kernel.org/doc/Documentation/vfio.txt
 [dpdk-linux-drivers]: https://doc.dpdk.org/guides/linux_gsg/linux_drivers.html
 [hugepages]: https://wiki.debian.org/Hugepages
-[vpp-hugepages]: https://fd.io/docs/vpp/master/gettingstarted/users/configuring/hugepages.html
+[vpp-hugepages]: https://s3-docs.fd.io/vpp/21.10.1/gettingstarted/users/configuring/hugepages.html
 [gns3-vm-docs]: docs/GNS3_APPLIANCES.md

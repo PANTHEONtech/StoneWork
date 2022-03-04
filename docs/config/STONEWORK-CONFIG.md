@@ -3338,7 +3338,7 @@ MemifLink defines configuration for interface type: MEMIF
 <a name="ligato.vpp.interfaces.RDMALink"></a>
 
 ### RDMALink
-https://github.com/FDio/vpp/blob/master/src/plugins/rdma/rdma_doc.md
+https://github.com/FDio/vpp/blob/master/src/plugins/rdma/rdma_doc.rst
 
 
 | Field                | Type                | Label     | Description                                      |
