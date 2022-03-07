@@ -14,22 +14,8 @@ see the [StoneWork Architecture][architecture].
    - [CNF Registry][cnf-registry-plugin]
    - [Punt Manager][punt-manager-plugin]
 
-   Since these plugins have to be imported, and because StoneWork is inside a private gerrit repository,
-   it is necessary to add StoneWork as a git submodule into the CNF repository:
-   
-   ```
-   cnf-repo$ git submodule add https://github.com/PANTHEONtech/StoneWork submodule/stonework
-   ```
-   
-   Then add into go.mod a replacement directory:
-   
-   ```
-   replace go.pantheon.tech/stonework => ./submodule/stonework
-   ```
-
-2. Add [CNF Registry][cnf-registry-plugin] and [Punt Manager][punt-manager-plugin] into the list
-   of plugins to load by the CNF agent. Some dependencies of these plugins are not injected by default
-   and have to be set explicitly as shown below. 
+   Add them into the list of plugins to load by the CNF agent. Some dependencies of these plugins are not
+   injected by default and have to be set explicitly as shown below. 
    
    For example, the CNF Registry requires `CnfIndex` - a CNF
    integer identifier, unique among all CNFs (that might be deployed alongside the same StoneWork instance).
@@ -85,7 +71,7 @@ see the [StoneWork Architecture][architecture].
    }  
    ```
 
-3. When a CNF runs in the Standalone mode (without StoneWork), it should run its own instance
+2. When a CNF runs in the Standalone mode (without StoneWork), it should run its own instance
    of VPP inside the container and manage it by its own CNF agent (i.e. VPP plugins for VPP features,
    that are being used have to be initialized by CNF agent). 
    
@@ -100,7 +86,7 @@ see the [StoneWork Architecture][architecture].
    See the section [`Deployment`, from the top-level README.md](/README.md#Deployment) of StoneWork, to learn how to set
    the variable.
 
-4. In order to use the same CNF image, **regardless** of the mode at which it is deployed, it is recommended to create two separate config directories:
+3. In order to use the same CNF image, **regardless** of the mode at which it is deployed, it is recommended to create two separate config directories:
    - One for the Standalone mode
    - One for the StoneWork-module mode. 
    
@@ -119,7 +105,7 @@ see the [StoneWork Architecture][architecture].
    ```
    (instead of `/etc/cnf` and `/etc/cnf-novpp` use something more descriptive, e.g. `/etc/dhcp` and `/etc/dhcp-novpp`)
 
-5. CNF Plugins (implementing CRUD operations over CNF config models) will have to depend on the CNF Registry
+4. CNF Plugins (implementing CRUD operations over CNF config models) will have to depend on the CNF Registry
    plugin and potentially even on the Punt Manager, if some packets need to be punted between VPP and CNF/Linux
    (over memif or TAP). 
    
@@ -154,7 +140,7 @@ see the [StoneWork Architecture][architecture].
    dependencies and requirements for packet punting. More information can be found in the API interfaces,
    `PuntManagerAPI` and `CnfAPI`.
 
-6. A descriptor corresponding to a CNF model will have to behave slightly differently, based on the mode
+5. A descriptor corresponding to a CNF model will have to behave slightly differently, based on the mode
    in which the CNF is deployed (Standalone vs. StoneWork-module).\
    
    **In Standalone mode:**
@@ -174,7 +160,7 @@ see the [StoneWork Architecture][architecture].
       is already established, and `Create` can call `GetPuntMetadata` of Punt Manager to learn metadata about
       the interconnection configured for punting (e.g. memif/TAP interface names, interface IP/MAC addresses, etc.)
 
-7. Additionally to `CNF_MODE`, where the env. variable that was already discussed, one may also need to define variable
+6. Additionally to `CNF_MODE`, where the env. variable that was already discussed, one may also need to define variable
    `CNF_MGMT_INTERFACE` or `CNF_MGMT_SUBNET` - these are used by CNF Registry to determine which network interface
    to use to talk to StoneWork (i.e. management interface). 
    
@@ -185,12 +171,12 @@ see the [StoneWork Architecture][architecture].
    network subnet is used by the management network. Based on that the plugin will be able to determine which interface
    is inside the mgmt network.
 
-8. Another deployment requirement is to mount `/run/stonework/` between StoneWork and every CNF.
+7. Another deployment requirement is to mount `/run/stonework/` between StoneWork and every CNF.
    
    - Sub-directory `/run/stonework/discovery` will be created and used by StoneWork and CNFs to discover each other.
    - Sub-directory `/run/stonework/memif` will be created and used by Punt Manager for memif sockets.
 
-9. The last requirement targeted for CNF Docker image, is that it should have an `/api` directory with all the proto files
+8. The last requirement targeted for CNF Docker image, is that it should have an `/api` directory with all the proto files
    that define CNF models (do not include Ligato models from upstream, even if used). 
    
    The directory structure inside `/api` should be the same as in the repository (under the `/proto` directory).
@@ -247,7 +233,7 @@ see the [StoneWork Architecture][architecture].
    ```
    RUN /usr/local/bin/cnf-init --print-spec > /api/models.spec.yaml
    ```
-   This api folder can be then used by `submodule/stonework/scripts/gen-docs.sh` to generate
+   This api folder can be then used by `scripts/gen-docs.sh` to generate
    documentation for the CNF (as markdown and pdf and also with json schema). Script takes two
    arguments: output directory for the documentation (use `docs` in the CNF repo) and the CNF
    name (e.g. "CNF-DHCP"). Script also reads standard input and expect a list of CNF images
@@ -256,7 +242,7 @@ see the [StoneWork Architecture][architecture].
    deployment, that aside from StoneWork itself includes one or more CNFs.
    For your single CNF, generate docs with:
    ```
-   $ echo "<your-cnf-image>" | ./submodule/stonework/scripts/gen-docs.sh "./docs/" "<your-cnf-name>"
+   $ echo "<your-cnf-image>" | ./scripts/gen-docs.sh "./docs/" "<your-cnf-name>"
    ```
 
 

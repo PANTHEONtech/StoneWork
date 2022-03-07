@@ -5,4 +5,4 @@ However it is needed to have compatible VPP version installed in your system
 version.
 
 To build the abx, use:
-./vpp2101/build.sh /path/to/vpp/workspace
+cd vpp2101 && ./build.sh /path/to/vpp/workspace

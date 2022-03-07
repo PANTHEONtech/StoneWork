@@ -8,7 +8,7 @@ Each CNF remains to be packaged and delivered as a single docker image. The same
 CNF either as **Standalone** (i.e. inside a chain/mesh of CNFs) or as a **StoneWork Module** or *SW-Module* for short.
 
 Simply by setting the environment variable `CNF_MODE` to `STANDALONE` or `STONEWORK_MODULE`, the CNF will either start
-its own instance of VPP or connect with the single shared VPP instance managed by Stonework, respectively.
+its own instance of VPP or connect with the single shared VPP instance managed by StoneWork, respectively.
 
 The StoneWork image itself consists of VPP (from upstream, with some additional PANTHEON.tech plugins) and a control agent,
 which is effectively [Ligato VPP-Agent][ligato-vpp-agent], extended with two additional plugins:

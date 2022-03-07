@@ -35,11 +35,16 @@ Running The Examples: The Automated Way
 The examples can be easily controlled using their respective Makefile.
 
 Just navigate to the directory of the chosen example and run `make test`
-to run the example, perform automated tests and dump logs in case of failure.
+to run the example, perform automated tests and dump logs in case of failure.  
+By default the tests are run with [the official StoneWork image from ghcr](https://github.com/PANTHEONtech/StoneWork/pkgs/container/stonework).
+To use a custom image, you need to set the `STONEWORK_IMAGE` variable:
+```
+$ STONEWORK_IMAGE=stonework:<version> make test
+```
 
 Alternatively, to have more control over the execution of the example, you can use these commands:
 
-- First, run `make start-example` to deploy the containers and apply the startup configuration.
+- First, run `make start-example` to deploy the containers and apply the startup configuration. You can optionally specify a custom StoneWork image using `STONEWORK_IMAGE=stonework:<version> make start-example`.
 - When the containers are running, run `make test-stonework` to run automated tests.
 - When the containers are running, run `make dump-logs` to dump StoneWork logs.
   The logs will be saved into a file `example.log` (if the file exists, it will be overwritten).
@@ -53,6 +58,10 @@ Running The Examples: The Manual Way
 Navigate to the directory of the chosen example and start the deployment with
 ```
 $ docker-compose up -d
+```
+or using a custom StoneWork image:
+```
+STONEWORK_IMAGE=stonework:<version> docker-compose up -d
 ```
 This command starts the example topology (it is defined in `docker-compose.yaml`).
 
