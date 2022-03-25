@@ -7,3 +7,4 @@ cmd/proto-rootgen/proto-rootgen
 .*-test
 examples/**/example.log
 examples/getting-started/config/new-config.yaml
+*.pdf
