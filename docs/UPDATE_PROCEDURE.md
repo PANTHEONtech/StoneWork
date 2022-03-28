@@ -51,14 +51,9 @@ Now, just update all occurrences of old version to new one.
 **Note:** If your *vpp-agent* was not yet merged into upstream repository, but you want to use it
 in StoneWork anyway, you will need to set the custom version to be used temporarily.
 
-To do so, examine the `go.mod` and use the replace clause prepared on the bottom.
+To do so, examine the `go.mod` and use the replace clause prepared at the bottom.
 
-Now, verify that `ls submodule/vpp-agent` is not empty. If it is, download StoneWork submodules with
-`git submodule update --init --recursive`
-
-After these steps, StoneWork will use vpp-agent from `submodule/vpp-agent` as its build dependency. 
-
-Now, you just need to apply your patches (or track remote branch) to this vpp-agent workspace.
+StoneWork will now use vpp-agent from the folder specified in the replace clause as its build dependency. 
 
 ## 2.4 Run StoneWork tests
 
