@@ -67,6 +67,7 @@ message PuntRequest {
         AF_UNIX = 2;
     }
     InterconnectType interconnect_type = 3;
+    bool enable_gso = 4;
 
     // Type-specific configuration to use for the punt.
     message HairpinXConnect {
