@@ -42,14 +42,6 @@ function check_in_sync {
     check_rv $? 1 "StoneWork is not in-sync"
 }
 
-# This is temporary workaround to make the test pass.
-# Some Linux update between 5.11.0-27-generic and 5.11.0-37-generic (from around
-# september 2021) increased maximum mtu from 65536 to 65575, so linux now by
-# default sets the mtu of device vrf1 to 65575. StoneWork (or vpp-agent) then
-# sets it to 65536 during resync (but not during initial configuration), which
-# causes the "check_in_sync" function to fail.
-docker exec mockcnf1 ip link set dev vrf1 mtu 65536
-
 check_in_sync
 
 # test JSON schema
@@ -76,9 +68,6 @@ docker exec stonework agentctl config update --replace /etc/stonework/config/run
 check_rv $? 0 "Config update failed"
 
 ../utils.sh waitForAgentConfig stonework 74 10 # mock CNFs make changes asynchronously
-
-# This is temporary workaround to make the test pass (see comment above).
-docker exec mockcnf1 ip link set dev vrf2 mtu 65536
 
 check_in_sync
 

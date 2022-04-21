@@ -13,3 +13,16 @@ You can reserve your own range by creating a pull request.
 | Organization            | Index range  |
 | ----------------------- | ------------ |
 | PANTHEON.tech           | 1..100       |
+
+The following table lists indexes assigned to specific CNFs.
+
+
+| CNF Name                | Index  |
+| ----------------------- | ------ |
+| CNF-IPsec (VPPSwan)     | 1      |
+| CNF-BGP                 | 2      |
+| CNF-NAT44               | 3      |
+| CNF-DHCP                | 4      |
+| CNF-IDS                 | 5      |
+| CNF-NetMon              | 6      |
+| CNF-OSPF                | 7      |

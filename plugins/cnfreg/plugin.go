@@ -177,7 +177,7 @@ type swModule struct {
 	cnfModels  []cnfModel
 }
 
-// Attributes specific to StoneWork Module (i.e. not used by standalone CNF or Stonework itself).
+// Attributes specific to StoneWork Module (i.e. not used by standalone CNF or StoneWork itself).
 type swModAttrs struct {
 	sync.Mutex
 	discovered  bool

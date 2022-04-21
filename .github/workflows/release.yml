@@ -28,6 +28,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.MM_PKG_WRITE }}
 
-      - name: "Build and push Docker image"
+      - name: "Push Docker images"
         run: make push-images
 

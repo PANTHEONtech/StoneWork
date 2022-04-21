@@ -19,7 +19,7 @@
 # This Dockerfile builds VPP image with DPDK Mellanox PMDs
 # To use it, rename it to vpp.Dockerfile, as:
 # $ mv vpp-mellanox.Dockerfile vpp.Dockerfile
-# and then build Stonework as usual:
+# and then build StoneWork as usual:
 # $ make images
 # The StoneWork build system will use it instead of standard VPP Dockerfile.
 

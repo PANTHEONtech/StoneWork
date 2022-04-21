@@ -95,7 +95,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-// Uncomment to use vpp-agent from sub-module to test changes in the agent before they are merged into the upstream
+// Uncomment to use vpp-agent from the specified directory to test changes in the agent before they are merged into the upstream
 // (or into any remote fork for that matter).
-// TODO: remove the submodule eventually
-// replace go.ligato.io/vpp-agent/v3 => ./submodule/vpp-agent
+// replace go.ligato.io/vpp-agent/v3 => ./path/to/vpp-agent

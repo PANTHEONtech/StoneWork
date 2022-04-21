@@ -103,20 +103,11 @@ linuxConfig:
       scope: GLOBAL
       dstNetwork: ::/0
       gwAddr: 2001:0:0:1::2
-      # Set metric to avoid bug
-      # There is a bug in vpp-agent that causes StoneWork to be out-of-sync if
-      # metric is not defined (the function check_in_sync in test-stonework.sh
-      # fails). 
-      metric: 1024
     - outgoingInterface: linux-tap2
       scope: GLOBAL
       dstNetwork: 2001:0:0:1::/64
       gwAddr: 2001:0:0:2::1
-      # Set metric to avoid bug
-      metric: 1024
     - outgoingInterface: veth2
       scope: GLOBAL
       dstNetwork: ::/0
       gwAddr: 2001:0:0:3::1
-      # Set metric to avoid bug
-      metric: 1024

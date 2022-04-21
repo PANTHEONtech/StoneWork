@@ -223,7 +223,7 @@ dep-install:
 generate-proto: protocgengo ## Generate Protobuf files
 
 generate-binapi: get-binapi-generator
-    # generated from vpp json api files copied into Stonework repository (plugins/binapi/vppXXXX/api)
+    # generated from vpp json api files copied into StoneWork repository (plugins/binapi/vppXXXX/api)
     # from VPP (/usr/share/vpp/api/(core|plugins))
 	@echo "=> generating binary API"
 	@cd plugins/binapi/vpp2009 && VPP_VERSION=20.09 go generate .
