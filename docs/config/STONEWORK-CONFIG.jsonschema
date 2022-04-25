@@ -475,6 +475,25 @@
                     "additionalProperties": true,
                     "type": "object"
                 },
+                "ISISXConnectionList": {
+                    "items": {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "properties": {
+                            "inputInterface": {
+                                "type": "string",
+                                "description": "Name of input interface"
+                            },
+                            "outputInterface": {
+                                "type": "string",
+                                "description": "Name of outgoing interface"
+                            }
+                        },
+                        "additionalProperties": true,
+                        "type": "object",
+                        "description": "Unidirectional cross-connection between 2 interfaces that will cross-connect only ISIS protocol data traffic"
+                    },
+                    "type": "array"
+                },
                 "Nat64AddressPoolList": {
                     "items": {
                         "$schema": "http://json-schema.org/draft-04/schema#",
@@ -631,7 +650,7 @@
                             },
                             "interval": {
                                 "type": "integer",
-                                "description": "VR advertisement interval in milliseconds, should be =\u003e 10 and \u003c= 655350. \n (Later, in implemetation it is converted into centiseconds, so precision may be lost)."
+                                "description": "VR advertisement interval in milliseconds, should be =\u003e 10 and \u003c= 65535.\n (Later, in implemetation it is converted into centiseconds, so precision may be lost)."
                             },
                             "preempt": {
                                 "type": "boolean",
@@ -1610,6 +1629,23 @@
                             },
                             "ipsec": {
                                 "properties": {
+                                    "tunnelMode": {
+                                        "enum": [
+                                            "POINT_TO_POINT",
+                                            0,
+                                            "POINT_TO_MULTIPOINT",
+                                            1
+                                        ],
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "integer"
+                                            }
+                                        ],
+                                        "description": "Mode of the IPIP tunnel"
+                                    },
                                     "esn": {
                                         "type": "boolean",
                                         "description": "Extended sequence number"
