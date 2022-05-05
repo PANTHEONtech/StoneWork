@@ -15,7 +15,10 @@
 # limitations under the License.
 
 test:
-	@make exec-test || (make dump-logs && make stop-example-ignore-errors && make environment-cleanup && exit 1)
+	@make exec-test || (make dump-logs-ignore-errors && make stop-example-ignore-errors && make environment-cleanup && exit 1)
+
+dump-logs-ignore-errors:
+	@make dump-logs || true
 
 exec-test: stop-example-ignore-errors environment-cleanup start-example test-cnf stop-example
 
