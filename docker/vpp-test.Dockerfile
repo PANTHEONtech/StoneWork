@@ -18,7 +18,8 @@ ARG VPP_IMAGE=vpp:21.06
 
 FROM ${VPP_IMAGE}
 
-RUN apt-get install -y python3-venv libssl-dev && \
+RUN apt-get update && \
+    apt-get install -y python3-venv libssl-dev && \
     apt-get install -y pkg-config
 
 ENV LC_ALL=C.UTF-8
