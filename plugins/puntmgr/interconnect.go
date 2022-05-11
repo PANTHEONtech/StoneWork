@@ -53,7 +53,7 @@ type InterconnectManager interface {
 	// localTxn = configuration items to configure on this side (StoneWork / Standalone CNF)
 	// remoteTxn = configuration items to configure on the side of the StoneWork module
 	AddInterconnects(localTxn, remoteTxn client.ChangeRequest, puntId puntID, reqs []InterconnectReq,
-		icType pb.PuntRequest_InterconnectType, withMultiplex bool) (interconnects []*pb.PuntMetadata_Interconnect, err error)
+		icType pb.PuntRequest_InterconnectType, enableGso bool, withMultiplex bool) (interconnects []*pb.PuntMetadata_Interconnect, err error)
 	// Delete all VPP<->CNF/Linux interconnects created for a given punt.
 	DelInterconnects(localTxn, remoteTxn client.ChangeRequest, puntId puntID) (err error)
 	// GetLinuxVrfName returns the name used for Linux VRF device corresponding to the given VPP VRF.
@@ -120,6 +120,7 @@ type interconnect struct {
 	id             icID
 	request        InterconnectReq
 	icType         pb.PuntRequest_InterconnectType
+	enableGso      bool
 	withMultiplex  bool
 	metadata       *pb.PuntMetadata_Interconnect
 	proxyIfaceName string
@@ -154,7 +155,7 @@ func NewInterconnectManager(log logging.Logger, ifPlugin ifplugin.API, svcLabel 
 
 // Add new VPP<->CNF/Linux interconnects needed for a given punt.
 func (m *interconnectManager) AddInterconnects(localTxn, remoteTxn client.ChangeRequest, puntId puntID, reqs []InterconnectReq,
-	icType pb.PuntRequest_InterconnectType, withMultiplex bool) (resp []*pb.PuntMetadata_Interconnect, err error) {
+	icType pb.PuntRequest_InterconnectType, enableGso bool, withMultiplex bool) (resp []*pb.PuntMetadata_Interconnect, err error) {
 
 	if _, hasICs := m.icByPuntID[puntId]; hasICs {
 		return nil, fmt.Errorf("punt %v already has some interconnects created", puntId)
@@ -255,6 +256,7 @@ func (m *interconnectManager) AddInterconnects(localTxn, remoteTxn client.Change
 			id:             id,
 			request:        req,
 			icType:         icType,
+			enableGso:      enableGso,
 			withMultiplex:  withMultiplex,
 			metadata:       metadata,
 			proxyIfaceName: proxyIfaceName,
@@ -581,6 +583,7 @@ func (m *interconnectManager) buildInterconnectTxn(localTxn, remoteTxn client.Ch
 				Tap: &vpp_interfaces.TapLink{
 					Version:        2,
 					ToMicroservice: msLabel,
+					EnableGso:      ic.enableGso,
 				},
 			},
 		}

@@ -370,7 +370,8 @@ func (p *Plugin) AddPunt(cnfMsLabel, key string, puntReq *pb.PuntRequest) error 
 	// try to create interconnects
 	localTxn := p.CfgClient.ChangeRequest()
 	icType := puntReq.InterconnectType
-	interconnects, err := p.icManager.AddInterconnects(localTxn, remoteTxn, id, icReqs, icType, withMultiplex)
+	enableGso := puntReq.EnableGso
+	interconnects, err := p.icManager.AddInterconnects(localTxn, remoteTxn, id, icReqs, icType, enableGso, withMultiplex)
 	if err != nil {
 		p.Log.Error(err)
 		return err
