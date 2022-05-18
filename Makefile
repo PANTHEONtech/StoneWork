@@ -43,7 +43,7 @@ endif
 ifeq ($(DEV_VERSION),) # for tagging in-development images
 DEV_VERSION="21.06"
 endif
-REPO="ghcr.io/pantheontech/"
+REPO="ghcr.io/pantheontech"
 STONEWORK_VPP_IMAGE="stonework-vpp"
 STONEWORK_VPP_TEST_IMAGE="stonework-vpp-test"
 STONEWORK_DEV_IMAGE="stonework-dev"
@@ -125,16 +125,16 @@ proto-rootgen-image:
 images: vpp-image dev-image prod-image tester-image mockcnf-image
 ifneq ($(RELEASE_TAG_CHECKED),)
 	# tag release images
-	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}:${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
-	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}:${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_MAJOR_MINOR}
-	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}:${STONEWORK_PROD_IMAGE}
+	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}/${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
+	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}/${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_MAJOR_MINOR}
+	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}/${STONEWORK_PROD_IMAGE}
 endif
 
 push-images:
 ifneq ($(RELEASE_TAG_CHECKED),)
-	docker push ${REPO}:${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
-	docker push ${REPO}:${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_MAJOR_MINOR}
-	docker push ${REPO}:${STONEWORK_PROD_IMAGE}
+	docker push ${REPO}/${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
+	docker push ${REPO}/${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_MAJOR_MINOR}
+	docker push ${REPO}/${STONEWORK_PROD_IMAGE}
 else
 	@echo "Release tag is empty or has incorrect format."
 	@echo "Supplied release tag: ${RELEASE_TAG}"
@@ -175,7 +175,7 @@ generate-config-docs:
 release:
 ifneq ($(RELEASE_TAG_CHECKED),)
 	RELEASE_TAG=$(RELEASE_VERSION_FULL) \
-	STONEWORK_IMAGE="$(REPO):$(STONEWORK_PROD_IMAGE):$(RELEASE_VERSION_FULL)" \
+	STONEWORK_IMAGE="$(REPO)/$(STONEWORK_PROD_IMAGE):$(RELEASE_VERSION_FULL)" \
 	./scripts/release.sh
 else
 	@echo "Release tag is empty or has incorrect format."
