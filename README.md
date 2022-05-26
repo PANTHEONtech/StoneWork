@@ -1,5 +1,9 @@
 # StoneWork
 
+ [![CI](https://github.com/PANTHEONtech/StoneWork/actions/workflows/ci.yml/badge.svg)](https://github.com/PANTHEONtech/StoneWork/actions/workflows/ci.yml)
+ [![stable](https://img.shields.io/github/release/PANTHEONtech/StoneWork.svg?label=latest%20release&logo=github)](https://github.com/PANTHEONtech/StoneWork/releases/latest)
+ [![ligato/vpp-agent](https://img.shields.io/badge/image-ghcr.io/pantheontech/stonework-blue.svg?logo=docker&logoColor=white)](https://github.com/PANTHEONtech/StoneWork/pkgs/container/stonework)
+
 A **high-performance** data plane, **modular** control plane solution.
 
 StoneWork is used by PANTHEON.tech to integrate [its cloud-native network functions][cdnf-io] on top of a single shared
@@ -15,9 +19,7 @@ Instead, the integration is:
 - Sharing of network namespaces and 
 - Re-use of data paths for packet punting between CNFs
 
-
-Features
---------
+## Features
 
 * High-performance [VPP][VPP]-based **data plane**
 * Management agent build on top of [Ligato VPP-Agent][ligato-vpp-agent]
@@ -44,8 +46,7 @@ Features
 * Dynamically (at run-time) **extensible** with additional features provided by
   [CNFs from PANTHEON.tech][cdnf-io]
 
-Examples
---------
+## Examples
 
 Before using StoneWork, we recommend reading this README and related
 documentation in the StoneWork [distribution folder][docs]. 
@@ -60,8 +61,7 @@ The [Getting Started][getting-started] example will guide you through your first
 deployment.
 
 
-Configuration
--------------
+## Configuration
 
 Configuration for StoneWork consists of two tasks:
 
@@ -140,8 +140,7 @@ Additional `*.yaml` files are used to show how run-time configuration can be mod
 refer to each examples `README.md` file for more information.
 
 
-Installation
-------------
+## Installation
 
 The following steps will guide you through the StoneWork **installation process**.
 The distribution package contains the **StoneWork Docker image** (`stonework.image`),
@@ -209,9 +208,7 @@ documentation (`*.md`) and some examples to get you started.
    $ docker load <./stonework.image
    ```
 
-
-Deployment
-----------
+## Deployment
 
 StoneWork is deployed using [Docker Compose][docker-compose] version 3.3 or
 newer. StoneWork itself is only a single container (with VPP and StoneWork agent
@@ -317,8 +314,8 @@ services:
   # here list other CNFs...
 ```
 
-Development
------------
+## Development
+[![Go Reference](https://pkg.go.dev/badge/go.pantheon.tech/stonework.svg)](https://pkg.go.dev/go.pantheon.tech/stonework)
 
 - **Build**: Build instruction for StoneWork can be found [here][build].
 - **Architecture**: StoneWork architecture is described in detail [here][architecture].
