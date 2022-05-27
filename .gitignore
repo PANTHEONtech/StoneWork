@@ -8,3 +8,7 @@ cmd/proto-rootgen/proto-rootgen
 examples/**/example.log
 examples/getting-started/config/new-config.yaml
 *.pdf
+/test_loop.sh
+/examples/testing/100-mock-cnf-module/*.log
+/examples/testing/100-mock-cnf-module/*.json
+/examples/testing/100-mock-cnf-module/*.err

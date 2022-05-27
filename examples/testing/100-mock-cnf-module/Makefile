@@ -40,24 +40,20 @@ environment-cleanup:
 test-stonework:
 	@./test-stonework.sh
 
-LOGFILE=./example.log
+LOGFILE_STONEWORK=./stonework.log
+LOGFILE_MOCKCNF1=./mockcnf1.log
+LOGFILE_MOCKCNF2=./mockcnf2.log
 
 dump-logs:
+	@echo ======================= Saving StoneWork logs;
 	@sh -c "(\
-		echo ===============================================================================;\
-		echo StoneWork logs;\
-		echo ===============================================================================;\
 		docker logs stonework || true;\
-		echo ===============================================================================;\
-		echo StoneWork running configuration;\
-		echo ===============================================================================;\
-		docker exec stonework agentctl config retrieve || true;\
-		echo ===============================================================================;\
-		echo Mock CNF 1 logs;\
-		echo ===============================================================================;\
+	) >${LOGFILE_STONEWORK} 2>&1"
+	@echo ======================= Saving Mock CNF 1 logs;
+	@sh -c "(\
 		docker logs mockcnf1 || true;\
-		echo ===============================================================================;\
-		echo Mock CNF 2 logs;\
-		echo ===============================================================================;\
+	) >${LOGFILE_MOCKCNF1} 2>&1"
+	@echo ======================= Saving Mock CNF 2 logs;
+	@sh -c "(\
 		docker logs mockcnf2 || true;\
-	) >${LOGFILE} 2>&1"
+	) >${LOGFILE_MOCKCNF2} 2>&1"
