@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Copyright 2021 PANTHEON.tech
+// Copyright 2022 PANTHEON.tech
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,4 +26,5 @@ package vppagent
 
 import (
 	_ "git.fd.io/govpp.git/cmd/binapi-generator"
+	_ "go.ligato.io/vpp-agent/v3/cmd/agentctl"
 )

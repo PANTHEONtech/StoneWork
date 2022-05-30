@@ -29,7 +29,7 @@ $ docker-compose up -d
 
 CNF can be managed through CLI provided by the Ligato framework:
 ```
-$ go get go.ligato.io/vpp-agent/v3/cmd/agentctl
+$ go install go.ligato.io/vpp-agent/v3/cmd/agentctl
 ```
 
 An example configuration can be found here:
