@@ -14,9 +14,11 @@ require (
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
 	go.ligato.io/vpp-agent/v3 v3.3.0
-	google.golang.org/grpc v1.38.0
+	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 )
+
+replace github.com/bketelsen/crypt => github.com/bketelsen/crypt v0.0.5
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
@@ -36,7 +38,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/evalphobia/logrus_fluent v0.4.0 // indirect
-	github.com/fatih/color v1.10.0 // indirect
+	github.com/fatih/color v1.12.0 // indirect
 	github.com/fluent/fluent-logger-golang v1.3.0 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
@@ -53,12 +55,14 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hashicorp/go-hclog v0.16.2 // indirect
 	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0 // indirect
 	github.com/lunixbochs/struc v0.0.0-20200521075829-a4cb8d33dbbe // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
-	github.com/mattn/go-isatty v0.0.12 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
-	github.com/mitchellh/mapstructure v1.1.2 // indirect
+	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/moby/sys/mount v0.1.0 // indirect
 	github.com/moby/sys/mountinfo v0.4.1 // indirect
 	github.com/moby/term v0.0.0-20200429084858-129dac9f73f6 // indirect
@@ -84,10 +88,10 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
-	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420 // indirect
-	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
+	golang.org/x/sys v0.0.0-20210909193231-528a39cd75f3 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
