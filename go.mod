@@ -8,7 +8,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
 	github.com/namsral/flag v1.7.4-pre
-	github.com/onsi/gomega v1.10.3
+	github.com/onsi/gomega v1.19.0
 	github.com/pkg/errors v0.9.1
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df
@@ -18,7 +18,10 @@ require (
 	google.golang.org/protobuf v1.27.1
 )
 
-replace github.com/bketelsen/crypt => github.com/bketelsen/crypt v0.0.5
+replace (
+	github.com/bketelsen/crypt => github.com/bketelsen/crypt v0.0.5
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+)
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
@@ -44,7 +47,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/fsouza/go-dockerclient v1.6.6 // indirect
 	github.com/ftrvxmtrx/fd v0.0.0-20150925145434-c6d800382fff // indirect
-	github.com/goccy/go-graphviz v0.0.6 // indirect
+	github.com/goccy/go-graphviz v0.0.9 // indirect
 	github.com/goccy/go-yaml v1.8.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
@@ -89,9 +92,9 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
-	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420 // indirect
-	golang.org/x/sys v0.0.0-20210909193231-528a39cd75f3 // indirect
+	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9 // indirect
+	golang.org/x/net v0.0.0-20220526153639-5463443f8c37 // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
