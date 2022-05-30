@@ -19,7 +19,7 @@ ARG DEV_IMAGE=stonework-dev:21.06
 
 FROM $VPP_IMAGE as vpp
 FROM $DEV_IMAGE as dev
-FROM ubuntu:18.04 as base
+FROM ubuntu:20.04 as base
 
 # utils just for testing - to be removed
 RUN apt-get update && apt-get install -y \
