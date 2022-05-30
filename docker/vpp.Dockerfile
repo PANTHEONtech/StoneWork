@@ -19,9 +19,17 @@ ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE}
 
-RUN mkdir -p /opt/dev && apt-get update && \
-    apt-get install -y git ca-certificates && \
-    apt-get install -y build-essential sudo cmake ninja-build
+ENV DEBIAN_FRONTEND=noninteractive
+RUN set -ex; \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    	git \
+    	ca-certificates \
+    	build-essential \
+    	sudo \
+    	cmake \
+    	ninja-build && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/dev
 
