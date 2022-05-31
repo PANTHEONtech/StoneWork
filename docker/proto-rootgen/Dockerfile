@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:18.04 as base
+FROM ubuntu:20.04 as base
 
 RUN apt-get update && apt-get install -y \
     git \
