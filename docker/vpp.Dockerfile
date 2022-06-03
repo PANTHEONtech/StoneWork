@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_VERSION=21.06
+ARG VPP_VERSION=22.02
 ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE}
@@ -28,8 +28,9 @@ RUN set -ex; \
     	build-essential \
     	sudo \
     	cmake \
-    	ninja-build && \
-    rm -rf /var/lib/apt/lists/*
+    	ninja-build \
+    	python3-ply \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/dev
 
@@ -41,7 +42,7 @@ RUN cd vpp && \
 
 #----------------------
 # build & install external plugins (ABX, ISISX)
-ARG VPP_VERSION=21.06
+ARG VPP_VERSION=22.02
 COPY vpp/abx /tmp/abx
 COPY vpp/isisx /tmp/isisx
 

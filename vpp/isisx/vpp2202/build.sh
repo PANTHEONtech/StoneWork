@@ -1,6 +1,8 @@
+#!/bin/bash
+
 # SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2022 PANTHEON.tech
+# Copyright 2021 PANTHEON.tech
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,25 +16,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: '3.3'
+set -e -o pipefail
 
-volumes:
-  runtime_data: {}
+if [ $# -lt 1 ]
+then
+    echo "usage: $0 /path/to/vpp/workspace"
+    exit 1
+fi
 
-services:
-  stonework:
-    container_name: stonework
-    image: "ghcr.io/pantheontech/stonework:22.02"
-    privileged: true
-    network_mode: "host"
-    pid: "host"
-    environment:
-      INITIAL_LOGLVL: "debug"
-      MICROSERVICE_LABEL: "stonework"
-      ETCD_CONFIG: ""
-    volumes:
-      - runtime_data:/run/stonework
-      - /sys/bus/pci:/sys/bus/pci
-      - /dev:/dev
-      - /run/docker.sock:/run/docker.sock
-      - ./config:/etc/stonework/config
+rm -rf build
+mkdir -p build
+pushd build
+cmake -GNinja -DVPP_WORKSPACE=$1 ..
+ninja
+popd # build

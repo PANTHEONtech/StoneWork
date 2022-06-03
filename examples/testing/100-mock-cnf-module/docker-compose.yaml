@@ -22,7 +22,7 @@ volumes:
 services:
   stonework:
     container_name: stonework
-    image: ${STONEWORK_IMAGE:-ghcr.io/pantheontech/stonework:21.06}
+    image: ${STONEWORK_IMAGE:-ghcr.io/pantheontech/stonework:22.02}
     privileged: true
     pid: "host"
     environment:
@@ -53,7 +53,7 @@ services:
 
   mockcnf1:
     container_name: mockcnf1
-    image: "stonework-mockcnf:21.06"
+    image: "stonework-mockcnf:22.02"
     depends_on:
       - stonework
       - router-ns
@@ -72,7 +72,7 @@ services:
 
   mockcnf2:
     container_name: mockcnf2
-    image: "stonework-mockcnf:21.06"
+    image: "stonework-mockcnf:22.02"
     depends_on:
       - stonework
       - router-ns

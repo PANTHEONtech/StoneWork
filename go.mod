@@ -3,7 +3,7 @@ module go.pantheon.tech/stonework
 go 1.17
 
 require (
-	git.fd.io/govpp.git v0.4.0
+	git.fd.io/govpp.git v0.4.1-0.20220519085400-f06c92da266e
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
@@ -13,7 +13,7 @@ require (
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
-	go.ligato.io/vpp-agent/v3 v3.3.0
+	go.ligato.io/vpp-agent/v3 v3.4.0-alpha.0.20220527115417-0d1768998bb5
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.27.1
 )
@@ -87,7 +87,7 @@ require (
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420 // indirect
-	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
+	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect

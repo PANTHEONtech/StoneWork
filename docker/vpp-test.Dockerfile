@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_IMAGE=vpp:21.06
+ARG VPP_IMAGE=vpp:22.02
 
 FROM ${VPP_IMAGE}
 

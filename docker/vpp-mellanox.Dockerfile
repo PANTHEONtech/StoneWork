@@ -27,7 +27,7 @@
 # host network_mode (besides making it privileged and mounting /dev volume as
 # ussual with DPDK), to use StoneWork with this VPP under the hood.
 
-ARG VPP_VERSION=21.01
+ARG VPP_VERSION=22.02
 ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE} AS base
@@ -62,7 +62,7 @@ RUN VPPVER=$(echo $VPP_VERSION | tr -d ".") && \
 
 RUN cd abx && ./build.sh /opt/dev/vpp/
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \

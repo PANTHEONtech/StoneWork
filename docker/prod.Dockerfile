@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_IMAGE=vpp:21.06
-ARG DEV_IMAGE=stonework-dev:21.06
+ARG VPP_IMAGE=vpp:22.02
+ARG DEV_IMAGE=stonework-dev:22.02
 
 FROM $VPP_IMAGE as vpp
 FROM $DEV_IMAGE as dev

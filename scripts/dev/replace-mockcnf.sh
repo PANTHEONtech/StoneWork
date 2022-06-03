@@ -23,6 +23,6 @@ set -e
 cp ../../cmd/mockcnf/mockcnf .
 
 # rebuild the production image with replaced agent binary
-docker build -f mockcnf.Dockerfile -t stonework-mockcnf:21.06 --no-cache --force-rm=true .
+docker build -f mockcnf.Dockerfile -t stonework-mockcnf:22.02 --no-cache --force-rm=true .
 
 rm -f ./mockcnf

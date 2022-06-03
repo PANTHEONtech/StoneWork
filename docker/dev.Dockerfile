@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_IMAGE=vpp:21.06
-ARG VPPAGENT_IMAGE=ligato/vpp-agent:v3.3.0
+ARG VPP_IMAGE=vpp:22.02
+ARG VPPAGENT_IMAGE=ligato/vpp-agent:latest
 
 FROM $VPP_IMAGE as vpp
 FROM $VPPAGENT_IMAGE as vppagent
