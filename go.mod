@@ -10,26 +10,27 @@ require (
 	github.com/namsral/flag v1.7.4-pre
 	github.com/onsi/gomega v1.10.3
 	github.com/pkg/errors v0.9.1
-	github.com/vishvananda/netlink v1.1.0
-	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df
+	github.com/vishvananda/netlink v1.2.1-beta.2
+	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
 	go.ligato.io/vpp-agent/v3 v3.3.0
-	google.golang.org/grpc v1.38.0
-	google.golang.org/protobuf v1.27.1
+	google.golang.org/grpc v1.47.0
+	google.golang.org/protobuf v1.28.0
 )
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
-	github.com/Microsoft/go-winio v0.4.15-0.20200113171025-3fe6c5262873 // indirect
-	github.com/Microsoft/hcsshim v0.8.9 // indirect
+	github.com/Microsoft/go-winio v0.5.2 // indirect
+	github.com/Microsoft/hcsshim v0.9.3 // indirect
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9 // indirect
 	github.com/bennyscetbun/jsongo v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/containerd/cgroups v0.0.0-20190919134610-bf292b21730f // indirect
-	github.com/containerd/containerd v1.4.13 // indirect
-	github.com/coreos/go-iptables v0.4.5 // indirect
+	github.com/containerd/cgroups v1.0.4 // indirect
+	github.com/containerd/containerd v1.5.13 // indirect
+	github.com/containerd/continuity v0.3.0 // indirect
+	github.com/coreos/go-iptables v0.5.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/docker/docker v20.10.12+incompatible // indirect
@@ -54,18 +55,19 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0 // indirect
+	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lunixbochs/struc v0.0.0-20200521075829-a4cb8d33dbbe // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/moby/sys/mount v0.1.0 // indirect
-	github.com/moby/sys/mountinfo v0.4.1 // indirect
+	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/moby/term v0.0.0-20200429084858-129dac9f73f6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
-	github.com/opencontainers/runc v1.0.3 // indirect
+	github.com/opencontainers/runc v1.1.2 // indirect
 	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.12.2 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
@@ -84,14 +86,14 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
-	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9 // indirect
-	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
+	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/genproto v0.0.0-20210629200056-84d6f6074151 // indirect
+	google.golang.org/genproto v0.0.0-20220607223854-30acc4cbd2aa // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
