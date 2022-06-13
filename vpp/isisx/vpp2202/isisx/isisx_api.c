@@ -68,7 +68,7 @@ vl_api_isisx_connection_add_del_t_handler (vl_api_isisx_connection_add_del_t * m
     {
       isisx_connection_delete (rx_sw_if_index);
     }
-  REPLY_MACRO (ISISX_MSG_ID (VL_API_ISISX_CONNECTION_ADD_DEL_REPLY));
+  REPLY_MACRO (VL_API_ISISX_CONNECTION_ADD_DEL_REPLY);
 }
 
 typedef struct isisx_connection_walk_ctx_t_

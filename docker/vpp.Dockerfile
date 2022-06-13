@@ -66,11 +66,11 @@ RUN cp /opt/dev/isisx/build/isisx/isisx.api.json \
 
 # there is a bug in VPP 21.06 that api files are not built on standard location
 # for external plugins, to reproduce it is enough to try to build sample-plugin
-RUN if [ "$VPP_VERSION" = "21.06" ]; \
-    then \
-      cp /vpp-api/vapi/* /usr/include/vapi/; \
-    else \
-      cp /opt/dev/abx/build/vpp-api/vapi/* /usr/include/vapi/; \
-    fi
+#RUN if [ "$VPP_VERSION" = "21.06" ]; \
+#    then \
+#      cp /vpp-api/vapi/* /usr/include/vapi/; \
+#    else \
+#      cp /opt/dev/abx/build/vpp-api/vapi/* /usr/include/vapi/; \
+#    fi
 
 CMD ["/usr/bin/vpp", "-c", "/etc/vpp/startup.conf"]

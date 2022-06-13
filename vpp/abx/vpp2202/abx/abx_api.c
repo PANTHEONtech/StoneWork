@@ -78,7 +78,7 @@ vl_api_abx_plugin_get_version_t_handler (vl_api_abx_plugin_get_version_t * mp)
 
   rmp = vl_msg_api_alloc (sizeof (*rmp));
   rmp->_vl_msg_id =
-    ntohs (VL_API_ABX_PLUGIN_GET_VERSION_REPLY + abx_base_msg_id);
+    ntohs (VL_API_ABX_PLUGIN_GET_VERSION_REPLY);
   rmp->context = mp->context;
   rmp->major = htonl (ABX_PLUGIN_VERSION_MAJOR);
   rmp->minor = htonl (ABX_PLUGIN_VERSION_MINOR);
@@ -106,7 +106,7 @@ vl_api_abx_policy_add_del_t_handler (vl_api_abx_policy_add_del_t * mp)
     {
       abx_policy_delete (policy_id);
     }
-  REPLY_MACRO (VL_API_ABX_POLICY_ADD_DEL_REPLY + abx_base_msg_id);
+  REPLY_MACRO (VL_API_ABX_POLICY_ADD_DEL_REPLY);
 }
 
 static void
@@ -127,7 +127,7 @@ vl_api_abx_interface_attach_detach_t_handler (
     {
       rv = abx_if_detach (policy_id, rx_sw_if_index);
     }
-  REPLY_MACRO (VL_API_ABX_INTERFACE_ATTACH_DETACH_REPLY + abx_base_msg_id);
+  REPLY_MACRO (VL_API_ABX_INTERFACE_ATTACH_DETACH_REPLY);
 }
 
 typedef struct abx_policy_walk_ctx_t_
@@ -149,7 +149,7 @@ abx_policy_send_details (
 
   mp = vl_msg_api_alloc (sizeof (*mp));
   clib_memset (mp, 0, sizeof (*mp));
-  mp->_vl_msg_id = htons (VL_API_ABX_POLICY_DETAILS + abx_base_msg_id);
+  mp->_vl_msg_id = htons (VL_API_ABX_POLICY_DETAILS);
 
   mp->context = ctx->context;
   mp->policy.policy_id = htonl (ap->ap_id);
@@ -243,7 +243,11 @@ abx_plugin_api_hookup (vlib_main_t *vm)
                            vl_noop_handler,                     \
                            vl_api_##n##_t_endian,               \
                            vl_api_##n##_t_print,                \
-                           sizeof(vl_api_##n##_t), 1);
+                           sizeof(vl_api_##n##_t), 1            \
+                           vl_api_##n##_t_print_json,           \
+                           vl_api_##n##_t_tojson,               \
+                           vl_api_##n##_t_tojson,               \
+                           sizeof (vl_api_##n##_t));
     foreach_abx_plugin_api_msg;
 #undef _
 
