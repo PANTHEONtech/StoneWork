@@ -243,10 +243,10 @@ abx_plugin_api_hookup (vlib_main_t *vm)
                            vl_noop_handler,                     \
                            vl_api_##n##_t_endian,               \
                            vl_api_##n##_t_print,                \
-                           sizeof(vl_api_##n##_t), 1            \
+                           sizeof(vl_api_##n##_t), 1,           \
                            vl_api_##n##_t_print_json,           \
                            vl_api_##n##_t_tojson,               \
-                           vl_api_##n##_t_tojson,               \
+                           vl_api_##n##_t_fromjson,             \
                            sizeof (vl_api_##n##_t));
     foreach_abx_plugin_api_msg;
 #undef _
