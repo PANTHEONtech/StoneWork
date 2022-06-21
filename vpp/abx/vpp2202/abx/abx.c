@@ -21,26 +21,11 @@
 
 #include <vlibapi/api.h>
 #include <vlibmemory/api.h>
-#include <stdbool.h>
 
 /* define message IDs */
-#include <abx/abx_msg_enum.h>
-
-/* define message structures */
-#define vl_typedefs
-#include <abx/abx_all_api_h.h>
-#undef vl_typedefs
-
-/* define generated endian-swappers */
-#define vl_endianfun
-#include <abx/abx_all_api_h.h>
-#undef vl_endianfun
-
-/* instantiate all the print functions we know about */
-#define vl_print(handle, ...) vlib_cli_output (handle, __VA_ARGS__)
-#define vl_printfun
-#include <abx/abx_all_api_h.h>
-#undef vl_printfun
+#include <vnet/format_fns.h>
+#include <abx/abx.api_enum.h>
+#include <abx/abx.api_types.h>
 
 abx_main_t abx_main;
 

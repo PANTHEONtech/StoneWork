@@ -287,7 +287,8 @@ abx_policy_walk (abx_policy_cb_t cb, void *ctx)
 
   pool_foreach_index (api, abx_policy_pool)
   {
-     if (!cb (api, ctx)) break;
+     if (!cb (api, ctx))
+     	break;
   }
   /* *INDENT-ON* */
 }

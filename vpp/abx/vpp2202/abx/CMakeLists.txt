@@ -33,9 +33,5 @@ add_vpp_plugin(abx
   API_FILES
   abx.api
 
-  INSTALL_HEADERS
-  abx_all_api_h.h
-  abx_msg_enum.h
-
   COMPONENT vpp-plugin-abx
 )

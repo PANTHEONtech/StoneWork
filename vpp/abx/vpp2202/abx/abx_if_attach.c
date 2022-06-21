@@ -397,7 +397,10 @@ abx_if_bond_init (vlib_main_t * vm)
   return (NULL);
 }
 
-VLIB_INIT_FUNCTION (abx_if_bond_init);
+VLIB_INIT_FUNCTION (abx_if_bond_init) =
+{
+	.runs_after = VLIB_INITS("acl_init"),
+};
 
 inline u32 get_abx_alctx_per_if(u32 sw_if_index)
 {

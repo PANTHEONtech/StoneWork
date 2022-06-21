@@ -13,56 +13,33 @@
  * limitations under the License.
  */
 
+#include <stddef.h>
+
 #include <vnet/vnet.h>
 #include <vnet/plugin/plugin.h>
+#include <abx/abx.h>
+#include <abx/abx_policy.h>
+#include <abx/abx_if_attach.h>
 #include <vnet/ip/ip_types_api.h>
 #include <vnet/ethernet/ethernet_types_api.h>
 #include <plugins/acl/acl.h>
 
-#include <abx/abx.h>
-#include <abx/abx_policy.h>
-#include <abx/abx_if_attach.h>
 
 #include <vlibapi/api.h>
 #include <vlibmemory/api.h>
-#include <stdbool.h>
 
 /* define message IDs */
-#include <abx/abx_msg_enum.h>
+#include <vnet/format_fns.h>
+#include <abx/abx.api_enum.h>
+#include <abx/abx.api_types.h>
 
-/* define message structures */
-#define vl_typedefs
-#include <abx/abx_all_api_h.h>
-#undef vl_typedefs
-
-/* define generated endian-swappers */
-#define vl_endianfun
-#include <abx/abx_all_api_h.h>
-#undef vl_endianfun
-
-/* instantiate all the print functions we know about */
-#define vl_print(handle, ...) vlib_cli_output (handle, __VA_ARGS__)
-#define vl_printfun
-#include <abx/abx_all_api_h.h>
-#undef vl_printfun
-
-/* Get the API version number */
-#define vl_api_version(n,v) static u32 api_version=(v);
-#include <abx/abx_all_api_h.h>
-#undef vl_api_version
-
+/**
+ * Base message ID for the plugin
+ */
 static u32 abx_base_msg_id;
 
+#define REPLY_MSG_ID_BASE (abx_base_msg_id)
 #include <vlibapi/api_helper_macros.h>
-
-/* List of message types that this plugin understands */
-
-#define foreach_abx_plugin_api_msg                          \
-_(ABX_POLICY_ADD_DEL, abx_policy_add_del)                   \
-_(ABX_INTERFACE_ATTACH_DETACH, abx_interface_attach_detach) \
-_(ABX_POLICY_DUMP, abx_policy_dump)                         \
-_(ABX_INTERFACE_ATTACH_DUMP, abx_interface_attach_dump)     \
-_(ABX_PLUGIN_GET_VERSION, abx_plugin_get_version)
 
 /* API message handler */
 
@@ -106,7 +83,7 @@ vl_api_abx_policy_add_del_t_handler (vl_api_abx_policy_add_del_t * mp)
     {
       abx_policy_delete (policy_id);
     }
-  REPLY_MACRO (VL_API_ABX_POLICY_ADD_DEL_REPLY + abx_base_msg_id);
+  REPLY_MACRO (VL_API_ABX_POLICY_ADD_DEL_REPLY);
 }
 
 static void
@@ -127,7 +104,7 @@ vl_api_abx_interface_attach_detach_t_handler (
     {
       rv = abx_if_detach (policy_id, rx_sw_if_index);
     }
-  REPLY_MACRO (VL_API_ABX_INTERFACE_ATTACH_DETACH_REPLY + abx_base_msg_id);
+  REPLY_MACRO (VL_API_ABX_INTERFACE_ATTACH_DETACH_REPLY);
 }
 
 typedef struct abx_policy_walk_ctx_t_
@@ -228,53 +205,15 @@ vl_api_abx_interface_attach_dump_t_handler (vl_api_abx_interface_attach_dump_t *
  abx_if_attach_walk (abx_interface_attach_details, &ctx);
 }
 
-#define vl_msg_name_crc_list
-#include <abx/abx_all_api_h.h>
-#undef vl_msg_name_crc_list
+#include <abx/abx.api.c>
 
-/* Set up the API message handling tables */
 static clib_error_t *
-abx_plugin_api_hookup (vlib_main_t *vm)
+abx_init_api (vlib_main_t * vm)
 {
-#define _(N,n)                                                  \
-    vl_msg_api_set_handlers((VL_API_##N + abx_base_msg_id),     \
-                           #n,					\
-                           vl_api_##n##_t_handler,              \
-                           vl_noop_handler,                     \
-                           vl_api_##n##_t_endian,               \
-                           vl_api_##n##_t_print,                \
-                           sizeof(vl_api_##n##_t), 1);
-    foreach_abx_plugin_api_msg;
-#undef _
-
-    return 0;
-}
-
-static void
-setup_message_id_table (api_main_t * am)
-{
-#define _(id,n,crc)   vl_msg_api_add_msg_name_crc (am, #n "_" #crc, id + abx_base_msg_id);
-  foreach_vl_msg_name_crc_abx ;
-#undef _
-}
-
-static clib_error_t * abx_init_api (vlib_main_t * vm)
-{
-  clib_error_t * error = 0;
-  u8 * name = format (0, "abx_%08x%c", api_version, 0);
-
   /* Ask for a correctly-sized block of API message decode slots */
-  abx_base_msg_id = vl_msg_api_get_msg_ids ((char *) name,
-                    VL_MSG_FIRST_AVAILABLE);
+  abx_base_msg_id = setup_message_id_table ();
 
-  error = abx_plugin_api_hookup (vm);
-
-  /* Add our API messages to the global name_crc hash table */
-  setup_message_id_table (vlibapi_get_main ());
-
-  vec_free(name);
-
-  return error;
+  return 0;
 }
 
 VLIB_INIT_FUNCTION (abx_init_api);
