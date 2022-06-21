@@ -27,6 +27,7 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+
 	"go.pantheon.tech/stonework/plugins/abx/abxidx"
 	"go.pantheon.tech/stonework/plugins/abx/descriptor"
 	"go.pantheon.tech/stonework/plugins/abx/vppcalls"
@@ -34,6 +35,7 @@ import (
 	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2009"
 	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2101"
 	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2106"
+	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2202"
 )
 
 // ABXPlugin is a plugin that manages ACL-based forwarding.
