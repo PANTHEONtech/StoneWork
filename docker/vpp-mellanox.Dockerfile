@@ -32,10 +32,15 @@ ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE} AS base
 
-RUN mkdir -p /opt/dev && apt-get update && \
-    apt-get install -y git && \
-    apt-get install -y build-essential sudo cmake ninja-build && \
-    rm -rf /var/lib/apt/lists/*
+RUN set -ex; \
+    apt-get update && \
+	apt-get install -y --no-install-recommends \
+		build-essential \
+		cmake \
+		git \
+		ninja-build \
+		sudo \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/dev
 
@@ -55,7 +60,7 @@ RUN cd vpp && yes | make install-dep install-ext-deps && make pkg-deb
 
 #-----------------
 # build ABX plugin
-ARG VPP_VERSION=21.01
+ARG VPP_VERSION=22.02
 COPY vpp/abx /tmp/abx
 RUN VPPVER=$(echo $VPP_VERSION | tr -d ".") && \
     cp -r /tmp/abx/vpp${VPPVER} /opt/dev/abx
@@ -64,14 +69,15 @@ RUN cd abx && ./build.sh /opt/dev/vpp/
 
 FROM ubuntu:20.04
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    gnupg \
-    iproute2 \
-    iputils-ping \
-    python3 \
-    python3-cffi \
+RUN set -ex; \
+    apt-get update && apt-get install -y --no-install-recommends \
+		ca-certificates \
+		curl \
+		gnupg \
+		iproute2 \
+		iputils-ping \
+		python3 \
+		python3-cffi \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /vpp

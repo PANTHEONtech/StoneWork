@@ -22,30 +22,33 @@ FROM $DEV_IMAGE as dev
 FROM ubuntu:20.04 as base
 
 # utils just for testing - to be removed
-RUN apt-get update && apt-get install -y \
-    binutils \
-    curl \
-    iproute2 \
-    iputils-ping \
-    net-tools \
-    netcat-openbsd \
-    lshw && \
+RUN set -ex; \
+    apt-get update && apt-get install -y \
+		binutils \
+		curl \
+		iproute2 \
+		iputils-ping \
+		lshw \
+		net-tools \
+		netcat-openbsd; \
     rm -rf /var/lib/apt/lists/*
 
 # Install vpp (except for ikev2 plugin which we are in a conflict with)
 RUN mkdir -p /vpp
-COPY --from=vpp /vpp/vpp_*.deb \
-    /vpp/libvppinfra_*.deb \
-    /vpp/vpp-plugin-dpdk_*.deb \
-    /vpp/vpp-plugin-core_*.deb \
-    /vpp/
+COPY --from=vpp \
+		/vpp/vpp_*.deb \
+		/vpp/libvppinfra_*.deb \
+		/vpp/vpp-plugin-dpdk_*.deb \
+		/vpp/vpp-plugin-core_*.deb \
+	/vpp/
 
-RUN cd /vpp/ \
-    && apt-get update \
-    && apt-get install -y ./*.deb \
-    && rm /usr/lib/x86_64-linux-gnu/vpp_plugins/ikev2_plugin.so \
-    && rm *.deb \
-    && rm -rf /var/lib/apt/lists/*
+RUN set -ex; \
+    cd /vpp; \
+    apt-get update; \
+    apt-get install -y ./*.deb; \
+    rm /usr/lib/x86_64-linux-gnu/vpp_plugins/ikev2_plugin.so; \
+    rm *.deb; \
+    rm -rf /var/lib/apt/lists/*;
 
 # install custom built vpp plugins
 COPY --from=vpp \
@@ -54,9 +57,11 @@ COPY --from=vpp \
     /usr/lib/x86_64-linux-gnu/vpp_plugins/
 
 # Install control-plane
-COPY --from=dev /usr/local/bin/stonework-init /usr/local/bin/
-COPY --from=dev /usr/local/bin/stonework /usr/local/bin/
-COPY --from=dev /usr/local/bin/agentctl /usr/local/bin/
+COPY --from=dev \
+		/usr/local/bin/stonework-init \
+		/usr/local/bin/stonework \
+		/usr/local/bin/agentctl \
+	/usr/local/bin/
 
 # Install config files
 COPY --from=dev /etc/stonework /etc/stonework

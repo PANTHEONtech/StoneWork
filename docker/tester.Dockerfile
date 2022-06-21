@@ -18,6 +18,20 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        curl wget tcpdump net-tools netcat-openbsd iproute2 ethtool iputils-ping expect-dev tcl8.6 iptables iperf ca-certificates \
-        && rm -rf /var/lib/apt/lists/*
+RUN set -ex; \
+    apt-get update && apt-get install -y --no-install-recommends \
+ 		ca-certificates \
+		curl \
+ 		ethtool \
+ 		expect-dev \
+ 		iperf \
+ 		iproute2 \
+ 		iptables \
+ 		iputils-ping \
+ 		netcat-openbsd \
+ 		net-tools \
+ 		tcl8.6 \
+ 		tcpdump \
+     	wget \
+	; \
+	rm -rf /var/lib/apt/lists/*

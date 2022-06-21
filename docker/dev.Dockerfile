@@ -22,25 +22,25 @@ FROM $VPPAGENT_IMAGE as vppagent
 FROM ubuntu:20.04 as base
 
 RUN apt-get update && apt-get install -y \
-    git \
-    gcc \
-    make \
-    iptables \
-    rsync \
-    # for debugging
-    binutils \
-    curl \
-    wget \
-    tcpdump \
-    iproute2 \
-    iputils-ping \
-    # stats client
-    python3 \
-    python3-cffi && \
-    rm -rf /var/lib/apt/lists/*
+		git \
+		gcc \
+		make \
+		iptables \
+		rsync \
+		# for debugging
+		binutils \
+		curl \
+		wget \
+		tcpdump \
+		iproute2 \
+		iputils-ping \
+		# stats client
+		python3 \
+		python3-cffi \
+	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.17.6
+ENV GOLANG_VERSION 1.18.3
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -118,6 +118,9 @@ RUN rm /tmp/legacy-nat.conf
 # Install script for packet tracing on VPP
 COPY ./docker/vpptrace.sh /usr/bin/vpptrace.sh
 RUN chmod u+x /usr/bin/vpptrace.sh
+
+COPY ./plugins/binapi/vpp2202/api/abx.api.json /usr/share/vpp/api/plugins/
+COPY ./plugins/binapi/vpp2202/api/isisx.api.json /usr/share/vpp/api/plugins/
 
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
     mkdir -p /run/vpp /run/stonework/vpp && \
