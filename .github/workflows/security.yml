@@ -1,12 +1,17 @@
-name: Snyk
+name: Security
+
 on:
   push:
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
+
 jobs:
-  security:
+  snyk:
+    name: Snyk
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/golang@master
         continue-on-error: true # To make sure that SARIF upload gets called
