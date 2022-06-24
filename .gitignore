@@ -8,3 +8,4 @@ cmd/proto-rootgen/proto-rootgen
 examples/**/example.log
 examples/getting-started/config/new-config.yaml
 *.pdf
+.dccache

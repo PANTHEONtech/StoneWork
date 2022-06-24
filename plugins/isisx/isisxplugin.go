@@ -26,10 +26,12 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+
 	"go.pantheon.tech/stonework/plugins/isisx/descriptor"
 	"go.pantheon.tech/stonework/plugins/isisx/vppcalls"
 
 	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2106"
+	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2202"
 )
 
 // ISISXPlugin is a plugin that manages ISIS protocol packet forwarding.

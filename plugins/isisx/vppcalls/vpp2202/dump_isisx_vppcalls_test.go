@@ -22,8 +22,8 @@ import (
 	. "github.com/onsi/gomega"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 
-	"go.pantheon.tech/stonework/plugins/binapi/vpp2009/vpe"
 	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/isisx"
+	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/vpe"
 )
 
 func TestDumpISISXConnections(t *testing.T) {
