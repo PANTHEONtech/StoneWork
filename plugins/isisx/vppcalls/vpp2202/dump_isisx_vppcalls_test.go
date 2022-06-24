@@ -23,7 +23,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 
 	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/isisx"
-	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/vpe"
+	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/memclnt"
 )
 
 func TestDumpISISXConnections(t *testing.T) {
@@ -43,7 +43,7 @@ func TestDumpISISXConnections(t *testing.T) {
 				TxSwIfIndex: 14,
 			},
 		})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&memclnt.ControlPingReply{})
 
 	ifIndexes.Put("interface1", &ifaceidx.IfaceMetadata{SwIfIndex: 11})
 	ifIndexes.Put("interface2", &ifaceidx.IfaceMetadata{SwIfIndex: 12})
