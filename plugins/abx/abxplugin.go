@@ -32,8 +32,6 @@ import (
 	"go.pantheon.tech/stonework/plugins/abx/descriptor"
 	"go.pantheon.tech/stonework/plugins/abx/vppcalls"
 
-	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2009"
-	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2101"
 	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2106"
 	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2202"
 )

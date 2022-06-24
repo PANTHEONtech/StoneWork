@@ -33,8 +33,6 @@ import (
 	"go.pantheon.tech/stonework/plugins/nat64/descriptor"
 	"go.pantheon.tech/stonework/plugins/nat64/vppcalls"
 
-	_ "go.pantheon.tech/stonework/plugins/nat64/vppcalls/vpp2009"
-	_ "go.pantheon.tech/stonework/plugins/nat64/vppcalls/vpp2101"
 	_ "go.pantheon.tech/stonework/plugins/nat64/vppcalls/vpp2106"
 )
 

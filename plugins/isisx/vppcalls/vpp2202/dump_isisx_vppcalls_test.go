@@ -14,15 +14,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vpp2106_test
+package vpp2202_test
 
 import (
 	"testing"
 
 	. "github.com/onsi/gomega"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+
 	"go.pantheon.tech/stonework/plugins/binapi/vpp2009/vpe"
-	"go.pantheon.tech/stonework/plugins/binapi/vpp2106/isisx"
+	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/isisx"
 )
 
 func TestDumpISISXConnections(t *testing.T) {

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vpp2106_test
+package vpp2202_test
 
 import (
 	"testing"
@@ -24,16 +24,17 @@ import (
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
-	"go.pantheon.tech/stonework/plugins/binapi/vpp2106/isisx"
+
+	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/isisx"
 	"go.pantheon.tech/stonework/plugins/isisx/vppcalls"
-	"go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2106"
+	"go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2202"
 )
 
 func isisxTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.ISISXVppAPI, ifaceidx.IfaceMetadataIndexRW) {
 	ctx := vppmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIdx := ifaceidx.NewIfaceIndex(log, "if-index")
-	isisxHandler := vpp2106.NewISISXVppHandler(ctx.MockChannel, ifIdx, log)
+	isisxHandler := vpp2202.NewISISXVppHandler(ctx.MockChannel, ifIdx, log)
 	return ctx, isisxHandler, ifIdx
 }
 

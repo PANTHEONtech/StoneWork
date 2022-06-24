@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vpp2106
+package vpp2202
 
 import (
 	"testing"
@@ -25,8 +25,9 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+
 	"go.pantheon.tech/stonework/plugins/abx/vppcalls"
-	"go.pantheon.tech/stonework/plugins/binapi/vpp2106/abx"
+	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/abx"
 )
 
 func abxTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.ABXVppAPI, ifaceidx.IfaceMetadataIndexRW) {
