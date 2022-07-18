@@ -15,7 +15,7 @@
 # limitations under the License.
 
 ARG VPP_IMAGE=vpp:22.02
-ARG VPPAGENT_IMAGE=ligato/vpp-agent:latest
+ARG VPPAGENT_IMAGE=ligato/vpp-agent:v3.4.0-beta
 
 FROM $VPP_IMAGE as vpp
 FROM $VPPAGENT_IMAGE as vppagent
@@ -99,6 +99,7 @@ COPY --from=vppagent /bin/agentctl /usr/local/bin/agentctl
 
 # Install config files
 RUN mkdir -p /etc/stonework /etc/vpp
+
 COPY ./docker/vpp-startup.conf /etc/vpp/vpp.conf
 COPY ./docker/etcd.conf /etc/stonework/etcd.conf
 COPY ./docker/grpc.conf /etc/stonework/grpc.conf
@@ -106,6 +107,7 @@ COPY ./docker/aggregator.conf /etc/stonework/aggregator.conf
 COPY ./docker/initfileregistry.conf /etc/stonework/initfileregistry.conf
 COPY ./docker/supervisor.conf /etc/stonework/supervisor.conf
 COPY ./docker/init_hook.sh /usr/bin/
+
 ENV CONFIG_DIR /etc/stonework/
 ENV CNF_MODE STONEWORK
 
