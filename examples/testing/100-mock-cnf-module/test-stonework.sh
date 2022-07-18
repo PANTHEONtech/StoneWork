@@ -37,7 +37,7 @@ function check_rv { # parameters: actual rv, expected rv, error message
 
 function check_in_sync {
     echo -n "Checking if StoneWork is in-sync ... "
-    docker-compose exec stonework curl -X POST localhost:9191/scheduler/downstream-resync?verbose=1 2>&1 \
+    docker-compose exec -T stonework curl -X POST localhost:9191/scheduler/downstream-resync?verbose=1 2>&1 \
         | grep -qi -E "Executed|error"
     check_rv $? 1 "StoneWork is not in-sync"
 }
@@ -48,10 +48,6 @@ check_in_sync
 #schema=$(docker-compose exec stonework curl localhost:9191/info/configuration/jsonschema 2>/dev/null)
 schema=$(curl localhost:9191/info/configuration/jsonschema 2>/dev/null)
 
-echo "************************************************************"
-echo $schema
-echo "************************************************************"
-
 echo -n "Checking mock CNF 1 model in JSON schema ... "
 echo $schema | grep -q '"mock1Config": {'
 check_rv $? 0 "Mock CNF 1 model is missing in JSON schema"
@@ -61,15 +57,15 @@ echo $schema | grep -q '"mock2Config": {'
 check_rv $? 0 "Mock CNF 2 model is missing in JSON schema"
 
 echo -n "Checking route in mock CNF 1 ... "
-docker-compose exec mockcnf1 ip route show table 1 | grep -q "7.7.7.7 dev tap"
+docker-compose exec -T mockcnf1 ip route show table 1 | grep -q "7.7.7.7 dev tap"
 check_rv $? 0 "Mock CNF 1 has not configured route"
 
 echo -n "Checking ARP entry in mock CNF 2 ... "
-docker-compose exec mockcnf2 arp -a | grep -qe "9\.9\.9\.9.*02:02:02:02:02:02"
+docker-compose exec -T mockcnf2 arp -a | grep -qe "9\.9\.9\.9.*02:02:02:02:02:02"
 check_rv $? 0 "Mock CNF 2 has not configured the ARP entry"
 
 echo -n "Updating config ... "
-docker-compose exec stonework agentctl config update --replace /etc/stonework/config/running-config.yaml >/dev/null 2>&1
+docker-compose exec -T stonework agentctl config update --replace /etc/stonework/config/running-config.yaml >/dev/null 2>&1
 check_rv $? 0 "Config update failed"
 
 ../utils.sh waitForAgentConfig stonework 74 10 # mock CNFs make changes asynchronously
@@ -77,11 +73,11 @@ check_rv $? 0 "Config update failed"
 check_in_sync
 
 echo -n "Checking re-configured route in mock CNF 1 ... "
-docker-compose exec mockcnf1 ip route show table 2 | grep -q "7.7.7.7 dev tap"
+docker-compose exec -T mockcnf1 ip route show table 2 | grep -q "7.7.7.7 dev tap"
 check_rv $? 0 "Mock CNF 1 has not re-configured route"
 
 echo -n "Checking if mock CNF 2 removed ARP entry ... "
-docker-compose exec mockcnf2 arp -a | grep -qe "9\.9\.9\.9.*02:02:02:02:02:02"
+docker-compose exec -T mockcnf2 arp -a | grep -qe "9\.9\.9\.9.*02:02:02:02:02:02"
 check_rv $? 1 "Mock CNF 2 has not removed the ARP entry"
 
 echo "------------------------------------------------"

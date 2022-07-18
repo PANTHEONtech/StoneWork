@@ -46,5 +46,5 @@ dump-logs:
 		echo ===============================================================================;\
 		echo StoneWork running configuration;\
 		echo ===============================================================================;\
-		docker-compose exec stonework agentctl config retrieve || true;\
+		docker-compose exec -T stonework agentctl config retrieve || true;\
 	) >${LOGFILE} 2>&1"

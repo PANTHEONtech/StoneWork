@@ -37,7 +37,7 @@ function check_rv { # parameters: actual rv, expected rv, error message
 
 function check_in_sync {
     echo -n "Checking if mock CNF 1 is in-sync ... "
-    docker-compose exec mockcnf1 curl -X POST localhost:9191/scheduler/downstream-resync?verbose=1 2>&1 \
+    docker-compose exec -T mockcnf1 curl -X POST localhost:9191/scheduler/downstream-resync?verbose=1 2>&1 \
         | grep -qi -E "Executed|error"
     check_rv $? 1 "Mock CNF 1 is not in-sync"
 }
@@ -45,18 +45,18 @@ function check_in_sync {
 check_in_sync
 
 # test JSON schema
-schema=$(docker-compose exec mockcnf1 curl localhost:9191/info/configuration/jsonschema 2>/dev/null)
+schema=$(docker-compose exec -T mockcnf1 curl localhost:9191/info/configuration/jsonschema 2>/dev/null)
 
 echo -n "Checking mock CNF 1 model in JSON schema ... "
 echo $schema | grep -q '"mock1Config": {'
 check_rv $? 0 "Mock CNF 1 model is missing in JSON schema"
 
 echo -n "Checking route in mock CNF 1 ... "
-docker-compose exec mockcnf1 ip route show table 1 | grep -q "7.7.7.7 dev tap"
+docker-compose exec -T mockcnf1 ip route show table 1 | grep -q "7.7.7.7 dev tap"
 check_rv $? 0 "Mock CNF 1 has not configured route"
 
 echo -n "Updating config ... "
-docker-compose exec mockcnf1 agentctl config update --replace /etc/mockcnf/config/running-config.yaml >/dev/null 2>&1
+docker-compose exec -T mockcnf1 agentctl config update --replace /etc/mockcnf/config/running-config.yaml >/dev/null 2>&1
 check_rv $? 0 "Config update failed"
 
 ../utils.sh waitForAgentConfig mockcnf1 74 10 # mock CNFs make changes asynchronously
@@ -64,7 +64,7 @@ check_rv $? 0 "Config update failed"
 check_in_sync
 
 echo -n "Checking re-configured route in mock CNF 1 ... "
-docker-compose exec mockcnf1 ip route show table 2 | grep -q "7.7.7.7 dev tap"
+docker-compose exec -T mockcnf1 ip route show table 2 | grep -q "7.7.7.7 dev tap"
 check_rv $? 0 "Mock CNF 1 has not re-configured route"
 
 echo "------------------------------------------------"

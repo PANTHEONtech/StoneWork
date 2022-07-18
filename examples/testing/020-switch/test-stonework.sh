@@ -37,33 +37,33 @@ function check_rv { # parameters: actual rv, expected rv, error message
 
 function check_in_sync {
     echo -n "Checking if StoneWork is in-sync ... "
-    docker-compose exec stonework agentctl config resync --verbose 2>&1 | grep -qi -E "Executed|error"
+    docker-compose exec -T stonework agentctl config resync --verbose 2>&1 | grep -qi -E "Executed|error"
     check_rv $? 1 "StoneWork is not in-sync"
 }
 
 check_in_sync
 
 echo -n "Checking bridge configuration in StoneWork ... "
-[ $(docker-compose exec stonework agentctl values 2>/dev/null \
+[ $(docker-compose exec -T stonework agentctl values 2>/dev/null \
     | grep -c -E "vpp.l2.bridge-domain.*CONFIGURED|vpp/bd/.*CONFIGURED") -eq 3 ]
 check_rv $? 0 "Bridge configuration missing in StoneWork" 
 
 echo -n "Checking bridge in VPP ... "
-[ $(docker-compose exec stonework vppctl sh int addr | grep -c "L2 bridge") -eq 2 ]
+[ $(docker-compose exec -T stonework vppctl sh int addr | grep -c "L2 bridge") -eq 2 ]
 check_rv $? 0 "Bridge not configured"
 
-docker-compose exec stonework vppctl trace add virtio-input 10
+docker-compose exec -T stonework vppctl trace add virtio-input 10
 
 echo -n "Pinging ... "
-docker-compose exec tester1 ping -c 1 -w 1 10.10.1.2 >/dev/null
+docker-compose exec -T tester1 ping -c 1 -w 1 10.10.1.2 >/dev/null
 check_rv $? 0 "Ping failed"
 
 echo -n "Checking if ping request went through StoneWork ... "
-docker-compose exec stonework vppctl show trace | grep -q "ICMP: 10.10.1.1 -> 10.10.1.2"
+docker-compose exec -T stonework vppctl show trace | grep -q "ICMP: 10.10.1.1 -> 10.10.1.2"
 check_rv $? 0 "Ping request did not go through StoneWork"
 
 echo -n "Checking if ping response went through StoneWork ... "
-docker-compose exec stonework vppctl show trace | grep -q "ICMP: 10.10.1.2 -> 10.10.1.1"
+docker-compose exec -T stonework vppctl show trace | grep -q "ICMP: 10.10.1.2 -> 10.10.1.1"
 check_rv $? 0 "Ping response did not go through StoneWork"
 
 echo "------------------------------------------------"
