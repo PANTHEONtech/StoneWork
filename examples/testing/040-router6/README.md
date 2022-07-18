@@ -39,7 +39,7 @@ Prerequisities and instructions for running the example can be found in the
 
 **Note:** to use the alternate configuration file, start the example as usual and then run
 ```
-$ docker exec stonework agentctl config update --replace /etc/stonework/config/config-with-arps.yaml
+$ docker-compose exec stonework agentctl config update --replace /etc/stonework/config/config-with-arps.yaml
 ```
 
 [readme-testing-examples]: ../README.md

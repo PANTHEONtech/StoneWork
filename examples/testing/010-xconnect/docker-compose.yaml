@@ -18,7 +18,6 @@ version: '3.3'
 
 services:
   stonework:
-    container_name: stonework
     image: ${STONEWORK_IMAGE:-ghcr.io/pantheontech/stonework:22.02}
     depends_on:
       - tester1
@@ -30,14 +29,13 @@ services:
       MICROSERVICE_LABEL: stonework
       ETCD_CONFIG: ""
     ports:
-      - 9111:9111
-      - 9191:9191
+      - "9111:9111"
+      - "9191:9191"
     volumes:
       - /run/docker.sock:/run/docker.sock
       - ./config:/etc/stonework/config
 
   tester1:
-    container_name: tester1
     image: stonework-tester:22.02
     privileged: true
     environment:
@@ -49,7 +47,6 @@ services:
       '
 
   tester2:
-    container_name: tester2
     image: stonework-tester:22.02
     privileged: true
     environment:

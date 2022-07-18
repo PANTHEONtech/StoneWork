@@ -47,9 +47,9 @@ dump-logs:
 		echo ===============================================================================;\
 		echo Mock CNF logs;\
 		echo ===============================================================================;\
-		docker logs mockcnf1 || true;\
+		docker-compose logs mockcnf1 || true;\
 		echo ===============================================================================;\
 		echo Mock CNF running configuration;\
 		echo ===============================================================================;\
-		docker exec mockcnf1 agentctl config retrieve || true;\
+		docker-compose exec mockcnf1 agentctl config retrieve || true;\
 	) >${LOGFILE} 2>&1"

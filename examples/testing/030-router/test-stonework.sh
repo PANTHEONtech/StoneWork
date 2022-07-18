@@ -37,33 +37,33 @@ function check_rv { # parameters: actual rv, expected rv, error message
 
 function check_in_sync {
     echo -n "Checking if StoneWork is in-sync ... "
-    docker exec stonework agentctl config resync --verbose 2>&1 | grep -qi -E "Executed|error"
+    docker-compose exec stonework agentctl config resync --verbose 2>&1 | grep -qi -E "Executed|error"
     check_rv $? 1 "StoneWork is not in-sync"
 }
 
 check_in_sync
 
 echo -n "Checking route configuration in StoneWork ... "
-docker exec stonework agentctl values 2>/dev/null \
+docker-compose exec stonework agentctl values 2>/dev/null \
     | grep -q -E "vpp.route.*dst/10.10.3.0/24/gw/10.10.2.2.*CONFIGURED"
 check_rv $? 0 "Route configuration missing in StoneWork" 
 
 echo -n "Checking route in VPP ... "
-docker exec stonework vppctl sh ip fib | grep -q "10.10.3.0/24"
+docker-compose exec stonework vppctl sh ip fib | grep -q "10.10.3.0/24"
 check_rv $? 0 "Route not configured"
 
-docker exec stonework vppctl trace add virtio-input 10
+docker-compose exec stonework vppctl trace add virtio-input 10
 
 echo -n "Pinging ... "
-docker exec tester1 ping -c 1 -w 1 10.10.3.2 >/dev/null
+docker-compose exec tester1 ping -c 1 -w 1 10.10.3.2 >/dev/null
 check_rv $? 0 "Ping failed"
 
 echo -n "Checking if ping request went through StoneWork ... "
-docker exec stonework vppctl show trace | grep -q "ICMP: 10.10.1.1 -> 10.10.3.2"
+docker-compose exec stonework vppctl show trace | grep -q "ICMP: 10.10.1.1 -> 10.10.3.2"
 check_rv $? 0 "Ping request did not go through StoneWork"
 
 echo -n "Checking if ping response went through StoneWork ... "
-docker exec stonework vppctl show trace | grep -q "ICMP: 10.10.3.2 -> 10.10.1.1"
+docker-compose exec stonework vppctl show trace | grep -q "ICMP: 10.10.3.2 -> 10.10.1.1"
 check_rv $? 0 "Ping response did not go through StoneWork"
 
 echo "------------------------------------------------"

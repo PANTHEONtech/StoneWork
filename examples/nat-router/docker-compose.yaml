@@ -21,7 +21,6 @@ volumes:
 
 services:
   stonework:
-    container_name: stonework
     image: "ghcr.io/pantheontech/stonework:22.02"
     privileged: true
     pid: "host"

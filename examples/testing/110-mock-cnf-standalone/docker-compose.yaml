@@ -18,7 +18,6 @@ version: '3.3'
 
 services:
   mockcnf1:
-    container_name: mockcnf1
     image: "stonework-mockcnf:22.02"
     privileged: true
     environment:

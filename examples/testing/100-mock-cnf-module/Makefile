@@ -35,7 +35,7 @@ stop-example-ignore-errors:
 # fix for "existing container with the same name" (docker-compose down of this test can't match and clean them
 # if it is for example other image. This points to some environment cleanup bug in some other test)
 environment-cleanup:
-	@cat docker-compose.yaml | grep container_name: | awk '{print $$2}' | xargs docker rm -f 1> /dev/null 2> /dev/null
+	echo NOP #@cat docker-compose.yaml | grep container_name: | awk '{print $$2}' | xargs docker rm -f 1> /dev/null 2> /dev/null
 
 test-stonework:
 	@./test-stonework.sh
@@ -47,17 +47,17 @@ dump-logs:
 		echo ===============================================================================;\
 		echo StoneWork logs;\
 		echo ===============================================================================;\
-		docker logs stonework || true;\
+		docker-compose logs stonework || true;\
 		echo ===============================================================================;\
 		echo StoneWork running configuration;\
 		echo ===============================================================================;\
-		docker exec stonework agentctl config retrieve || true;\
+		docker-compose exec stonework agentctl config retrieve || true;\
 		echo ===============================================================================;\
 		echo Mock CNF 1 logs;\
 		echo ===============================================================================;\
-		docker logs mockcnf1 || true;\
+		docker-compose logs mockcnf1 || true;\
 		echo ===============================================================================;\
 		echo Mock CNF 2 logs;\
 		echo ===============================================================================;\
-		docker logs mockcnf2 || true;\
+		docker-compose logs mockcnf2 || true;\
 	) >${LOGFILE} 2>&1"

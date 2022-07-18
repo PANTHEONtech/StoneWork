@@ -101,7 +101,7 @@ rtt min/avg/max/mdev = 0.247/0.492/0.839/0.251 ms
 
 Let's enter the VPP CLI:
 ```
-$ docker exec -it stonework vppctl
+$ docker-compose exec -it stonework vppctl
     _______    _        _   _____  ___ 
  __/ __/ _ \  (_)__    | | / / _ \/ _ \
  _/ _// // / / / _ \   | |/ / ___/ ___/
@@ -147,7 +147,7 @@ StoneWork container.
 
 Obtain the currently running configuration with:
 ```
-$ docker exec stonework agentctl config get 2>/dev/null
+$ docker-compose exec stonework agentctl config get 2>/dev/null
 netallocConfig: {}
 linuxConfig:
   interfaces:
@@ -210,7 +210,7 @@ linuxConfig:
 Remember, that the config dir is mounted into
 the container under `/etc/stonework/config`. Apply the new, desired config with:
 ```
-$ docker exec stonework agentctl config update --replace /etc/stonework/config/new-config.yaml
+$ docker-compose exec stonework agentctl config update --replace /etc/stonework/config/new-config.yaml
 ```
 Observe the performed config changes:
 ```
@@ -223,7 +223,7 @@ vpp: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         RX errors 0  dropped 0  overruns 0  frame 0
         TX packets 77  bytes 11885 (11.8 KB)
         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
-$ docker exec stonework vppctl show interface address
+$ docker-compose exec stonework vppctl show interface address
 local0 (dn):
 tap0 (up):
   L3 192.168.222.3/30
@@ -274,7 +274,7 @@ $ curl -v --header "Content-Type: application/yaml" --request PUT --data-binary 
 To observe what is happening behind the scenes and to debug any potential issues,
 obtain StoneWork logs with:
 ```
-$ docker logs stonework
+$ docker-compose logs stonework
 ```
 
 ### Shutdown & Undeploy
