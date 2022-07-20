@@ -38,10 +38,10 @@ RELEASE_VERSION_MAJOR_MINOR = $(shell echo $(RELEASE_VERSION_FULL) | cut -d '.' 
 endif
 
 ifeq ($(VPP_VERSION),)
-VPP_VERSION="21.06"
+VPP_VERSION="22.02"
 endif
 ifeq ($(DEV_VERSION),) # for tagging in-development images
-DEV_VERSION="21.06"
+DEV_VERSION="22.02"
 endif
 REPO="ghcr.io/pantheontech"
 STONEWORK_VPP_IMAGE="stonework-vpp"
@@ -51,6 +51,8 @@ STONEWORK_PROD_IMAGE="stonework"
 TESTER_IMAGE="stonework-tester"
 MOCK_CNF_IMAGE="stonework-mockcnf"
 PROTO_ROOTGEN_IMAGE="stonework-proto-rootgen"
+
+export DOCKER_BUILDKIT=1
 
 help:
 	@echo "List of make targets:"
@@ -226,9 +228,8 @@ generate-binapi: get-binapi-generator
     # generated from vpp json api files copied into StoneWork repository (plugins/binapi/vppXXXX/api)
     # from VPP (/usr/share/vpp/api/(core|plugins))
 	@echo "=> generating binary API"
-	@cd plugins/binapi/vpp2009 && VPP_VERSION=20.09 go generate .
-	@cd plugins/binapi/vpp2101 && VPP_VERSION=21.01 go generate .
 	@cd plugins/binapi/vpp2106 && VPP_VERSION=21.06 go generate .
+	@cd plugins/binapi/vpp2202 && VPP_VERSION=22.02 go generate .
 
 generate-descriptor-adapters: get-descriptor-adapter-generator
 	@echo "# generating descriptor adapters"

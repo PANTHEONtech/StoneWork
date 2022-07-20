@@ -1,9 +1,9 @@
 module go.pantheon.tech/stonework
 
-go 1.17
+go 1.18
 
 require (
-	git.fd.io/govpp.git v0.4.0
+	git.fd.io/govpp.git v0.4.1-0.20220519085400-f06c92da266e
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
@@ -13,7 +13,7 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
-	go.ligato.io/vpp-agent/v3 v3.3.0
+	go.ligato.io/vpp-agent/v3 v3.4.0
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
 )
@@ -21,7 +21,7 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
-	github.com/Microsoft/hcsshim v0.8.24 // indirect
+	github.com/Microsoft/hcsshim v0.9.3 // indirect
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9 // indirect
 	github.com/bennyscetbun/jsongo v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -29,7 +29,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/containerd/cgroups v1.0.4 // indirect
 	github.com/containerd/containerd v1.5.13 // indirect
-	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/coreos/go-iptables v0.5.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect

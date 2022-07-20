@@ -42,9 +42,9 @@ dump-logs:
 		echo ===============================================================================;\
 		echo StoneWork logs;\
 		echo ===============================================================================;\
-		docker logs stonework || true;\
+		docker-compose logs stonework || true;\
 		echo ===============================================================================;\
 		echo StoneWork running configuration;\
 		echo ===============================================================================;\
-		docker exec stonework agentctl config retrieve || true;\
+		docker-compose exec -T stonework agentctl config retrieve || true;\
 	) >${LOGFILE} 2>&1"

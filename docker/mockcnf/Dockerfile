@@ -15,32 +15,32 @@
 # limitations under the License.
 
 ARG VPP_IMAGE=vpp:22.02
-ARG VPPAGENT_IMAGE=ligato/vpp-agent:v3.3.0
+ARG VPPAGENT_IMAGE=ligato/vpp-agent:v3.4.0
 
 FROM $VPP_IMAGE as vpp
 FROM $VPPAGENT_IMAGE as vppagent
 FROM ubuntu:20.04 as base
 
 RUN apt-get update && apt-get install -y \
-    git \
-    gcc \
-    make \
-    iptables \
-    net-tools \
-    # for debugging
-    binutils \
-    curl \
-    wget \
-    tcpdump \
-    iproute2 \
-    iputils-ping \
-    # stats client
-    python3 \
-    python3-cffi && \
+		git \
+		gcc \
+		make \
+		iptables \
+		net-tools \
+		# for debugging
+		binutils \
+		curl \
+		wget \
+		tcpdump \
+		iproute2 \
+		iputils-ping \
+		# stats client
+		python3 \
+		python3-cffi && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.17.6
+ENV GOLANG_VERSION 1.18.3
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \

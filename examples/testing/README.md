@@ -77,15 +77,15 @@ $ agentctl <command>
 ```
 Otherwise, you can run
 ```
-$ docker exec stonework agentctl <command>
+$ docker-compose exec stonework agentctl <command>
 ```
 For more information about `agentctl` commands, see [Getting started example][getting-started].
 
 You can explore any container in the topology using
 ```
-$ docker exec -it <container-name> bash
+$ docker-compose exec -it <container-name> bash
 $ # Example:
-$ docker exec -it stonework bash
+$ docker-compose exec -it stonework bash
 ```
 
 **Note**: Automated tests for StoneWork can be found in `test-stonework.sh`.
@@ -101,7 +101,7 @@ $ ./test-stonework.sh
 
 To study StoneWork logs, run
 ```
-$ docker logs stonework
+$ docker-compose logs stonework
 ```
 
 ### Stop The Example

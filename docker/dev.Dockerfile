@@ -14,33 +14,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_IMAGE=vpp:21.06
-ARG VPPAGENT_IMAGE=ligato/vpp-agent:v3.3.0
+ARG VPP_IMAGE=vpp:22.02
+ARG VPPAGENT_IMAGE=ligato/vpp-agent:v3.4.0
 
 FROM $VPP_IMAGE as vpp
 FROM $VPPAGENT_IMAGE as vppagent
 FROM ubuntu:20.04 as base
 
 RUN apt-get update && apt-get install -y \
-    git \
-    gcc \
-    make \
-    iptables \
-    rsync \
-    # for debugging
-    binutils \
-    curl \
-    wget \
-    tcpdump \
-    iproute2 \
-    iputils-ping \
-    # stats client
-    python3 \
-    python3-cffi && \
-    rm -rf /var/lib/apt/lists/*
+		git \
+		gcc \
+		make \
+		iptables \
+		rsync \
+		# for debugging
+		binutils \
+		curl \
+		wget \
+		tcpdump \
+		iproute2 \
+		iputils-ping \
+		# stats client
+		python3 \
+		python3-cffi \
+	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.17.6
+ENV GOLANG_VERSION 1.18.3
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -99,6 +99,7 @@ COPY --from=vppagent /bin/agentctl /usr/local/bin/agentctl
 
 # Install config files
 RUN mkdir -p /etc/stonework /etc/vpp
+
 COPY ./docker/vpp-startup.conf /etc/vpp/vpp.conf
 COPY ./docker/etcd.conf /etc/stonework/etcd.conf
 COPY ./docker/grpc.conf /etc/stonework/grpc.conf
@@ -106,6 +107,7 @@ COPY ./docker/aggregator.conf /etc/stonework/aggregator.conf
 COPY ./docker/initfileregistry.conf /etc/stonework/initfileregistry.conf
 COPY ./docker/supervisor.conf /etc/stonework/supervisor.conf
 COPY ./docker/init_hook.sh /usr/bin/
+
 ENV CONFIG_DIR /etc/stonework/
 ENV CNF_MODE STONEWORK
 
@@ -118,6 +120,9 @@ RUN rm /tmp/legacy-nat.conf
 # Install script for packet tracing on VPP
 COPY ./docker/vpptrace.sh /usr/bin/vpptrace.sh
 RUN chmod u+x /usr/bin/vpptrace.sh
+
+COPY ./plugins/binapi/vpp2202/api/abx.api.json /usr/share/vpp/api/plugins/
+COPY ./plugins/binapi/vpp2202/api/isisx.api.json /usr/share/vpp/api/plugins/
 
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
     mkdir -p /run/vpp /run/stonework/vpp && \

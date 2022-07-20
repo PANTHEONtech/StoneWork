@@ -22,7 +22,7 @@
 # - timeout, in seconds
 function waitForAgentConfig {
 	SLEPT=0
-	while ! [ $(docker exec $1 agentctl values 2>/dev/null | grep -c -E "CONFIGURED|obtained") -ge $2 ]
+	while ! [ $(docker-compose exec -T $1 agentctl values 2>/dev/null | grep -c -E "CONFIGURED|obtained") -ge $2 ]
 	do
 		sleep 1
 		SLEPT=$((SLEPT+1))

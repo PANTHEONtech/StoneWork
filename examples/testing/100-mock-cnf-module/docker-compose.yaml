@@ -21,8 +21,7 @@ volumes:
 
 services:
   stonework:
-    container_name: stonework
-    image: ${STONEWORK_IMAGE:-ghcr.io/pantheontech/stonework:21.06}
+    image: ${STONEWORK_IMAGE:-ghcr.io/pantheontech/stonework:22.02}
     privileged: true
     pid: "host"
     environment:
@@ -43,7 +42,6 @@ services:
       - ./config:/etc/stonework/config
 
   router-ns:
-    container_name: router-ns
     image: "busybox:1.29.3"
     command: >
       sh -c '
@@ -52,8 +50,7 @@ services:
       '
 
   mockcnf1:
-    container_name: mockcnf1
-    image: "stonework-mockcnf:21.06"
+    image: "stonework-mockcnf:22.02"
     depends_on:
       - stonework
       - router-ns
@@ -71,8 +68,7 @@ services:
     network_mode: "service:router-ns"
 
   mockcnf2:
-    container_name: mockcnf2
-    image: "stonework-mockcnf:21.06"
+    image: "stonework-mockcnf:22.02"
     depends_on:
       - stonework
       - router-ns

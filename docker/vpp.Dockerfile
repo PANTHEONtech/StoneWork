@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_VERSION=21.06
+ARG VPP_VERSION=22.02
 ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE}
@@ -28,8 +28,9 @@ RUN set -ex; \
     	build-essential \
     	sudo \
     	cmake \
-    	ninja-build && \
-    rm -rf /var/lib/apt/lists/*
+    	ninja-build \
+    	python3-ply \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/dev
 
@@ -41,35 +42,50 @@ RUN cd vpp && \
 
 #----------------------
 # build & install external plugins (ABX, ISISX)
-ARG VPP_VERSION=21.06
+ARG VPP_VERSION
 COPY vpp/abx /tmp/abx
 COPY vpp/isisx /tmp/isisx
 
-RUN VPPVER=$(echo $VPP_VERSION | tr -d ".") && \
+# Plugins
+RUN set -ex; \
+    VPPVER=$(echo $VPP_VERSION | tr -d ".") && \
     cp -r /tmp/abx/vpp${VPPVER} /opt/dev/abx && \
     cp -r /tmp/isisx/vpp${VPPVER} /opt/dev/isisx    
 
-RUN cd abx && ./build.sh /opt/dev/vpp/
-
-RUN cp /opt/dev/abx/build/lib/vpp_plugins/abx_plugin.so \
-       /usr/lib/x86_64-linux-gnu/vpp_plugins/
-RUN cp /opt/dev/abx/build/abx/abx.api.json \
+# Plugin ABX
+RUN set -ex; \
+	cd abx; \
+    ./build.sh /opt/dev/vpp/
+RUN set -ex; \
+	cp /opt/dev/abx/build/lib/vpp_plugins/abx_plugin.so \
+       /usr/lib/x86_64-linux-gnu/vpp_plugins/; \
+	cp /opt/dev/abx/build/abx/abx.api.json \
        /usr/share/vpp/api/core/
 
-RUN cd ./isisx && ./build.sh /opt/dev/vpp/
-
-RUN cp /opt/dev/isisx/build/lib/vpp_plugins/isisx_plugin.so \
-       /usr/lib/x86_64-linux-gnu/vpp_plugins/
-RUN cp /opt/dev/isisx/build/isisx/isisx.api.json \
+# Plugin plugin
+RUN set -ex; \
+	cd ./isisx; \
+    ./build.sh /opt/dev/vpp/
+RUN set -ex; \
+	cp /opt/dev/isisx/build/lib/vpp_plugins/isisx_plugin.so \
+       /usr/lib/x86_64-linux-gnu/vpp_plugins/; \
+	cp /opt/dev/isisx/build/isisx/isisx.api.json \
        /usr/share/vpp/api/core/
 
 # there is a bug in VPP 21.06 that api files are not built on standard location
 # for external plugins, to reproduce it is enough to try to build sample-plugin
-RUN if [ "$VPP_VERSION" = "21.06" ]; \
+RUN set -ex; \
+    if [ "$VPP_VERSION" = "22.02" ]; \
     then \
-      cp /vpp-api/vapi/* /usr/include/vapi/; \
-    else \
+      cp abx/build/CMakeFiles/vpp-api/vapi/* /usr/include/vapi/; \
+    elif [ "$VPP_VERSION" = "21.06" ]; \
+	then \
+	  cp /vpp-api/vapi/* /usr/include/vapi/; \
+	else \
       cp /opt/dev/abx/build/vpp-api/vapi/* /usr/include/vapi/; \
     fi
 
-CMD ["/usr/bin/vpp", "-c", "/etc/vpp/startup.conf"]
+COPY docker/vpp-startup.conf /etc/vpp/startup.conf
+
+CMD ["/bin/bash", "-c", "mkdir -p /run/stonework/vpp; \
+	  exec /usr/bin/vpp -c /etc/vpp/startup.conf"]

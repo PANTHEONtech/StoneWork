@@ -14,6 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM stonework-mockcnf:21.06
+FROM stonework-mockcnf:22.02
 
 COPY mockcnf /usr/local/bin/mockcnf

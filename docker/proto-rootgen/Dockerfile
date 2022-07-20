@@ -18,19 +18,19 @@
 FROM ubuntu:20.04 as base
 
 RUN apt-get update && apt-get install -y \
-    git \
-    gcc \
-    make \
-    wget \
-    curl \
-    zip \
-    rsync \
-    pandoc \
-    texlive &&\
+		git \
+		gcc \
+		make \
+		wget \
+		curl \
+		zip \
+		rsync \
+		pandoc \
+		texlive &&\
     rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.17.6
+ENV GOLANG_VERSION 1.18.3
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
