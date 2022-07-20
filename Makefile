@@ -135,8 +135,10 @@ endif
 push-images:
 ifneq ($(RELEASE_TAG_CHECKED),)
 	docker push ${REPO}/${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
+ifneq ($(findstring -,$(RELEASE_TAG_CHECKED)),-)
 	docker push ${REPO}/${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_MAJOR_MINOR}
 	docker push ${REPO}/${STONEWORK_PROD_IMAGE}
+endif
 else
 	@echo "Release tag is empty or has incorrect format."
 	@echo "Supplied release tag: ${RELEASE_TAG}"
