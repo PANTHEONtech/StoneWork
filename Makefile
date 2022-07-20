@@ -133,6 +133,9 @@ ifneq ($(RELEASE_TAG_CHECKED),)
 endif
 
 push-images:
+	docker push ${REPO}/${STONEWORK_VPP_IMAGE}:${VPP_VERSION}
+	docker push ${REPO}/${STONEWORK_VPP_IMAGE}
+
 ifneq ($(RELEASE_TAG_CHECKED),)
 	docker push ${REPO}/${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
 ifneq ($(findstring -,$(RELEASE_TAG_CHECKED)),-)
