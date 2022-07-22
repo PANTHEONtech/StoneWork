@@ -125,6 +125,8 @@ proto-rootgen-image:
 	./scripts/build.sh proto-rootgen
 
 images: vpp-image dev-image prod-image tester-image mockcnf-image
+	docker tag ${STONEWORK_VPP_IMAGE}:${VPP_VERSION} ${REPO}/${STONEWORK_VPP_IMAGE}:${VPP_VERSION}
+
 ifneq ($(RELEASE_TAG_CHECKED),)
 	# tag release images
 	docker tag ${STONEWORK_PROD_IMAGE}:${DEV_VERSION} ${REPO}/${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
@@ -134,7 +136,6 @@ endif
 
 push-images:
 	docker push ${REPO}/${STONEWORK_VPP_IMAGE}:${VPP_VERSION}
-	docker push ${REPO}/${STONEWORK_VPP_IMAGE}
 
 ifneq ($(RELEASE_TAG_CHECKED),)
 	docker push ${REPO}/${STONEWORK_PROD_IMAGE}:${RELEASE_VERSION_FULL}
