@@ -47,6 +47,7 @@ VLIB_INIT_FUNCTION (abx_init);
 VNET_FEATURE_INIT (abx_ip4_unicast, static) = {
   .arc_name = "ip4-unicast",
   .node_name = "abx-ip4",
+  .runs_before = VNET_FEATURES("nat-pre-out2in", "nat-pre-in2out", "nat44-ed-out2in", "nat44-ed-in2out"),
 };
 
 VNET_FEATURE_INIT (abx_ip4_multicast, static) = {
