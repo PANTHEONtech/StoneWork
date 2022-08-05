@@ -93,6 +93,8 @@ abx_node_fn_inline (vlib_main_t * vm,
   abx_next_t next_index;
   u32 pkts_abx_fwd = 0;
 
+  vnet_main_t *vnm = vnet_get_main ();
+
   from = vlib_frame_vector_args (frame);
   n_left_from = frame->n_vectors;
   next_index = node->cached_next_index;
@@ -156,16 +158,6 @@ abx_node_fn_inline (vlib_main_t * vm,
 		  u8 l2off_valid = b0->flags & VNET_BUFFER_F_L2_HDR_OFFSET_VALID;
 		  u16 l2off = l2off_valid ? vnet_buffer (b0)->l2_hdr_offset : 0;
 		  orig_eth = (ethernet_header_t *)(b0->data + l2off);
-		  vlib_buffer_advance (b0, -sizeof (ethernet_header_t));
-		  new_eth = vlib_buffer_get_current (b0);
-
-		  if (ethernet_frame_is_tagged (clib_net_to_host_u16 (orig_eth->type)))
-		    {
-			  /* Remove VLAN tag. */
-			  memmove(new_eth->src_address, orig_eth->src_address, 6);
-			  memmove(new_eth->dst_address, orig_eth->dst_address, 6);
-			  vnet_buffer (b0)->l2_hdr_offset = b0->current_data;
-		    }
 
 		  next0 = ABX_NEXT_INTERFACE_OUTPUT;
 		  matched = true;
@@ -176,7 +168,69 @@ abx_node_fn_inline (vlib_main_t * vm,
 		      ap0 = abx_policy_get (aia0->aia_abx);
 		      if (ap0)
 			{
-			  /* Overwrite dest mac address if not muticast */
+			  vlib_buffer_advance (b0,
+					       -sizeof (ethernet_header_t));
+
+			  u32 outer_vlan = ~0, inner_vlan = ~0;
+
+			  vnet_sw_interface_t *si0 = vnet_get_sw_interface (
+			    vnm, ap0->ap_tx_sw_if_index);
+			  if (si0->type == VNET_SW_INTERFACE_TYPE_SUB)
+			    {
+			      if (si0->sub.eth.flags.one_tag == 1)
+				{
+				  vlib_buffer_advance (
+				    b0, -4 /* space for 1 VLAN tag. */);
+				  outer_vlan =
+				    (si0->sub.eth.outer_vlan_id << 16) |
+				    0x0800;
+				}
+			      else if (si0->sub.eth.flags.two_tags == 1)
+				{
+				  vlib_buffer_advance (
+				    b0, -8 /* space for 2 VLAN tags. */);
+				  outer_vlan =
+				    (si0->sub.eth.outer_vlan_id << 16) |
+				    0x8100;
+				  inner_vlan =
+				    (si0->sub.eth.inner_vlan_id << 16) |
+				    0x0800;
+				}
+			    }
+
+			  new_eth = vlib_buffer_get_current (b0);
+
+			  if (ethernet_frame_is_tagged (
+				clib_net_to_host_u16 (orig_eth->type)) ||
+			      si0->type == VNET_SW_INTERFACE_TYPE_SUB)
+			    {
+			      /* Remove VLAN tags from old frame. */
+			      memmove (new_eth->dst_address,
+				       orig_eth->dst_address, 6);
+			      memmove (new_eth->src_address,
+				       orig_eth->src_address, 6);
+			      vnet_buffer (b0)->l2_hdr_offset =
+				b0->current_data;
+			    }
+
+			  if (si0->type == VNET_SW_INTERFACE_TYPE_SUB &&
+			      outer_vlan != (u32) ~0)
+			    {
+			      new_eth->type =
+				(si0->sub.eth.flags.dot1ad == 1) ?
+				  clib_net_to_host_u16 (0x88a8) :
+				  clib_net_to_host_u16 (0x8100);
+			      u32 *vlan_tag = (u32 *) (new_eth + 1);
+			      *vlan_tag = clib_host_to_net_u32 (outer_vlan);
+			      if (inner_vlan != (u32) ~0)
+				{
+				  u32 *inner_vlan_tag = (u32 *) (vlan_tag + 1);
+				  *inner_vlan_tag =
+				    clib_host_to_net_u32 (inner_vlan);
+				}
+			    }
+
+			  /* Overwrite dest mac address if not multicast */
 			  if (!mac_address_is_zero (&ap0->ap_dst_mac))
 			    {
 			      if ((!is_ip6
