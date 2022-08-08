@@ -18,11 +18,11 @@ package vpp2202
 
 import (
 	"fmt"
-	"net"
 
 	"github.com/go-errors/errors"
 
 	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/abx"
+	"go.pantheon.tech/stonework/plugins/binapi/vpp2202/ethernet_types"
 )
 
 // GetAbxVersion retrieves version of the VPP ABX plugin
@@ -38,8 +38,8 @@ func (h *ABXVppHandler) GetAbxVersion() (ver string, err error) {
 }
 
 // AddAbxPolicy creates new ABX entry
-func (h *ABXVppHandler) AddAbxPolicy(policyID uint32, aclID uint32, tx_if string, dst_mac string) error {
-	if err := h.abxAddDelPolicy(policyID, aclID, tx_if, dst_mac, true); err != nil {
+func (h *ABXVppHandler) AddAbxPolicy(policyID uint32, aclID uint32, txIf string, dstMac string) error {
+	if err := h.abxAddDelPolicy(policyID, aclID, txIf, dstMac, true); err != nil {
 		return errors.Errorf("failed to add ABX policy %d (ACL: %v): %v", policyID, aclID, err)
 	}
 	return nil
@@ -64,7 +64,7 @@ func (h *ABXVppHandler) AbxAttachInterface(policyID, ifIdx, priority uint32) err
 // AbxDetachInterface detaches interface from the ABF
 func (h *ABXVppHandler) AbxDetachInterface(policyID, ifIdx, priority uint32) error {
 	if err := h.abxAttachDetachInterface(policyID, ifIdx, priority, false); err != nil {
-		return errors.Errorf("failed to detach interface %d from ABF policy %d: %v", ifIdx, policyID, err)
+		return errors.Errorf("failed to detach interface %d from ABX policy %d: %v", ifIdx, policyID, err)
 	}
 	return nil
 }
@@ -83,14 +83,21 @@ func (h *ABXVppHandler) abxAttachDetachInterface(policyID, ifIdx, priority uint3
 	return h.callsChannel.SendRequest(req).ReceiveReply(reply)
 }
 
-func (h *ABXVppHandler) abxAddDelPolicy(policyID, aclID uint32, txInterface string, dstMac string, isAdd bool) error {
+func (h *ABXVppHandler) abxAddDelPolicy(policyID, aclID uint32, txInterface string, dstMac string, isAdd bool) (err error) {
 	var txSwIfIndex uint32
 	if isAdd {
 		meta, found := h.ifIndexes.LookupByName(txInterface)
 		if !found {
-			return errors.Errorf("interface %s not found", txInterface)
+			return errors.Errorf("tx interface %s not found", txInterface)
 		}
 		txSwIfIndex = meta.SwIfIndex
+	}
+	var dstMacAddr ethernet_types.MacAddress
+	if dstMac != "" {
+		dstMacAddr, err = ethernet_types.ParseMacAddress(dstMac)
+		if err != nil {
+			return fmt.Errorf("parse dstMac error: %w", err)
+		}
 	}
 
 	req := &abx.AbxPolicyAddDel{
@@ -99,18 +106,11 @@ func (h *ABXVppHandler) abxAddDelPolicy(policyID, aclID uint32, txInterface stri
 			PolicyID:    policyID,
 			ACLIndex:    aclID,
 			TxSwIfIndex: txSwIfIndex,
+			DstMac:      dstMacAddr,
 		},
 	}
 	reply := &abx.AbxPolicyAddDelReply{}
 
-	if dstMac != "" {
-		var err error
-		macAddr, err := net.ParseMAC(dstMac)
-		if err != nil {
-			return err
-		}
-		copy(req.Policy.DstMac[:], macAddr)
-	}
 	return h.callsChannel.SendRequest(req).ReceiveReply(reply)
 }
 

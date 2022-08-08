@@ -78,7 +78,6 @@ func (h *ABXVppHandler) dumpABXInterfaces() (map[uint32][]*vpp_abx.ABX_AttachedI
 		attached := &vpp_abx.ABX_AttachedInterface{
 			InputInterface: ifName,
 			Priority:       reply.Attach.Priority,
-			//			IsIpv6:         uintToBool(reply.Attach.IsIPv6),
 		}
 
 		_, ok := abxIfs[reply.Attach.PolicyID]
@@ -93,9 +92,8 @@ func (h *ABXVppHandler) dumpABXInterfaces() (map[uint32][]*vpp_abx.ABX_AttachedI
 
 func (h *ABXVppHandler) dumpABXPolicy() ([]*vppcalls.ABXDetails, error) {
 	var abxs []*vppcalls.ABXDetails
-	req := &abx.AbxPolicyDump{}
-	reqCtx := h.callsChannel.SendMultiRequest(req)
 
+	reqCtx := h.callsChannel.SendMultiRequest(&abx.AbxPolicyDump{})
 	for {
 		reply := &abx.AbxPolicyDetails{}
 		last, err := reqCtx.ReceiveReply(reply)
@@ -112,11 +110,22 @@ func (h *ABXVppHandler) dumpABXPolicy() ([]*vppcalls.ABXDetails, error) {
 			aclName = unknownName
 		}
 
+		// output interface name
+		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(reply.Policy.TxSwIfIndex)
+		if !exists {
+			ifName = unknownName
+		}
+		dstMac := ""
+		if mac := reply.Policy.DstMac.String(); mac != "00:00:00:00:00:00" {
+			dstMac = mac
+		}
+
 		abxData := &vppcalls.ABXDetails{
 			ABX: &vpp_abx.ABX{
-				Index:   reply.Policy.PolicyID,
-				AclName: aclName,
-				// ForwardingPaths: fwdPaths,
+				Index:           reply.Policy.PolicyID,
+				AclName:         aclName,
+				OutputInterface: ifName,
+				DstMac:          dstMac,
 			},
 			Meta: &vppcalls.ABXMeta{
 				PolicyID: reply.Policy.PolicyID,
@@ -127,11 +136,4 @@ func (h *ABXVppHandler) dumpABXPolicy() ([]*vppcalls.ABXDetails, error) {
 	}
 
 	return abxs, nil
-}
-
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
 }
