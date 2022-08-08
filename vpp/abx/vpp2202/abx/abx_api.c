@@ -132,7 +132,7 @@ abx_policy_send_details (
   mp->policy.policy_id = htonl (ap->ap_id);
   mp->policy.acl_index = htonl (ap->ap_acl);
   mp->policy.tx_sw_if_index = htonl (ap->ap_tx_sw_if_index);
-  //  mac_address_encode (ap->ap_mac, &mp->policy.dst_mac);
+  mac_address_encode (&ap->ap_dst_mac, mp->policy.dst_mac);
 
   vl_api_send_msg (ctx->reg, (u8 *) mp);
 

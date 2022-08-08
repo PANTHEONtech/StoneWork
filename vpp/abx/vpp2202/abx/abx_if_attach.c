@@ -213,10 +213,10 @@ abx_if_detach (u32 policy_id, u32 sw_if_index)
                           sw_if_index))
     return (VNET_API_ERROR_INVALID_SW_IF_INDEX);
 
-  /* not a physical port? */
-  sw_if = vnet_get_sw_interface (vnm, sw_if_index);
-  if (sw_if->type != VNET_SW_INTERFACE_TYPE_HARDWARE)
-    return (VNET_API_ERROR_INVALID_SW_IF_INDEX);
+  /* not a physical port? */ // DOES IT MATTER?
+  //sw_if = vnet_get_sw_interface (vnm, sw_if_index);
+  //if (sw_if->type != VNET_SW_INTERFACE_TYPE_HARDWARE)
+  //  return (VNET_API_ERROR_INVALID_SW_IF_INDEX);
 
   /*
    * check this is a valid attachment
