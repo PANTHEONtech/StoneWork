@@ -100,11 +100,13 @@ func (d *ABXDescriptor) EquivalentABXs(key string, oldABX, newABX *abx.ABX) bool
 	if oldABX.AclName != newABX.AclName {
 		return false
 	}
-
-	// compare attached interfaces
-	if len(oldABX.AttachedInterfaces) != len(newABX.AttachedInterfaces) {
+	if oldABX.DstMac != newABX.DstMac {
 		return false
 	}
+	if oldABX.OutputInterface != newABX.OutputInterface {
+		return false
+	}
+	// compare attached interfaces
 	return equivalentABXAttachedInterfaces(oldABX.AttachedInterfaces, newABX.AttachedInterfaces)
 }
 
@@ -201,6 +203,10 @@ func (d *ABXDescriptor) Dependencies(key string, abxData *abx.ABX) (dependencies
 }
 
 func equivalentABXAttachedInterfaces(oldIfs, newIfs []*abx.ABX_AttachedInterface) bool {
+	if len(oldIfs) != len(newIfs) {
+		return false
+	}
+	// compare values in list ignoring order
 	for _, oldIf := range oldIfs {
 		var found bool
 		for _, newIf := range newIfs {
