@@ -22,6 +22,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+
 	abx "go.pantheon.tech/stonework/proto/abx"
 )
 
@@ -43,7 +44,7 @@ type ABXVppAPI interface {
 	// GetAbxVersion retrieves version of the VPP ABX plugin
 	GetAbxVersion() (ver string, err error)
 	// AddAbxPolicy creates new ABX entry together with a list of forwarding paths
-	AddAbxPolicy(policyID uint32, aclID uint32, tx_if string, dst_mac string) error
+	AddAbxPolicy(policyID uint32, aclID uint32, txIf string, dstMac string) error
 	// DeleteAbxPolicy removes existing ABX entry
 	DeleteAbxPolicy(policyID uint32) error
 	// AbxAttachInterface attaches interface to the ABX

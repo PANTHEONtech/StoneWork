@@ -28,7 +28,7 @@
 #include <vppinfra/error.h>
 
 #define ABX_PLUGIN_VERSION_MAJOR 1
-#define ABX_PLUGIN_VERSION_MINOR 1
+#define ABX_PLUGIN_VERSION_MINOR 2
 
 typedef struct
 {

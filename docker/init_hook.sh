@@ -17,7 +17,6 @@
 # limitations under the License.
 
 terminate_process() {
-  if [ -n "NOTERM_INIT_PROC" ] && { echo "WARNING: Termination of init process is disabled via NOTERM_INIT_PROC env var"; return }
   PID=$(pidof $1)
   if [[ ${PID} != "" ]]; then
     kill ${PID}
