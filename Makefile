@@ -224,10 +224,6 @@ get-descriptor-adapter-generator:
 	@echo "# installing descriptor adapter generator"
 	go install go.ligato.io/vpp-agent/v3/plugins/kvscheduler/descriptor-adapter
 
-
-dep-install:
-	@go mod download
-
 generate-proto: protocgengo ## Generate Protobuf files
 
 generate-binapi: get-binapi-generator

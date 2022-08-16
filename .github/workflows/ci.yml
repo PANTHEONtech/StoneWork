@@ -1,6 +1,5 @@
 ---
 name: CI
-
 on:
   push:
     branches:
@@ -13,10 +12,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
-          go-version: '1.18.3'
+          go-version: '1.18'
       - run: go mod tidy -v
       - name: "Check for changes in go.mod"
         run: |
@@ -25,10 +24,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
-          go-version: '1.18.3'
+          go-version: '1.18'
       - run: go mod download
       - name: "Compile Go code"
         run: |
@@ -37,9 +36,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: "Enable VRF kernel module"
-        run: sudo apt-get update && sudo apt-get install -y linux-modules-extra-$(uname -r) && sudo modprobe -v vrf
+        run: |
+          sudo apt-get update && \
+          sudo apt-get install -y linux-modules-extra-$(uname -r) && \
+          sudo modprobe -v vrf
       - name: "Build images"
         run: make images
       - name: "Run Tests"

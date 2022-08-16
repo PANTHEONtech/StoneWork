@@ -21,8 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/vishvananda/netlink"
-	"google.golang.org/grpc"
 	"io/ioutil"
 	"net"
 	"os"
@@ -30,7 +28,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vishvananda/netlink"
+	"google.golang.org/grpc"
+
 	"go.ligato.io/vpp-agent/v3/client/remoteclient"
+
 	pb "go.pantheon.tech/stonework/proto/cnfreg"
 )
 
@@ -87,7 +89,7 @@ func (p *Plugin) cnfDiscovery() error {
 		}
 		swMod, err := p.getCnfModels(pf.IpAddress, pf.GrpcPort, pf.HttpPort)
 		if err != nil {
-			p.Log.Errorf("failed to obtain CNF models (pid file: %d): %v", pidFile.Name(), err)
+			p.Log.Errorf("failed to obtain CNF models (pid file: %v): %v", pidFile.Name(), err)
 			continue
 		}
 		p.sw.modules[swMod.cnfMsLabel] = swMod
