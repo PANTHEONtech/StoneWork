@@ -77,27 +77,31 @@ abx_policy_update (const u32 policy_id, const u32 acl_index,
        * create a new policy
        */
       pool_get (abx_policy_pool, ap);
-
-      api = ap - abx_policy_pool;
-      ap->ap_acl = acl_index;
-      ap->ap_id = policy_id;
-      ap->ap_tx_sw_if_index = tx_sw_if_index;
-      if (NULL != mac && !mac_address_is_zero (mac))
-	{
-	  memcpy (ap->ap_dst_mac.bytes, mac, 6);
-	}
-
       /*
        * add this new policy to the DB
        */
+      api = ap - abx_policy_pool;
       hash_set (abx_policy_db, policy_id, api);
     }
   else
     {
+      /*
+       * get existing policy
+       */
       ap = abx_policy_get (api);
-      ap->ap_acl = acl_index;
-      ap->ap_id = policy_id;
-      ap->ap_tx_sw_if_index = tx_sw_if_index;
+    }
+
+  ap->ap_acl = acl_index;
+  ap->ap_id = policy_id;
+  ap->ap_tx_sw_if_index = tx_sw_if_index;
+
+  if (NULL != mac && !mac_address_is_zero (mac))
+    {
+      memcpy (ap->ap_dst_mac.bytes, mac, 6);
+    }
+  else
+    {
+      clib_memset (&ap->ap_dst_mac, 0, sizeof (mac_address_t));
     }
 }
 
