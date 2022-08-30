@@ -28,7 +28,8 @@
 
 #include <vlibapi/api_helper_macros.h>
 
-#define ISISX_MSG_ID(_id) (_id + isisx_main.msg_id_base)
+#undef REPLY_MSG_ID_BASE
+#define REPLY_MSG_ID_BASE isisx_main.msg_id_base
 
 /* API message handler */
 
@@ -44,7 +45,7 @@ vl_api_isisx_plugin_get_version_t_handler (vl_api_isisx_plugin_get_version_t * m
 
   rmp = vl_msg_api_alloc (sizeof (*rmp));
   rmp->_vl_msg_id =
-    ntohs (ISISX_MSG_ID (VL_API_ISISX_PLUGIN_GET_VERSION_REPLY));
+    ntohs (VL_API_ISISX_PLUGIN_GET_VERSION_REPLY + REPLY_MSG_ID_BASE);
   rmp->context = mp->context;
   rmp->major = htonl (ISISX_PLUGIN_VERSION_MAJOR);
   rmp->minor = htonl (ISISX_PLUGIN_VERSION_MINOR);
@@ -85,7 +86,7 @@ isisx_connection_send_details (
   isisx_connection_walk_ctx_t *ctx = args;
   clib_memset (mp, 0, sizeof (*mp));
 
-  mp->_vl_msg_id = htons (ISISX_MSG_ID (VL_API_ISISX_CONNECTION_DETAILS));
+  mp->_vl_msg_id = htons (VL_API_ISISX_CONNECTION_DETAILS + REPLY_MSG_ID_BASE);
   mp->context = ctx->context;
   mp->connection.rx_sw_if_index = htonl (rx_sw_interface_index);
   mp->connection.tx_sw_if_index = htonl (tx_sw_interface_index);
