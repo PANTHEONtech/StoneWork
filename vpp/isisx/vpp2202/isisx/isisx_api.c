@@ -34,17 +34,19 @@
 /* API message handler */
 
 static void
-vl_api_isisx_plugin_get_version_t_handler (vl_api_isisx_plugin_get_version_t * mp)
+vl_api_isisx_plugin_get_version_t_handler (
+    vl_api_isisx_plugin_get_version_t *mp)
 {
   vl_api_isisx_plugin_get_version_reply_t *rmp;
-  REPLY_MACRO_DETAILS2(VL_API_ISISX_PLUGIN_GET_VERSION_REPLY, ({
-                         rmp->major = htonl (ISISX_PLUGIN_VERSION_MAJOR);
-                         rmp->minor = htonl (ISISX_PLUGIN_VERSION_MINOR);
-                       }));
+  REPLY_MACRO_DETAILS2 (VL_API_ISISX_PLUGIN_GET_VERSION_REPLY, ({
+                          rmp->major = htonl (ISISX_PLUGIN_VERSION_MAJOR);
+                          rmp->minor = htonl (ISISX_PLUGIN_VERSION_MINOR);
+                        }));
 }
 
 static void
-vl_api_isisx_connection_add_del_t_handler (vl_api_isisx_connection_add_del_t * mp)
+vl_api_isisx_connection_add_del_t_handler (
+    vl_api_isisx_connection_add_del_t *mp)
 {
   vl_api_isisx_connection_add_del_reply_t *rmp;
   int rv = 0;
@@ -52,7 +54,7 @@ vl_api_isisx_connection_add_del_t_handler (vl_api_isisx_connection_add_del_t * m
   u32 rx_sw_if_index = htonl (mp->connection.rx_sw_if_index);
   if (mp->is_add)
     {
-      u32 tx_sw_if_index = htonl (mp->connection.tx_sw_if_index);  
+      u32 tx_sw_if_index = htonl (mp->connection.tx_sw_if_index);
 
       isisx_connection_update (rx_sw_if_index, tx_sw_if_index);
     }
@@ -70,8 +72,8 @@ typedef struct isisx_connection_walk_ctx_t_
 } isisx_connection_walk_ctx_t;
 
 static walk_rc_t
-isisx_connection_send_details (
-  u32 rx_sw_interface_index, u32 tx_sw_interface_index, void *args)
+isisx_connection_send_details (u32 rx_sw_interface_index,
+                               u32 tx_sw_interface_index, void *args)
 {
   vl_api_isisx_connection_details_t *rmp;
   isisx_connection_walk_ctx_t *ctx = args;
@@ -79,15 +81,17 @@ isisx_connection_send_details (
   u32 context = ctx->context;
 
   REPLY_MACRO_DETAILS4 (VL_API_ISISX_CONNECTION_DETAILS, reg, context, ({
-                          rmp->connection.rx_sw_if_index = htonl (rx_sw_interface_index);
-                          rmp->connection.tx_sw_if_index = htonl (tx_sw_interface_index);
+                          rmp->connection.rx_sw_if_index
+                              = htonl (rx_sw_interface_index);
+                          rmp->connection.tx_sw_if_index
+                              = htonl (tx_sw_interface_index);
                         }));
 
   return WALK_CONTINUE;
 }
 
 static void
-vl_api_isisx_connection_dump_t_handler (vl_api_isisx_connection_dump_t * mp)
+vl_api_isisx_connection_dump_t_handler (vl_api_isisx_connection_dump_t *mp)
 {
   vl_api_registration_t *reg;
 
@@ -95,19 +99,19 @@ vl_api_isisx_connection_dump_t_handler (vl_api_isisx_connection_dump_t * mp)
   if (!reg)
     return;
 
-  isisx_connection_walk_ctx_t ctx = {	
+  isisx_connection_walk_ctx_t ctx = {
     .reg = reg,
     .context = mp->context,
   };
 
- isisx_connection_walk (isisx_connection_send_details, &ctx);
+  isisx_connection_walk (isisx_connection_send_details, &ctx);
 }
 
 /* Set up the API message handling tables */
 
 #include <isisx/isisx.api.c>
 static clib_error_t *
-isisx_plugin_api_hookup (vlib_main_t * vm)
+isisx_plugin_api_hookup (vlib_main_t *vm)
 {
   isisx_main_t *pm = &isisx_main;
 
