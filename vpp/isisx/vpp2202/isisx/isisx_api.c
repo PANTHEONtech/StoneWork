@@ -37,19 +37,10 @@ static void
 vl_api_isisx_plugin_get_version_t_handler (vl_api_isisx_plugin_get_version_t * mp)
 {
   vl_api_isisx_plugin_get_version_reply_t *rmp;
-  vl_api_registration_t *rp;
-
-  rp = vl_api_client_index_to_registration (mp->client_index);
-  if (!rp)
-    return;
-
-  rmp = vl_msg_api_alloc (sizeof (*rmp));
-  rmp->_vl_msg_id =
-    ntohs (VL_API_ISISX_PLUGIN_GET_VERSION_REPLY + REPLY_MSG_ID_BASE);
-  rmp->context = mp->context;
-  rmp->major = htonl (ISISX_PLUGIN_VERSION_MAJOR);
-  rmp->minor = htonl (ISISX_PLUGIN_VERSION_MINOR);
-  vl_api_send_msg (rp, (u8 *) rmp);
+  REPLY_MACRO_DETAILS2(VL_API_ISISX_PLUGIN_GET_VERSION_REPLY, ({
+                         rmp->major = htonl (ISISX_PLUGIN_VERSION_MAJOR);
+                         rmp->minor = htonl (ISISX_PLUGIN_VERSION_MINOR);
+                       }));
 }
 
 static void
@@ -82,16 +73,16 @@ static walk_rc_t
 isisx_connection_send_details (
   u32 rx_sw_interface_index, u32 tx_sw_interface_index, void *args)
 {
-  vl_api_isisx_connection_details_t *mp = vl_msg_api_alloc (sizeof (*mp));
+  vl_api_isisx_connection_details_t *rmp;
   isisx_connection_walk_ctx_t *ctx = args;
-  clib_memset (mp, 0, sizeof (*mp));
+  vl_api_registration_t *reg = ctx->reg;
+  u32 context = ctx->context;
 
-  mp->_vl_msg_id = htons (VL_API_ISISX_CONNECTION_DETAILS + REPLY_MSG_ID_BASE);
-  mp->context = ctx->context;
-  mp->connection.rx_sw_if_index = htonl (rx_sw_interface_index);
-  mp->connection.tx_sw_if_index = htonl (tx_sw_interface_index);
-  vl_api_send_msg (ctx->reg, (u8 *) mp);
-  
+  REPLY_MACRO_DETAILS4 (VL_API_ISISX_CONNECTION_DETAILS, reg, context, ({
+                          rmp->connection.rx_sw_if_index = htonl (rx_sw_interface_index);
+                          rmp->connection.tx_sw_if_index = htonl (tx_sw_interface_index);
+                        }));
+
   return WALK_CONTINUE;
 }
 
