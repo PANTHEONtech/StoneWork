@@ -32,9 +32,11 @@ ENV LANG=C.UTF-8
 RUN set -ex; \
     cp -r /opt/dev/abx/abx /opt/dev/vpp/src/plugins/abx && \
     cp -r /opt/dev/isisx/isisx /opt/dev/vpp/src/plugins/isisx && \
-    cp -r /opt/dev/isisx/test /opt/dev/vpp/test
+    cp -r /opt/dev/isisx/test /opt/dev/vpp/ && \
+    cp -r /opt/dev/abx/test /opt/dev/vpp/
 
 WORKDIR /opt/dev/vpp
 
 ARG CACHEBUST=1
 RUN make test TEST=isisx
+RUN make test TEST=abx
