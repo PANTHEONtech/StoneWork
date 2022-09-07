@@ -18,10 +18,13 @@ ARG VPP_IMAGE=vpp:22.02
 
 FROM ${VPP_IMAGE}
 
+# `netbase` has to be installed because it provides /etc/protocols file.
+# The file is used by Scapy which the VPP Test Framework depends on.
 RUN set -ex; \
     apt-get update && \
     apt-get install -y --no-install-recommends \
 		libssl-dev \
+		netbase \
 		pkg-config \
 		python3-venv \
     && rm -rf /var/lib/apt/lists/*
