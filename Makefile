@@ -209,7 +209,8 @@ test-vpp-plugins: vpp-image vpp-test-image
 test-vpp-plugins-prebuilt: # For running VPP tests repeatedly (saves time by skipping building process)
 	docker run --privileged --name=vpp-test -d ${STONEWORK_VPP_TEST_IMAGE}:${VPP_VERSION}
 	docker cp ./vpp/isisx/vpp$(shell echo ${VPP_VERSION} | tr -d ".")/isisx vpp-test:/opt/dev/vpp/src/plugins/isisx
-	docker exec -it vpp-test sh -c "cd /opt/dev/vpp;make test TEST=isisx"
+	docker cp ./vpp/abx/vpp$(shell echo ${VPP_VERSION} | tr -d ".")/abx vpp-test:/opt/dev/vpp/src/plugins/abx
+	docker exec -it vpp-test sh -c "cd /opt/dev/vpp;make test TEST=isisx;make test TEST=abx"
 	docker rm -f vpp-test
 
 # -------------------------------

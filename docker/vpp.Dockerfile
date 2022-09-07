@@ -87,5 +87,5 @@ RUN set -ex; \
 
 COPY docker/vpp-startup.conf /etc/vpp/startup.conf
 
-CMD ["/bin/bash", "-c", "mkdir -p /run/stonework/vpp; \
-	  exec /usr/bin/vpp -c /etc/vpp/startup.conf"]
+CMD /bin/bash -c "mkdir -p /run/stonework/vpp; \
+	exec /usr/bin/vpp -c /etc/vpp/startup.conf"
