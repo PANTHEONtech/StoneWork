@@ -20,18 +20,19 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN set -ex; \
     apt-get update && apt-get install -y --no-install-recommends \
- 		ca-certificates \
+		ca-certificates \
 		curl \
- 		ethtool \
- 		expect-dev \
- 		iperf \
- 		iproute2 \
- 		iptables \
- 		iputils-ping \
- 		netcat-openbsd \
- 		net-tools \
- 		tcl8.6 \
- 		tcpdump \
-     	wget \
+		ethtool \
+		expect-dev \
+		iperf \
+		iproute2 \
+		iptables \
+		iputils-ping \
+		netcat-openbsd \
+		net-tools \
+		tcl8.6 \
+		tcpdump \
+		wget \
+		bridge-utils \
 	; \
 	rm -rf /var/lib/apt/lists/*
