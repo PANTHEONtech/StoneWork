@@ -25,5 +25,5 @@
 package vppagent
 
 import (
-	_ "git.fd.io/govpp.git/cmd/binapi-generator"
+	_ "go.fd.io/govpp/cmd/binapi-generator"
 )

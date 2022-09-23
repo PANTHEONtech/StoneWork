@@ -17,13 +17,13 @@
 package vpp2106
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 
 	"go.pantheon.tech/stonework/plugins/bfd/vppcalls"
-	"go.pantheon.tech/stonework/plugins/binapi/vpp2106"
+	binapi "go.pantheon.tech/stonework/plugins/binapi/vpp2106"
 	"go.pantheon.tech/stonework/plugins/binapi/vpp2106/bfd"
 )
 
