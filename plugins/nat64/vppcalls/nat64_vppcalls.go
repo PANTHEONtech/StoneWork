@@ -22,6 +22,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+
 	"go.pantheon.tech/stonework/proto/nat64"
 )
 

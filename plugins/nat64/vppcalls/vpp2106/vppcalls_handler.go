@@ -17,37 +17,37 @@
 package vpp2106
 
 import (
-    govppapi "go.fd.io/govpp/api"
-    "go.ligato.io/cn-infra/v2/logging"
+	govppapi "go.fd.io/govpp/api"
+	"go.ligato.io/cn-infra/v2/logging"
 
-    "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 
-    binapi "go.pantheon.tech/stonework/plugins/binapi/vpp2106"
-    natba "go.pantheon.tech/stonework/plugins/binapi/vpp2106/nat64"
-    "go.pantheon.tech/stonework/plugins/nat64/vppcalls"
+	binapi "go.pantheon.tech/stonework/plugins/binapi/vpp2106"
+	natba "go.pantheon.tech/stonework/plugins/binapi/vpp2106/nat64"
+	"go.pantheon.tech/stonework/plugins/nat64/vppcalls"
 )
 
 func init() {
-    var msgs []govppapi.Message
-    msgs = append(msgs, natba.AllMessages()...)
+	var msgs []govppapi.Message
+	msgs = append(msgs, natba.AllMessages()...)
 
-    vppcalls.AddNat64HandlerVersion(binapi.Version, msgs, NewNat64VppHandler)
+	vppcalls.AddNat64HandlerVersion(binapi.Version, msgs, NewNat64VppHandler)
 }
 
 // Nat64VppHandler is accessor for NAT64-related vppcalls methods.
 type Nat64VppHandler struct {
-    callsChannel govppapi.Channel
-    ifIndexes    ifaceidx.IfaceMetadataIndex
-    log          logging.Logger
+	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.IfaceMetadataIndex
+	log          logging.Logger
 }
 
 // NewNat64VppHandler creates new instance of NAT64 vppcalls handler.
 func NewNat64VppHandler(callsChan govppapi.Channel,
-    ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger,
+	ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger,
 ) vppcalls.Nat64VppAPI {
-    return &Nat64VppHandler{
-        callsChannel: callsChan,
-        ifIndexes:    ifIndexes,
-        log:          log,
-    }
+	return &Nat64VppHandler{
+		callsChannel: callsChan,
+		ifIndexes:    ifIndexes,
+		log:          log,
+	}
 }
