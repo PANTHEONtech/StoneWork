@@ -3,7 +3,6 @@ module go.pantheon.tech/stonework
 go 1.18
 
 require (
-	git.fd.io/govpp.git v0.5.0
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
@@ -12,8 +11,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
+	go.fd.io/govpp v0.6.0
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
-	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20220812190713-74793c7e4a33
+	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20220919113652-e9371095e56b
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.1
 )

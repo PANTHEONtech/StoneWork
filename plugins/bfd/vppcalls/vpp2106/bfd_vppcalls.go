@@ -23,7 +23,7 @@ import (
 	"os"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 
 	"go.pantheon.tech/stonework/plugins/bfd/vppcalls"
 	binapi "go.pantheon.tech/stonework/plugins/binapi/vpp2106/bfd"

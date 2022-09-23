@@ -19,8 +19,8 @@
 package abxplugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"

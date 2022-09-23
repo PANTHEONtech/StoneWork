@@ -19,8 +19,8 @@ package vpp2202_test
 import (
 	"testing"
 
-	govppapi "git.fd.io/govpp.git/api"
 	. "github.com/onsi/gomega"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"

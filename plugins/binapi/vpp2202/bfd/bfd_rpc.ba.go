@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	api "git.fd.io/govpp.git/api"
+	api "go.fd.io/govpp/api"
 	memclnt "go.pantheon.tech/stonework/plugins/binapi/vpp2202/memclnt"
 )
 

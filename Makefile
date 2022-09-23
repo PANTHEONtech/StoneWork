@@ -219,7 +219,7 @@ test-vpp-plugins-prebuilt: # For running VPP tests repeatedly (saves time by ski
 
 get-binapi-generator:
 	@echo "# installing binary API generator"
-	go install git.fd.io/govpp.git/cmd/binapi-generator
+	go install go.fd.io/govpp/cmd/binapi-generator
 
 get-descriptor-adapter-generator:
 	@echo "# installing descriptor adapter generator"

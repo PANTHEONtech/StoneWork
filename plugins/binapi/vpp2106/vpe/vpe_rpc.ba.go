@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	api "git.fd.io/govpp.git/api"
+	api "go.fd.io/govpp/api"
 )
 
 // RPCService defines RPC service vpe.
@@ -149,6 +149,10 @@ func (c *serviceClient_LogDumpClient) Recv() (*LogDetails, error) {
 	case *LogDetails:
 		return m, nil
 	case *ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
