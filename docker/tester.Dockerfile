@@ -20,6 +20,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN set -ex; \
     apt-get update && apt-get install -y --no-install-recommends \
+		bridge-utils \
 		ca-certificates \
 		curl \
 		ethtool \
@@ -33,6 +34,5 @@ RUN set -ex; \
 		tcl8.6 \
 		tcpdump \
 		wget \
-		bridge-utils \
 	; \
 	rm -rf /var/lib/apt/lists/*
