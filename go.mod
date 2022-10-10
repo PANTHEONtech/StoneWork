@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-errors/errors v1.0.1
+	github.com/go-errors/errors v1.4.2
 	github.com/namsral/flag v1.7.4-pre
 	github.com/onsi/gomega v1.21.1
 	github.com/pkg/errors v0.9.1
