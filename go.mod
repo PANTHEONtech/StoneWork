@@ -14,7 +14,7 @@ require (
 	go.fd.io/govpp v0.6.0
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
 	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20220919113652-e9371095e56b
-	google.golang.org/grpc v1.47.0
+	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
 )
 
