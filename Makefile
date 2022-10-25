@@ -38,10 +38,10 @@ RELEASE_VERSION_MAJOR_MINOR = $(shell echo $(RELEASE_VERSION_FULL) | cut -d '.' 
 endif
 
 ifeq ($(VPP_VERSION),)
-VPP_VERSION="22.02"
+VPP_VERSION="22.10"
 endif
 ifeq ($(DEV_VERSION),) # for tagging in-development images
-DEV_VERSION="22.02"
+DEV_VERSION="22.10"
 endif
 REPO="ghcr.io/pantheontech"
 STONEWORK_VPP_IMAGE="stonework-vpp"
@@ -232,7 +232,8 @@ generate-binapi: get-binapi-generator
     # from VPP (/usr/share/vpp/api/(core|plugins))
 	@echo "=> generating binary API"
 	@cd plugins/binapi/vpp2106 && VPP_VERSION=21.06 go generate .
-	@cd plugins/binapi/vpp2202 && VPP_VERSION=22.10 go generate .
+	@cd plugins/binapi/vpp2202 && VPP_VERSION=22.02 go generate .
+	@cd plugins/binapi/vpp2210 && VPP_VERSION=22.10 go generate .
 
 generate-descriptor-adapters: get-descriptor-adapter-generator
 	@echo "# generating descriptor adapters"
