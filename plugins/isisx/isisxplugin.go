@@ -32,6 +32,7 @@ import (
 
 	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2106"
 	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2202"
+	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2210"
 )
 
 // ISISXPlugin is a plugin that manages ISIS protocol packet forwarding.
