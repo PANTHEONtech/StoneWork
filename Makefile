@@ -232,7 +232,7 @@ generate-binapi: get-binapi-generator
     # from VPP (/usr/share/vpp/api/(core|plugins))
 	@echo "=> generating binary API"
 	@cd plugins/binapi/vpp2106 && VPP_VERSION=21.06 go generate .
-	@cd plugins/binapi/vpp2202 && VPP_VERSION=22.02 go generate .
+	@cd plugins/binapi/vpp2202 && VPP_VERSION=22.10 go generate .
 
 generate-descriptor-adapters: get-descriptor-adapter-generator
 	@echo "# generating descriptor adapters"
