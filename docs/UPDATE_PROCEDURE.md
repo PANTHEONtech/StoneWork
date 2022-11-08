@@ -11,7 +11,7 @@ StoneWork is based on *vpp-agent* and thus supports stable VPP versions, support
 Check whether `ligato/vpp-base`, with your desired version, already exists.
 
 To do so, just look at `ligato/vpp-base` tags on [DockerHub][dockerhub-tags]. Or directly by docker pull command, for example:
-`docker pull ligato/vpp-base:22.02`
+`docker pull ligato/vpp-base:22.10`
 
 If there is no such tagged version, you need to create it.
 
@@ -75,16 +75,16 @@ StoneWork docker images are present on [GitHub Container Registry][ghcr].
 To update images, create and push a git tag into image repository according to
 the following convention:
 `v<VPP-major>.<VPP-minor>.<patch><optional-identifier>` (for example
-`v22.02.0`), where `<patch>` may increase if VPP is updated by its patch version
+`v22.10.0`), where `<patch>` may increase if VPP is updated by its patch version
 or if some change is submitted into the control-plane.
 
 This triggers build of the images in repository and tags StoneWork production
 image as `ghcr.io/pantheontech/stonework` with the following version tags:
 1. Full git tag as-it-is, with trimmed leading '`v`', for example
-   `ghcr.io/pantheontech/stonework:22.02.0`. This tag is fixed
+   `ghcr.io/pantheontech/stonework:22.10.0`. This tag is fixed
    and should never be changed.
 2. `<VPP-major>.<VPP-minor>`, for example
-   `ghcr.io/pantheontech/stonework:22.02`. This tag points to the
+   `ghcr.io/pantheontech/stonework:22.10`. This tag points to the
    latest version with the same major and minor version number.
 3. `latest`, for example `ghcr.io/pantheontech/stonework:latest`.
 
@@ -94,7 +94,7 @@ while keeping the `latest` and `<VPP-major>.<VPP-minor>` tags still updated.
 After that, all three tagged images are automatically pushed into GitHub
 Container Registry.
 
-[dockerhub-tags]: https://hub.docker.com/r/ligato/vpp-base/tags?page=1&ordering=last_updated&name=22.02
+[dockerhub-tags]: https://hub.docker.com/r/ligato/vpp-base/tags?page=1&ordering=last_updated&name=22.10
 [inspiration-pr]: https://github.com/ligato/vpp-base/pull/18
 [agent-instructions]: https://github.com/ligato/vpp-agent/wiki/Guide-for-adding-new-VPP-version
 [ghcr]: https://github.com/orgs/PANTHEONtech/packages/container/package/stonework

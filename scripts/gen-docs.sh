@@ -54,17 +54,17 @@ while IFS= read -r line; do
 done
 
 # generate root proto message
-docker run --rm -v ${TMPDIR}:/api stonework-proto-rootgen:22.02 proto-rootgen --cnf-name ${CNFNAME}
+docker run --rm -v ${TMPDIR}:/api stonework-proto-rootgen:22.10 proto-rootgen --cnf-name ${CNFNAME}
 
 # generate json schema
-docker run --rm -v ${TMPDIR}:/api stonework-proto-rootgen:22.02 \
+docker run --rm -v ${TMPDIR}:/api stonework-proto-rootgen:22.10 \
   protoc \
     --jsonschema_out="json_fieldnames:/api" \
     --proto_path=/api /api/${CNFNAME,,}-root.proto
 cp ${TMPDIR}/Root.jsonschema ${OUTDIR}/${CNFNAME^^}-CONFIG.jsonschema
 
 # generate docs (as markdown & pdf)
-docker run --rm -v ${TMPDIR}:/api stonework-proto-rootgen:22.02 \
+docker run --rm -v ${TMPDIR}:/api stonework-proto-rootgen:22.10 \
   bash -x -c "\
     sed -i 's/{{.CnfName}}/${CNFNAME}/g' /gendoc/markdown.tmpl &&
     protos=\$(find /api -name \"*.proto\" | grep -vF \"/api/${CNFNAME,,}-root.proto\") &&
