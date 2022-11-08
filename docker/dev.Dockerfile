@@ -121,8 +121,8 @@ RUN rm /tmp/legacy-nat.conf
 COPY ./docker/vpptrace.sh /usr/bin/vpptrace.sh
 RUN chmod u+x /usr/bin/vpptrace.sh
 
-# COPY ./plugins/binapi/vpp2210/api/abx.api.json /usr/share/vpp/api/plugins/
-# COPY ./plugins/binapi/vpp2210/api/isisx.api.json /usr/share/vpp/api/plugins/
+COPY ./plugins/binapi/vpp2210/api/abx.api.json /usr/share/vpp/api/plugins/
+COPY ./plugins/binapi/vpp2210/api/isisx.api.json /usr/share/vpp/api/plugins/
 
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
     mkdir -p /run/vpp /run/stonework/vpp && \
