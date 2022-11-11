@@ -13,7 +13,7 @@ require (
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.fd.io/govpp v0.6.0
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
-	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20220919113652-e9371095e56b
+	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20221111123417-d039a1a7da5f
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.1
 )
@@ -96,5 +96,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20220919113652-e9371095e56b => github.com/pemoticak/vpp-agent/v3 v3.4.0-alpha.0.20221108114004-00bd75a0b6ee
