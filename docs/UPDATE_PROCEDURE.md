@@ -56,8 +56,13 @@ To do so, examine the `go.mod` and use the replace clause prepared at the bottom
 StoneWork will now use vpp-agent from the folder specified in the replace clause as its build dependency. 
 
 ## 2.4 Run StoneWork tests
+Run `make test-vpp-plugins`. This builds VPP inside a test image specified in `docker/vpp-test.Dockerfile`, runs
+custom VPP plugin tests and shows the test results at the end of the output.
 
-Run `make test`. If tests fail, you have most probably done some mistake in 2.2
+If you make further changes to the custom VPP plugins (for example to fix a failing test case), you can 
+then run `make test-vpp-plugins-prebuilt` to skip the lengthy VPP build process.
+
+After that, run `make test`. If tests fail, you have most probably done some mistake in 2.2
 and not all containers started successfully, especially those containing VPP and vpp-agent.
 
 In that case, execute the command
