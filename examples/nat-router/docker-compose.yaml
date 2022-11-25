@@ -21,7 +21,7 @@ volumes:
 
 services:
   stonework:
-    image: "ghcr.io/pantheontech/stonework:22.02"
+    image: "ghcr.io/pantheontech/stonework:22.10"
     privileged: true
     pid: "host"
     environment:

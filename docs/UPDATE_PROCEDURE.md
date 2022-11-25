@@ -11,7 +11,7 @@ StoneWork is based on *vpp-agent* and thus supports stable VPP versions, support
 Check whether `ligato/vpp-base`, with your desired version, already exists.
 
 To do so, just look at `ligato/vpp-base` tags on [DockerHub][dockerhub-tags]. Or directly by docker pull command, for example:
-`docker pull ligato/vpp-base:22.02`
+`docker pull ligato/vpp-base:22.10`
 
 If there is no such tagged version, you need to create it.
 
@@ -56,8 +56,13 @@ To do so, examine the `go.mod` and use the replace clause prepared at the bottom
 StoneWork will now use vpp-agent from the folder specified in the replace clause as its build dependency. 
 
 ## 2.4 Run StoneWork tests
+Run `make test-vpp-plugins`. This builds VPP inside a test image specified in `docker/vpp-test.Dockerfile`, runs
+custom VPP plugin tests and shows the test results at the end of the output.
 
-Run `make test`. If tests fail, you have most probably done some mistake in 2.2
+If you make further changes to the custom VPP plugins (for example to fix a failing test case), you can 
+then run `make test-vpp-plugins-prebuilt` to skip the lengthy VPP build process.
+
+After that, run `make test`. If tests fail, you have most probably done some mistake in 2.2
 and not all containers started successfully, especially those containing VPP and vpp-agent.
 
 In that case, execute the command
@@ -75,16 +80,16 @@ StoneWork docker images are present on [GitHub Container Registry][ghcr].
 To update images, create and push a git tag into image repository according to
 the following convention:
 `v<VPP-major>.<VPP-minor>.<patch><optional-identifier>` (for example
-`v22.02.0`), where `<patch>` may increase if VPP is updated by its patch version
+`v22.10.0`), where `<patch>` may increase if VPP is updated by its patch version
 or if some change is submitted into the control-plane.
 
 This triggers build of the images in repository and tags StoneWork production
 image as `ghcr.io/pantheontech/stonework` with the following version tags:
 1. Full git tag as-it-is, with trimmed leading '`v`', for example
-   `ghcr.io/pantheontech/stonework:22.02.0`. This tag is fixed
+   `ghcr.io/pantheontech/stonework:22.10.0`. This tag is fixed
    and should never be changed.
 2. `<VPP-major>.<VPP-minor>`, for example
-   `ghcr.io/pantheontech/stonework:22.02`. This tag points to the
+   `ghcr.io/pantheontech/stonework:22.10`. This tag points to the
    latest version with the same major and minor version number.
 3. `latest`, for example `ghcr.io/pantheontech/stonework:latest`.
 
@@ -94,7 +99,7 @@ while keeping the `latest` and `<VPP-major>.<VPP-minor>` tags still updated.
 After that, all three tagged images are automatically pushed into GitHub
 Container Registry.
 
-[dockerhub-tags]: https://hub.docker.com/r/ligato/vpp-base/tags?page=1&ordering=last_updated&name=22.02
+[dockerhub-tags]: https://hub.docker.com/r/ligato/vpp-base/tags?page=1&ordering=last_updated&name=22.10
 [inspiration-pr]: https://github.com/ligato/vpp-base/pull/18
 [agent-instructions]: https://github.com/ligato/vpp-agent/wiki/Guide-for-adding-new-VPP-version
 [ghcr]: https://github.com/orgs/PANTHEONtech/packages/container/package/stonework
