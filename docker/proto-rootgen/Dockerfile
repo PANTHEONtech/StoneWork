@@ -17,6 +17,7 @@
 
 FROM ubuntu:20.04 as base
 
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
 		git \
 		gcc \
@@ -55,8 +56,8 @@ ARG PROTOC_GEN_JSONSCHEMA_PSEUDO_VERSION=dc9f108
 WORKDIR /tmp
 RUN curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-$(uname -m).zip -o protoc.zip
 RUN unzip protoc.zip && mv bin/protoc /usr/local/bin/protoc && mv include/google /usr/local/include/google
-RUN go get -v github.com/chrusty/protoc-gen-jsonschema/cmd/protoc-gen-jsonschema@${PROTOC_GEN_JSONSCHEMA_PSEUDO_VERSION}
-RUN go get -v github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v${PROTOC_GEN_DOC_VERSION}
+RUN go install -v github.com/chrusty/protoc-gen-jsonschema/cmd/protoc-gen-jsonschema@${PROTOC_GEN_JSONSCHEMA_PSEUDO_VERSION}
+RUN go install -v github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v${PROTOC_GEN_DOC_VERSION}
 COPY docker/proto-rootgen/markdown.tmpl /gendoc/markdown.tmpl
 COPY docker/proto-rootgen/pandoc-preamble.tex /gendoc/pandoc-preamble.tex
 

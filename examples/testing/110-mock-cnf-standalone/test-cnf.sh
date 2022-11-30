@@ -59,7 +59,7 @@ echo -n "Updating config ... "
 docker-compose exec -T mockcnf1 agentctl config update --replace /etc/mockcnf/config/running-config.yaml >/dev/null 2>&1
 check_rv $? 0 "Config update failed"
 
-../utils.sh waitForAgentConfig mockcnf1 74 10 # mock CNFs make changes asynchronously
+../utils.sh waitForAgentConfig mockcnf1 72 10 # mock CNFs make changes asynchronously
 
 check_in_sync
 

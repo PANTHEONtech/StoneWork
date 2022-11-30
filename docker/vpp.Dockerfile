@@ -19,7 +19,7 @@ ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE}
 
-ENV DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 RUN set -ex; \
     apt-get update && \
     apt-get install -y --no-install-recommends \
