@@ -840,8 +840,8 @@ go.etcd.io/etcd/client/v3 v3.5.1/go.mod h1:OnjH4M8OnAotwaB2l9bVgZzRFKru7/ZMoS46O
 go.etcd.io/etcd/pkg/v3 v3.5.1 h1:nYifzmtBQ2l91wUQM6aZGGwR/pvpQQyscmS4azm184Q=
 go.etcd.io/etcd/raft/v3 v3.5.1 h1:nthXrxmATKB9OZ9C64sk3QZaJ1WZ8tmlI0VwzpJSZwg=
 go.etcd.io/etcd/server/v3 v3.5.1 h1:u8risUH348DmLy2XD3krH/S3GWk2ljuCrs8V3hd4584=
-go.fd.io/govpp v0.6.0 h1:08orIJ0m84rDzzwZPuVTCZ/44Wym6aPEnqJlnFKdUT8=
-go.fd.io/govpp v0.6.0/go.mod h1:XSuROhrlT3NfyVixnn3exprPsEjqDAlWAMOIajCOW7s=
+go.fd.io/govpp v0.7.0 h1:8qideC7G0xPeYz2sjwni8GKWWbNk45Ev73oR1igKDYY=
+go.fd.io/govpp v0.7.0/go.mod h1:VxUPq8HGQH6/9IL9saMURL3UcHsUuN8XmETuao5HA7o=
 go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa h1:PbrmPqtS8K7jVVXbs9w2n0AzEqT3KGW/0bXWrSgEoOo=
 go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa/go.mod h1:N4rrtufgHchultyJuN8ClAS7szH3IhcfDcC3LX9cRRo=
 go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20221115150613-53f1bc4b4d04 h1:h7NWezxtAXg13294FroZ5L5VuBiVakI2r3VWuJVNxJU=
