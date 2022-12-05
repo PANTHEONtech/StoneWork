@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Copyright 2021 PANTHEON.tech
+// Copyright 2022 PANTHEON.tech
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import (
 
 	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2106"
 	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2202"
+	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2210"
 )
 
 // ISISXPlugin is a plugin that manages ISIS protocol packet forwarding.

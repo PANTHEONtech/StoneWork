@@ -68,7 +68,7 @@ echo -n "Updating config ... "
 docker-compose exec -T stonework agentctl config update --replace /etc/stonework/config/running-config.yaml >/dev/null 2>&1
 check_rv $? 0 "Config update failed"
 
-../utils.sh waitForAgentConfig stonework 74 10 # mock CNFs make changes asynchronously
+../utils.sh waitForAgentConfig stonework 72 10 # mock CNFs make changes asynchronously
 
 check_in_sync
 

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Copyright 2021 PANTHEON.tech
+# Copyright 2022 PANTHEON.tech
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 # host network_mode (besides making it privileged and mounting /dev volume as
 # ussual with DPDK), to use StoneWork with this VPP under the hood.
 
-ARG VPP_VERSION=22.02
+ARG VPP_VERSION=22.10
 ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE} AS base
@@ -60,7 +60,7 @@ RUN cd vpp && yes | make install-dep install-ext-deps && make pkg-deb
 
 #-----------------
 # build ABX plugin
-ARG VPP_VERSION=22.02
+ARG VPP_VERSION=22.10
 COPY vpp/abx /tmp/abx
 RUN VPPVER=$(echo $VPP_VERSION | tr -d ".") && \
     cp -r /tmp/abx/vpp${VPPVER} /opt/dev/abx

@@ -23,6 +23,6 @@ set -e
 cp ../../cmd/stonework/stonework .
 
 # rebuild the production image with replaced agent binary
-docker build -f stonework.Dockerfile -t stonework:22.02 --no-cache --force-rm=true .
+docker build -f stonework.Dockerfile -t stonework:22.10 --no-cache --force-rm=true .
 
 rm -f ./stonework
