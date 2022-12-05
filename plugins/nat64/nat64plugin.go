@@ -34,6 +34,8 @@ import (
 	"go.pantheon.tech/stonework/plugins/nat64/vppcalls"
 
 	_ "go.pantheon.tech/stonework/plugins/nat64/vppcalls/vpp2106"
+	_ "go.pantheon.tech/stonework/plugins/nat64/vppcalls/vpp2202"
+	_ "go.pantheon.tech/stonework/plugins/nat64/vppcalls/vpp2210"
 )
 
 // NAT64Plugin configures VPP NAT.
