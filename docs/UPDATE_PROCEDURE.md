@@ -40,7 +40,7 @@ Then verify its presence with `sudo vppctl sh plugins`.
 ## 2.2 Update StoneWork-specific vpp-agent plugins
 
 StoneWork contains a few additional vpp-agent plugins that are not present in the
-open-source *vpp-agent* codebase. These reside in the `plugins/` subdirectory.
+*vpp-agent* codebase. These reside in the `plugins/` subdirectory.
 Their update follows the same steps and principles as the update of *vpp-agent*
 plugins you are already familiar with.
 
@@ -51,9 +51,9 @@ Now, just update all occurrences of old version to new one.
 **Note:** If your *vpp-agent* was not yet merged into upstream repository, but you want to use it
 in StoneWork anyway, you will need to set the custom version to be used temporarily.
 
-To do so, examine the `go.mod` and use the replace clause prepared at the bottom.
+To do so, use a replace clause in the `go.mod` file.
 
-StoneWork will now use vpp-agent from the folder specified in the replace clause as its build dependency. 
+StoneWork will then use vpp-agent from the folder specified in the replace clause as its build dependency. 
 
 ## 2.4 Run StoneWork tests
 Run `make test-vpp-plugins`. This builds VPP inside a test image specified in `docker/vpp-test.Dockerfile`, runs
