@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"net"
 	"os"
 	"path"
@@ -57,44 +57,71 @@ type PidFile struct {
 // StoneWork will then connect to each CNF over gRPC and discovers all CNF-specific configuration models.
 // Downside of this trivial approach for discovery is that the Init phase will take longer and most of that time nothing
 // actually happens (agent sleeps).
-func (p *Plugin) cnfDiscovery() error {
-	// Give CNFs some time to write pid files.
-	time.Sleep(p.config.CnfDiscoveryTimeout)
-
-	// Load all pid files written by SW-Module CNFs.
+func (p *Plugin) cnfDiscovery(done chan struct{}) {
+	var dirModTime time.Time
+	pidFileModTime := make(map[string]time.Time)
 	p.sw.modules = make(map[string]swModule)
-	pidFiles, err := ioutil.ReadDir(pidFileDir)
+	ticker := time.NewTicker(p.config.CnfDiscoveryPollingRate)
+	for {
+		select {
+		case <-done:
+			p.Log.Infof("CNF discovery ending")
+			return
+		case <-ticker.C:
+			info, err := os.Stat(pidFileDir)
+			if err != nil {
+				if os.IsNotExist(err) {
+					p.Log.Warnf("Directory \"%s\" does not exist, no CNFs will be loaded", pidFileDir)
+				}
+				p.Log.Errorf("failed to get status of directory with PID files: %v", err)
+				continue
+			}
+			if !info.ModTime().After(dirModTime) {
+				continue
+			}
+			dirModTime = info.ModTime()
+			pidFiles, _ := os.ReadDir(pidFileDir) // TODO: err checked earlier, is that enough?
+			for _, pidFile := range pidFiles {
+				info, err := os.Stat(pidFile.Name())
+				if err != nil {
+					p.Log.Errorf("failed to get status of  PID file %s: %v", pidFile.Name(), err)
+					continue
+				}
+				if !info.ModTime().After(pidFileModTime[pidFile.Name()]) {
+					continue
+				}
+				pidFileModTime[pidFile.Name()] = info.ModTime()
+				swMod, err := p.loadSwModFromFile(pidFile)
+				if err != nil {
+					p.Log.Error(err)
+				}
+				p.sw.modules[swMod.cnfMsLabel] = swMod
+				p.initCnfProxy(swMod)
+			}
+		}
+	}
+}
+
+// Load all pid files written by SW-Module CNFs.
+func (p *Plugin) loadSwModFromFile(file fs.DirEntry) (swModule, error) {
+	var swMod swModule
+	if !strings.HasSuffix(file.Name(), pidFileExt) {
+		return swMod, fmt.Errorf("PID file name %s does not have suffix %s", file.Name(), pidFileExt)
+	}
+	content, err := os.ReadFile(path.Join(pidFileDir, file.Name()))
 	if err != nil {
-		if os.IsNotExist(err) {
-			p.Log.Warnf("Directory \"%s\" does not exist, no CNFs will be loaded", pidFileDir)
-			return nil
-		}
-		p.Log.Errorf("failed to read directory with PID files: %v", err)
-		return err
+		return swMod, fmt.Errorf("failed to read PID file %s: %v", file.Name(), err)
 	}
-	for _, pidFile := range pidFiles {
-		if !strings.HasSuffix(pidFile.Name(), pidFileExt) {
-			continue
-		}
-		content, err := ioutil.ReadFile(path.Join(pidFileDir, pidFile.Name()))
-		if err != nil {
-			p.Log.Errorf("failed to read PID file %s: %v", pidFile.Name(), err)
-			continue
-		}
-		var pf PidFile
-		err = json.Unmarshal(content, &pf)
-		if err != nil {
-			p.Log.Errorf("failed to parse PID file %s: %v", pidFile.Name(), err)
-			continue
-		}
-		swMod, err := p.getCnfModels(pf.IpAddress, pf.GrpcPort, pf.HttpPort)
-		if err != nil {
-			p.Log.Errorf("failed to obtain CNF models (pid file: %v): %v", pidFile.Name(), err)
-			continue
-		}
-		p.sw.modules[swMod.cnfMsLabel] = swMod
+	var pf PidFile
+	err = json.Unmarshal(content, &pf)
+	if err != nil {
+		return swMod, fmt.Errorf("failed to parse PID file %s: %v", file.Name(), err)
 	}
-	return nil
+	swMod, err = p.getCnfModels(pf.IpAddress, pf.GrpcPort, pf.HttpPort)
+	if err != nil {
+		return swMod, fmt.Errorf("failed to obtain CNF models (pid file: %v): %v", file.Name(), err)
+	}
+	return swMod, nil
 }
 
 func (p *Plugin) getCnfModels(ipAddress string, grpcPort, httpPort int) (swMod swModule, err error) {
@@ -225,7 +252,7 @@ func (p *Plugin) writePidFile() error {
 		return err
 	}
 	_ = os.Mkdir(pidFileDir, os.ModeDir)
-	err = ioutil.WriteFile(
+	err = os.WriteFile(
 		path.Join(pidFileDir, p.ServiceLabel.GetAgentLabel()+pidFileExt),
 		content, 0644)
 	return err

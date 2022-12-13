@@ -56,6 +56,13 @@ echo -n "Checking mock CNF 2 model in JSON schema ... "
 echo $schema | grep -q '"mock2Config": {'
 check_rv $? 0 "Mock CNF 2 model is missing in JSON schema"
 
+# while true; do sleep 100; done
+until [ -f /tmp/unpause.txt ]
+do
+    sleep 1
+done
+echo "Unpause file found, continuing..."
+
 echo -n "Checking route in mock CNF 1 ... "
 docker-compose exec -T mockcnf1 ip route show table 1 | grep -q "7.7.7.7 dev tap"
 check_rv $? 0 "Mock CNF 1 has not configured route"
