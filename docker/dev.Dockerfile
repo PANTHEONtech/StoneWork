@@ -94,8 +94,9 @@ RUN rsync -v --recursive --chmod=D2775,F444 \
     --exclude '*.go' --exclude 'puntmgr*' --exclude 'cnfreg*' --exclude 'mockcnf*' proto/ /api/
 RUN /usr/local/bin/stonework-init --print-spec > /api/models.spec.yaml
 
-## Install agentctl
-COPY --from=vppagent /bin/agentctl /usr/local/bin/agentctl
+# Install agentctl
+RUN go install go.ligato.io/vpp-agent/v3/cmd/agentctl@master
+RUN mv $GOPATH/bin/agentctl /usr/local/bin/agentctl
 
 # Install config files
 RUN mkdir -p /etc/stonework /etc/vpp
