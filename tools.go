@@ -19,11 +19,11 @@
 
 // Manage tool dependencies using Go modules.
 //
-//  https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
-//  https://github.com/golang/go/issues/25922
-//
+//	https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
+//	https://github.com/golang/go/issues/25922
 package vppagent
 
 import (
 	_ "go.fd.io/govpp/cmd/binapi-generator"
+	_ "go.ligato.io/vpp-agent/v3/cmd/agentctl"
 )

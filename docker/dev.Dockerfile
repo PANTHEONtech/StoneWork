@@ -95,7 +95,7 @@ RUN rsync -v --recursive --chmod=D2775,F444 \
 RUN /usr/local/bin/stonework-init --print-spec > /api/models.spec.yaml
 
 # Install agentctl
-RUN go install go.ligato.io/vpp-agent/v3/cmd/agentctl@master
+RUN go install go.ligato.io/vpp-agent/v3/cmd/agentctl
 RUN mv $GOPATH/bin/agentctl /usr/local/bin/agentctl
 
 # Install config files
