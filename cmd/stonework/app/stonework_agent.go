@@ -38,6 +38,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/localregistry"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/watcher"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi"
+	"go.ligato.io/vpp-agent/v3/plugins/telemetry"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
@@ -75,6 +76,7 @@ type StoneWorkAgent struct {
 	RESTAPI      *restapi.Plugin
 	Probe        *probe.Plugin
 	StatusCheck  *statuscheck.Plugin
+	Telemetry    *telemetry.Plugin
 }
 
 // New creates new StoneWorkAgent instance.
@@ -122,6 +124,7 @@ func New() *StoneWorkAgent {
 		RESTAPI:      &restapi.DefaultPlugin,
 		Probe:        &probe.DefaultPlugin,
 		StatusCheck:  &statuscheck.DefaultPlugin,
+		Telemetry:    &telemetry.DefaultPlugin,
 	}
 }
 

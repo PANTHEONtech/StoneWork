@@ -1,0 +1,17 @@
+global:
+  scrape_interval:     15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'agent'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['stonework:9191']
+
+  - job_name: 'vpp'
+    metrics_path: '/metrics/vpp'
+    static_configs:
+      - targets: ['stonework:9191']

@@ -63,8 +63,9 @@ help:
 -include scripts/make/proto.make
 
 build:
-	@cd cmd/stonework && go build -v -ldflags "${LDFLAGS}"
-	@cd cmd/stonework-init && go build -v -ldflags "${LDFLAGS}"
+	# TODO
+	@cd cmd/stonework && go build -v -ldflags '${LDFLAGS} -w -s -extldflags "-static"' -tags 'osusergo netgo'
+	@cd cmd/stonework-init && go build -v -ldflags '${LDFLAGS} -w -s -extldflags "-static"' -tags 'osusergo netgo'
 	@cd cmd/mockcnf && go build -v -ldflags "${LDFLAGS}"
 	@cd cmd/proto-rootgen && go build -v -ldflags "${LDFLAGS}"
 
