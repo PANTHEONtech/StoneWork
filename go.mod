@@ -119,3 +119,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace go.ligato.io/vpp-agent/v3 => github.com/pemoticak/vpp-agent/v3 v3.4.0-alpha.0.20230214095348-8b77cb08a5cc

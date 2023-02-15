@@ -17,41 +17,25 @@
 package mockcnf
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
-	ModelMockCnf = models.Register(getModelProto(), models.Spec{
-		Module:  fmt.Sprintf("mock%d", MockCnfIndex()),
+	ModelMockCnf1 = models.Register(&MockCnf1{}, models.Spec{
+		Module:  "mock1",
 		Version: "v1",
 		Type:    "mock-type",
-	}, models.WithNameTemplate(getModelNameTemplate()))
+	}, models.WithNameTemplate("{{.IpProtocol}}"))
+
+	ModelMockCnf2 = models.Register(&MockCnf2{}, models.Spec{
+		Module:  "mock2",
+		Version: "v1",
+		Type:    "mock-type",
+	}, models.WithNameTemplate("{{.VppInterface}}"))
 )
-
-func getModelProto() proto.Message {
-	switch MockCnfIndex() {
-	case 1:
-		return &MockCnf1{}
-	case 2:
-		return &MockCnf2{}
-	}
-	return nil
-}
-
-func getModelNameTemplate() string {
-	switch MockCnfIndex() {
-	case 1:
-		return "{{.IpProtocol}}"
-	case 2:
-		return "{{.VppInterface}}"
-	}
-	return ""
-}
 
 func MockCnfIndex() int {
 	index, err := strconv.Atoi(os.Getenv("MOCK_CNF_INDEX"))

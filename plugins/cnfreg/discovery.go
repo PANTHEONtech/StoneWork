@@ -98,6 +98,8 @@ func (p *Plugin) cnfDiscovery(done chan struct{}) {
 				p.sw.modules[swMod.cnfMsLabel] = swMod
 				p.initCnfProxy(swMod)
 			}
+			// time.Sleep(p.config.CnfDiscoveryTimeout)
+			// done <- struct{}{}
 		}
 	}
 }

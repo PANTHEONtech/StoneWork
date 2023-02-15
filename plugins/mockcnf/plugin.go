@@ -54,7 +54,7 @@ func (p *Plugin) Init() (err error) {
 		}
 
 		// register the model implemented by CNF
-		err = p.CnfRegistry.RegisterCnfModel(mockcnf.ModelMockCnf, mockCnfDescriptor,
+		err = p.CnfRegistry.RegisterCnfModel(mockcnf.ModelMockCnf1, mockCnfDescriptor,
 			&cnfreg_plugin.CnfModelCallbacks{
 				PuntRequests:     descriptor.MockCnf1PuntReqs,
 				ItemDependencies: descriptor.MockCnf1ItemDeps,
@@ -73,7 +73,7 @@ func (p *Plugin) Init() (err error) {
 		}
 
 		// register the model implemented by CNF
-		err = p.CnfRegistry.RegisterCnfModel(mockcnf.ModelMockCnf, mockCnfDescriptor,
+		err = p.CnfRegistry.RegisterCnfModel(mockcnf.ModelMockCnf2, mockCnfDescriptor,
 			&cnfreg_plugin.CnfModelCallbacks{PuntRequests: descriptor.MockCnf2PuntReqs})
 		if err != nil {
 			return err

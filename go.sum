@@ -722,6 +722,8 @@ github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FI
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml v1.8.1 h1:1Nf83orprkJyknT6h7zbuEGUEjcyVlCxSUGTENmNCRM=
 github.com/pelletier/go-toml v1.8.1/go.mod h1:T2/BmBdy8dvIRq1a/8aqjN41wvWlN4lrapLU/GW4pbc=
+github.com/pemoticak/vpp-agent/v3 v3.4.0-alpha.0.20230214095348-8b77cb08a5cc h1:IGt4bB/HKOduM1od+4j+xC77lvrAC+5s4MixvWTZNn4=
+github.com/pemoticak/vpp-agent/v3 v3.4.0-alpha.0.20230214095348-8b77cb08a5cc/go.mod h1:rbqXVq1y82p2rBzu++cW6ec1aSqZ3PxE1jPK5ywWefI=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
 github.com/philhofer/fwd v1.0.0 h1:UbZqGr5Y38ApvM/V/jEljVxwocdweyH+vmYvRPBnbqQ=
 github.com/philhofer/fwd v1.0.0/go.mod h1:gk3iGcWd9+svBvR0sR+KPcfE+RNWozjowpeBVG3ZVNU=
@@ -919,8 +921,6 @@ go.fd.io/govpp v0.7.0 h1:8qideC7G0xPeYz2sjwni8GKWWbNk45Ev73oR1igKDYY=
 go.fd.io/govpp v0.7.0/go.mod h1:VxUPq8HGQH6/9IL9saMURL3UcHsUuN8XmETuao5HA7o=
 go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa h1:PbrmPqtS8K7jVVXbs9w2n0AzEqT3KGW/0bXWrSgEoOo=
 go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa/go.mod h1:N4rrtufgHchultyJuN8ClAS7szH3IhcfDcC3LX9cRRo=
-go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230313160121-631c8f60947a h1:yxcsqX7LUlP9PRPOy04lZbQTF9lG2zt5Si/HfEqQTHY=
-go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230313160121-631c8f60947a/go.mod h1:rbqXVq1y82p2rBzu++cW6ec1aSqZ3PxE1jPK5ywWefI=
 go.mozilla.org/pkcs7 v0.0.0-20200128120323-432b2356ecb1/go.mod h1:SNgMg+EgDFwmvSmLRTNKC5fegJjB7v23qTQ0XLGUNHk=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=

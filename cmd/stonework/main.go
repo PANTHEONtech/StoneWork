@@ -27,6 +27,8 @@ import (
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.pantheon.tech/stonework/cmd/stonework/app"
+
+	_ "go.pantheon.tech/stonework/proto/mockcnf"
 )
 
 const logo = `
