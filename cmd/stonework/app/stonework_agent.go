@@ -110,6 +110,13 @@ func New() *StoneWorkAgent {
 	vpp := DefaultVPP()
 	linux := DefaultLinux()
 
+	defaultConfig := telemetry.DefaultConfig
+	telemetry.DefaultConfig = func() *telemetry.Config {
+		cfg := defaultConfig()
+		cfg.Disabled = true
+		return cfg
+	}
+
 	return &StoneWorkAgent{
 		PluginName:   "StoneWorkAgent",
 		LogManager:   &logmanager.DefaultPlugin,

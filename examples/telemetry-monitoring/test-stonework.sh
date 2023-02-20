@@ -16,10 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO remove
-shopt -s expand_aliases
-alias docker-compose='docker compose'
-
 trap "exit 1" TERM
 export TOP_PID=$$
 
