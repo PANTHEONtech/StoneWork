@@ -29,4 +29,6 @@ jobs:
 
       - name: "Push Docker images"
         run: make push-images
+  call-vpp-test:
+    uses: ./.github/workflows/vpp.yml
 
