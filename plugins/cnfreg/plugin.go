@@ -257,17 +257,9 @@ func (p *Plugin) Init() (err error) {
 		pb.RegisterCnfDiscoveryServer(grpcServer, p)
 
 	case pb.CnfMode_STONEWORK:
-		// CNF "discovery"
+		p.sw.modules = make(map[string]swModule)
+		// CNF discovery
 		go p.cnfDiscovery(make(chan struct{}))
-		p.Log.Debugf("Discovered CNFs: %+v", p.sw.modules)
-
-		// setup proxy for each config module exposed by every CNF
-		// for _, swMod := range p.sw.modules {
-		// 	err := p.initCnfProxy(swMod)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// }
 	}
 	return nil
 }

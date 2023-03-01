@@ -23,10 +23,6 @@ const (
 	defaultSwModGrpcBasePort = 19000
 	// Start of the HTTP port range for StoneWork modules
 	defaultSwModHttpBasePort = 19100
-	// by default StoneWork will wait 5 seconds in the Init phase for all CNFs to write lock files,
-	// based on which they are discovered by StoneWork.
-	defaultSwCnfDiscoveryTimeout     = 5 * time.Second
-	defaultSwCnfDiscoveryPollingRate = 500 * time.Millisecond
 )
 
 // Config file for CnfRegistry plugin.
@@ -44,10 +40,8 @@ type Config struct {
 // loadConfig returns PuntMgr plugin file configuration if exists.
 func (p *Plugin) loadConfig() (*Config, error) {
 	cfg := &Config{
-		SwModGrpcBasePort:       defaultSwModGrpcBasePort,
-		SwModHttpBasePort:       defaultSwModHttpBasePort,
-		CnfDiscoveryTimeout:     defaultSwCnfDiscoveryTimeout,
-		CnfDiscoveryPollingRate: defaultSwCnfDiscoveryPollingRate,
+		SwModGrpcBasePort: defaultSwModGrpcBasePort,
+		SwModHttpBasePort: defaultSwModHttpBasePort,
 	}
 	found, err := p.Cfg.LoadValue(cfg)
 	if err != nil {

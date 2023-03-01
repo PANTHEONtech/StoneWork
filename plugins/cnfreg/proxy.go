@@ -33,17 +33,6 @@ import (
 
 // The function initializes proxy descriptor for every config model exposed by the given CNF.
 func (p *Plugin) initCnfProxy(swMod swModule) error {
-	// Register models with the local registry.
-	for _, cnfModel := range swMod.cnfModels {
-		spec := models.ToSpec(cnfModel.info.Spec)
-		_, err := models.DefaultRegistry.Register(cnfModel.info, spec)
-		if err != nil {
-			p.Log.Errorf("Failed to register CNF model for proto message %s: %v",
-				cnfModel.info.ProtoName, err)
-			return err
-		}
-	}
-
 	// create descriptor for each model
 	for _, cnfModel := range swMod.cnfModels {
 		spec := models.ToSpec(cnfModel.info.Spec)

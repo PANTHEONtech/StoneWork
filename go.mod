@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/docker/cli v20.10.17+incompatible
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.4.2
 	github.com/goccy/go-yaml v1.8.0
@@ -49,7 +50,6 @@ require (
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/fluent/fluent-logger-golang v1.3.0 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/fsouza/go-dockerclient v1.7.1 // indirect
 	github.com/ftrvxmtrx/fd v0.0.0-20150925145434-c6d800382fff // indirect
 	github.com/goccy/go-graphviz v0.0.6 // indirect
@@ -119,5 +119,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace go.ligato.io/vpp-agent/v3 => github.com/pemoticak/vpp-agent/v3 v3.4.0-alpha.0.20230214095348-8b77cb08a5cc
