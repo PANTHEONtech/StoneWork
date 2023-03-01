@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package dhcp4;
+
+option go_package = "pantheon.tech/cnf-dhcp/proto/dhcp4;dhcp4";
+
+// The interfaces-config map specifies the server configuration concerning the network interfaces,
+// on which the server should listen to the DHCP messages. The interfaces parameter specifies a list of
+// network interfaces on which the server should listen.
+// For a more detailed explanation see: https://downloads.isc.org/isc/kea/1.5.0/doc/kea-guide.html#dhcp4-configuration (10th paragraph)
+// For a reference also explaining fields see: https://downloads.isc.org/isc/kea/1.5.0/doc/kea-guide.html#dhcp4-interface-configuration
+message InterfacesConfig {
+    // Specifies a list of Linux interfaces on which the Kea DHCPv4 should listen.
+    // The interfaces should be referenced by their logical names, not the host interface names.
+    // If the CNF runs as StoneWork module it is not supported to reference Linux interfaces directly,
+    // instead DHCP should be configured for VPP VRFs (see vpp_vrf field) and the proxying/punting
+    // of DHCP requests from VPP to Linux will be configured automatically.
+    repeated string linux_interfaces = 1;
+
+    // If VPP is used as data-plane (i.e. CNF-DHCP is integrated with StoneWork), here it is possible
+    // to specify the list of VRFs from which DHCP requests will be punted into Kea DHCPv4.
+    repeated uint32 vpp_vrfs = 2;
+
+    enum IfSocketType {
+        UNDEFINED = 0;
+        UDP = 1;
+        RAW = 2;
+    }
+    // The dhcp-socket-type specifies that the IP/UDP sockets will be opened on
+    // all interfaces on which the server listens.
+    // If the dhcp-socket-type is set to raw, it configures the server to use raw sockets instead.
+    // If the dhcp-socket-type value is not specified, the default value raw is used.
+    // Using UDP sockets automatically disables the reception of broadcast packets from directly connected clients.
+    // This effectively means that the UDP sockets can be used for relayed traffic only.
+    // When using the raw sockets, both the traffic from the directly connected clients and the relayed traffic will be handled.
+    // Caution should be taken when configuring the server to open multiple raw sockets on the interface with several IPv4 addresses assigned.
+    // If the directly connected client sends the message to the broadcast address all sockets on this link will receive
+    // this message and multiple responses will be sent to the client. Hence, the configuration with multiple IPv4 addresses
+    // assigned to the interface should not be used when the directly connected clients are operating on that link.
+    // To use a single address on such interface, the "interface-name/address" notation should be used.
+    IfSocketType dhcp_socket_type = 3;
+}
+
+// For a more detailed explanation see: https://downloads.isc.org/isc/kea/1.5.0/doc/kea-guide.html#dhcp4-address-config
+message Pool {
+    // Address range used for client assignments.
+    string pool = 3;
+    // Pool level list of DHCP options.
+    repeated OptionData option_data = 4;
+}
+
+// List of IPv4 relay addresses for which this subnet is
+// selected.
+// For a more detailed explanation see: https://downloads.isc.org/isc/kea/1.5.0/doc/kea-guide.html#dhcp4-relay-override
+message Relay {
+    repeated string ip_addresses = 1;
+}
+
+// For a more detailed explanation see: https://downloads.isc.org/isc/kea/1.5.0/doc/kea-guide.html#dhcp4-std-options
+message OptionData {
+    // The name parameter specifies the option name.
+    // For a list of currently supported names, see: https://downloads.isc.org/isc/kea/1.5.0/doc/kea-guide.html#dhcp4-std-options-list
+    string name = 1;
+    // Option data to be stored in the option payload.
+    string data = 2;
+    // option code.
+    int32 code = 3;
+    // Option space. The default value "dhcp4" designates the
+    // top level option space.
+    string space = 5;
+    // Boolean flag indicating if the given option is always
+    // send in response or only when requested. The default
+    // value of false indicates that it is only sent when
+    // requested.
+    bool always_send = 6;
+}
+
+// For a more detailed explanation see: https://downloads.isc.org/isc/kea/1.5.0/doc/kea-guide.html#dhcp4-address-config
+message IPv4Subnet {
+    // List of Ip address pools belonging to the subnet.
+    repeated Pool pools = 1;
+
+    // Subnet prefix.
+    string subnet = 2;
+
+    // List of IPv4 relay addresses for which this subnet is
+    // selected.
+    Relay relay = 3;
+
+    // Subnet level list of DHCP options.
+    repeated OptionData option_data = 4;
+
+    // Specifies that this subnet is selected for the requests
+    // received on the particular interface.
+    // The field should reference the Linux interface by its logical name.
+    // It is not valid to specify both linux_interface and vpp_vrf for the same subnet.
+    string linux_interface = 5;
+
+    // Vrf is encapsulated inside a message to differentiate between unset and zero value.
+    message VppVrf {
+        uint32 vrf = 1;
+    }
+    // Specifies that this subnet is selected for the requests
+    // received on the particular VPP VRF (which has DHCP requests proxied to Kea DHCP server).
+    // It is not valid to specify both linux_interface and vpp_vrf for the same subnet.
+    VppVrf vpp_vrf = 6;
+}
+
+// DHCPv4 specific configuration proto message.
+message Dhcp4 {
+    InterfacesConfig interfaces_config = 1;
+
+    // Shared network level valid lifetime.
+    // valid_lifetime (in seconds) defines how long the addresses (leases) given out by the server are valid.
+    int32 valid_lifetime = 2;
+
+    // Global value for the renew timer, i.e. the timer after which the
+    // DHCP client renews the lease.
+    // renew-timer (in seconds) defines a timer that governs when the client will begin the renewal procedure.
+    int32 renew_timer = 3;
+
+    // Global value for the rebind timer, i.e. the time after which the
+    // DHCP client enters rebind state if it fails to renew the lease.
+    // rebind-timer (in seconds) defines a timer that governs when the client will begin the rebind procedure.
+    int32 rebind_timer = 4;
+
+    // List of IPv4 subnets belonging to this network.
+    repeated IPv4Subnet subnets = 5;
+}

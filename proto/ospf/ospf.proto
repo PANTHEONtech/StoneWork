@@ -1,0 +1,91 @@
+/*
+(simplified, for full configuration tree refer to plugins/ospfplugin/yang/frr/frr-ospfd.tree)
+
+module: frr-ospfd
+  augment /frr-rt:routing/frr-rt:control-plane-protocols/frr-rt:control-plane-protocol:
+    +--rw ospf
+       +--rw ospf
+       |  +--rw router-id?              inet:ipv4-address
+       +--rw passive-interface* [interface]
+       |  +--rw interface    frr-interface:interface-ref
+       |  +--rw address?     inet:ipv4-address
+       +--rw areas
+          +--rw area* [area-id]
+             +--rw area-id          ospf-area-id
+             +--rw nssa!
+             |  +--rw no-summary?   boolean
+             +--rw stub!
+                +--rw no-summary?   boolean
+
+  augment /frr-interface:lib/frr-interface:interface:
+    +--rw ospf
+       +--rw instance* [id]
+          +--rw id                     uint16
+          +--rw network?               enumeration
+          +--rw area?                  ospf-area-id
+          +--rw cost?                  uint16
+          +--rw priority?              uint8
+          +--rw interface-address* [address]
+             +--rw address                inet:ipv4-address
+             +--rw area?                  ospf-area-id
+             +--rw cost?                  uint16
+             +--rw priority?              uint8
+*/
+
+syntax = "proto3";
+
+package ospf;
+
+option go_package = "pantheon.tech/cnf-frr/proto/ospf;ospf";
+
+// Definition of the OSPF Router.
+// Only one OSPF Router instance can be started per agent.
+message Router {
+	// Router ID (required in the IP address format). Must be unique within the OSPF domain.
+	string id = 1;
+}
+
+// OSPF enabled interface.
+message Interface {
+	// Logical name of a VPP interface.
+	string vpp_interface = 1;
+	// Enable to make this OSPF Passive interface (in that case the attributes below are ignored).
+	bool is_passive = 2;
+
+	// ID of area behind the interface.
+	// The ID should be in the dotted number form (x.x.x.x).
+	string area = 3;
+	enum AreaType {
+		NORMAL = 0;
+		STUB = 1;
+		TOTALLY_STUB = 2;
+		NSSA = 3;
+		TOTALLY_NSSA = 4;
+	}
+	AreaType area_type = 4;
+
+	// Type of the network behind the interface.
+	enum Network {
+		BROADCAST = 0;
+		NON_BROADCAST = 1;
+		POINT_TO_MULTIPOINT = 2;
+		POINT_TO_POINT = 3;
+	}
+	Network network = 5;
+
+	// Interface cost in the range <1,65535>.
+	uint32 cost = 6;
+	// Router priority in the range <0,255>.
+	// Used for the election of a Designed Router.
+	// The router with the highest priority will be more eligible to become Designated Router.
+	// Setting the value to 0, makes the router ineligible to become Designated Router. The default value is 1.
+	uint32 priority = 7;
+	// Hello interval in the range <1-65535>.
+	uint32 hello_interval = 8;
+	// Dead interval in the range <1-65535>.
+	uint32 dead_interval = 9;
+	// Retransmit interval in the range <1-65535>.
+	uint32 retransmit_interval = 10;
+	// Transmit delay in the range <1-65535>.
+    uint32 transmit_delay = 11;
+}

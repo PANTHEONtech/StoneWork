@@ -1,0 +1,215 @@
+syntax = "proto3";
+
+package bgp;
+
+option go_package = "pantheon.tech/cnf-frr/proto/bgp;bgp";
+
+// Address Family.
+message AddressFamily {
+    enum Afi {
+        AFI_UNKNOWN = 0;
+        AFI_IP = 1;
+        AFI_IP6 = 2;
+        AFI_L2VPN = 25;
+        AFI_LS = 16388;
+        AFI_OPAQUE = 16397;
+    }
+
+    enum Safi {
+        SAFI_UNKNOWN = 0;
+        SAFI_UNICAST = 1;
+        SAFI_MULTICAST = 2;
+        SAFI_MPLS_LABEL = 4;
+        SAFI_ENCAPSULATION = 7;
+        SAFI_VPLS = 65;
+        SAFI_EVPN = 70;
+        SAFI_LS = 71;
+        SAFI_MPLS_VPN = 128;
+        SAFI_MPLS_VPN_MULTICAST = 129;
+        SAFI_ROUTE_TARGET_CONSTRAINTS = 132;
+        SAFI_FLOW_SPEC_UNICAST = 133;
+        SAFI_FLOW_SPEC_VPN = 134;
+        SAFI_KEY_VALUE = 241;
+    }
+
+    Afi afi = 1;
+    Safi safi = 2;
+}
+
+message Router {
+    // Router ID.
+    string id = 1;
+
+    // Autonomous system number.
+    uint32 asn = 2;
+
+    uint32 vrf_id = 3;
+
+    // Enable to run BGP in Multi-VRF mode.
+    // If enabled, a single instance of BGP server will maintain a separate routing table for every VRF.
+    // Using route distinguishers/targets the server is able to determine for a given path advertisement
+    // to which VRF it relates.
+    bool multi_vrf = 4;
+
+    // By default the BGP server carries network layer reachability information (NLRI) for address
+    // family AFI_IP(6)/SAFI_UNICAST. This field allows to enable multiple address families,
+    // i.e. to run multi-protocol BGP (MP-BGP).
+    repeated AddressFamily addr_families = 5;
+
+    // Directly connected networks which will be advertised by the local
+    // BGP speaker, no matter whether they will be configured as BGP sessions or not.
+    // Networks reachable from the server but not listed here will NOT be advertised.
+    message Neighbor {
+        // Network address in the CIDR format.
+        string network = 1;
+        // For per-VRF BGP server (multi_vrf=false) a neighbor with zero (i.e. undefined) vrf_id
+        // will inherit the VRF of the server.
+        uint32 vrf_id = 2;
+    }
+    repeated Neighbor neighbors = 6;
+}
+
+// BGP configuration to associate with a VPP VRF.
+// Configure in multi-VRF mode to differentiate between multiple VRFs using route
+// targets and route distinguishers.
+// In per-VRF mode this configuration will not be applied.
+message Vrf {
+    // ID of a VRF as used on VPP.
+    uint32 id = 1;
+
+    // Two-Octet AS Specific Extended Community.
+    message TwoOctetAsSEC {
+        // 2 bytes ASN
+        uint32 admin_asn = 1;
+        uint32 local_num = 2;
+    }
+
+    // IPv4 Address Specific Extended Community.
+    message IPv4AddressSEC {
+        // IPv4 address
+        string admin_ip = 1;
+        uint32 local_num = 2;
+    }
+
+    // Four-octet AS Specific Extended Community.
+    message FourOctetASSEC {
+        // 4 bytes ASN
+        uint32 admin_asn = 1;
+        uint32 local_num = 2;
+    }
+
+    // Route distinguisher is used only within a single internet service provider's
+    // network to distinguish the distinct virtual private network (VPN) routes of separate
+    // customers who connect to the provider (appended to IP prefixes in the BGP table to keep them unique).
+    oneof route_distinguisher {
+        TwoOctetAsSEC rd_type0 = 2;
+        IPv4AddressSEC rd_type1 = 3;
+        FourOctetASSEC rd_type2 = 4;
+    }
+
+    // RouteTarget is a tag attached to an exported route that decides to which VRF the route is imported
+    // by a receiving BGP router.
+    message RouteTarget {
+        oneof route_target {
+            TwoOctetAsSEC rt_type0 = 1;
+            IPv4AddressSEC rt_type1 = 2;
+            FourOctetASSEC rt_type2 = 3;
+        }
+    }
+    repeated RouteTarget import_route_targets = 5;
+    repeated RouteTarget export_route_targets = 6;
+}
+
+// Session endpoint is a local side of the BGP session. The session endpoint is bound to a
+// local interface and defines BGP connection to the accessible peer, usually on the same
+// network. For every peered autonomous system, a separate session endpoint must be configured
+// (i.e separate interface is required for every peered remote AS).
+// Multiple peer routers with the same autonomous network may be defined in a single session
+// endpoint peer object. A session can be configured only if the BGP server is up.
+message SessionEndpoint {
+    // VPP interface used as ingress/egress to the peer(s).
+    string vpp_interface = 1;
+
+    // VRF (with ID as used on VPP) to which this session endpoint belongs.
+    // Use in the per-VRF BGP server mode to associate session endpoint with the server.
+    // The VPP interface has to be inserted into this VRF before the session endpoint can be installed.
+    uint32 vrf_id = 2;
+
+    // Remote autonomous system network number.
+    uint32 remote_asn = 3;
+
+    // Enable Bidirectional Forwarding Detection for fast detection of a lost connection to a BGP peer.
+    bool enable_bfd = 4;
+
+    // Peer describes remote BGP servers.
+    message Peer {
+        // Peer IP addresses in the CIDR format.
+        string ip_address = 2;
+
+        // Enable peer as a route reflector client.
+        bool route_reflector = 3;
+
+        // Route reflector cluster ID (Required if RR is enabled).
+        string cluster_id = 4;
+
+        // Optional peer configuration parameters.
+        message Options {
+            // The TTL carried in the IP header of BGP packets.
+            // Since every incoming packet is punted, the value must be always greater than 1.
+            uint32 multi_hop_ttl = 1;
+
+            // Timeout in seconds between peer connection attempts.
+            uint32 retry_connection_timeout = 2;
+
+            // Time span in seconds between keep-alive messages.
+            uint32 keep_alive_interval = 3;
+
+            // The hold time specifies how long the server waits for incoming BGP
+            // messages before it assumes the peer is dead. Default value is 30 seconds.
+            uint32 hold_time = 4;
+        }
+        Options options = 5;
+    }
+    repeated Peer peers = 5;
+}
+
+
+// Simplified BGP policy is a set of policy entries. Every entry consists of direction and a set
+// of statements which are considered for every route the direction applies for.
+message Policy {
+    message Entry {
+        enum Direction {
+            IMPORT = 0;
+            EXPORT = 1;
+        }
+        Direction direction = 2;
+
+        // A statement consists of conditions and actions. If any route in given direction
+        // fulfills all conditions, an appropriate action is applied to it.
+        message Statement {
+
+            // Condition is a set of rules. The action is executed when all conditions are
+            // fulfilled. Conditions may remain empty in order to "match all".
+            message Condition {
+                // Prefix is a route destination. Multiple prefixes can be set in single
+                // policy statement, they are evaluated as 'ANY OF'.
+                repeated string prefixes = 1;
+
+                // Neighbor is a path the route was received from. As for prefixes, multiple
+                // neighbors may be set.
+                repeated string neighbors = 2;
+            }
+            Condition conditions = 1;
+
+            // At least one action is required.
+            message Action {
+                // Set the local preference to the given value. Keep in mind that the local
+                // preference can be exported only to iBGP peers.
+                uint32 local_pref = 1;
+            }
+            Action actions = 2;
+        }
+        repeated Statement statements = 3;
+    }
+    repeated Entry entries = 1;
+}
