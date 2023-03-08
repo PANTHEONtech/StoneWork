@@ -10,6 +10,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const (
+	EnvVarDebug              = "SWCTL_DEBUG"
+	EnvVarLogLevel           = "SWCTL_LOGLEVEL"
+	EnvVarVppProbeNoDownload = "SWCTL_VPP_PROBE_NO_DOWNLOAD"
+)
+
 var (
 	glob GlobalOptions
 )
@@ -42,12 +48,12 @@ func InitGlobalOptions(cli Cli, opts *GlobalOptions) {
 	}
 
 	// debug mode
-	if os.Getenv("SWCTL_DEBUG") != "" {
+	if os.Getenv(EnvVarDebug) != "" {
 		opts.Debug = true
 	}
 
 	// log level
-	if loglvl := os.Getenv("SWCTL_LOGLEVEL"); loglvl != "" {
+	if loglvl := os.Getenv(EnvVarLogLevel); loglvl != "" {
 		opts.LogLevel = loglvl
 	}
 	if opts.LogLevel != "" {

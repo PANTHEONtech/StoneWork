@@ -13,6 +13,7 @@ import (
 	"go.pantheon.tech/stonework/client"
 )
 
+// Cli is a client API for CLI application.
 type Cli interface {
 	Initialize(opts Options) error
 	Client() client.API
@@ -24,6 +25,7 @@ type Cli interface {
 	Apply(...CliOption) error
 }
 
+// CLI implements Cli interface.
 type CLI struct {
 	client client.API
 
@@ -34,6 +36,7 @@ type CLI struct {
 	in  *streams.In
 }
 
+// NewCli returns a new CLI instance. It accepts CliOption for customization.
 func NewCli(opt ...CliOption) (*CLI, error) {
 	cli := new(CLI)
 	if err := cli.Apply(opt...); err != nil {
@@ -60,7 +63,7 @@ func (cli *CLI) Initialize(opts Options) (err error) {
 		return fmt.Errorf("init error: %w", err)
 	}
 
-	if os.Getenv("SWCTL_VPP_PROBE_NO_DOWNLOAD") == "" {
+	if os.Getenv(EnvVarVppProbeNoDownload) == "" {
 		vppProbePath, err := getVppProbe()
 		if err != nil {
 			logrus.Errorf("getting vpp-probe failed: %v", err)

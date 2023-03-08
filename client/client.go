@@ -1,6 +1,10 @@
 package client
 
-// Option
+import (
+	"fmt"
+)
+
+// Option is a function that customizes a Client.
 type Option func(*Client)
 
 // API defines client API. It is supposed to be used by various client
@@ -10,6 +14,7 @@ type API interface {
 	GetComponents() ([]Component, error)
 }
 
+// Client implements API interface.
 type Client struct {
 	components []Component
 }
@@ -24,11 +29,12 @@ func NewClient(opts ...Option) (*Client, error) {
 	return c, nil
 }
 
+// GetComponents returns list of components.
 func (c *Client) GetComponents() ([]Component, error) {
 	var components []Component
 
 	// TODO: implement retrieval of components
 
-	return components, nil
+	return components, fmt.Errorf("NOT IMPLEMENTED YET")
 
 }

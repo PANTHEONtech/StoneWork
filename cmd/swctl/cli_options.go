@@ -9,6 +9,7 @@ import (
 	"go.pantheon.tech/stonework/client"
 )
 
+// CliOption is a function that customizes CLI.
 type CliOption func(cli *CLI) error
 
 // WithStandardStreams sets a cli in, out and err streams with the standard streams.
