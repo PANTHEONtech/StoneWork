@@ -19,21 +19,22 @@ package main
 import (
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"time"
 
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/logging"
-	"go.pantheon.tech/stonework/cmd/stonework/app"
 
-	_ "net/http/pprof"
+	"go.pantheon.tech/stonework/cmd/stonework/app"
 )
 
 const logo = `
    ______               _      __         __
   / __/ /____  ___  ___| | /| / /__  ____/ /__
  _\ \/ __/ _ \/ _ \/ -_) |/ |/ / _ \/ __/  '_/
-/___/\__/\___/_//_/\__/|__/|__/\___/_/ /_/\_\  %s\n`
+/___/\__/\___/_//_/\__/|__/|__/\___/_/ /_/\_\  %s
+`
 
 func main() {
 	go func() {
