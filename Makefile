@@ -16,17 +16,31 @@
 
 SHELL := /usr/bin/env bash -o pipefail
 
-PROJECT := StoneWork
+PROJECT    := StoneWork
+VERSION    ?= $(shell git describe --always --tags --dirty)
+COMMIT     ?= $(shell git rev-parse HEAD)
+BRANCH     ?= $(shell git rev-parse --abbrev-ref HEAD)
+DATE       ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
+BUILD_DATE ?= $(shell date +%s)
+BUILD_HOST ?= $(shell hostname)
+BUILD_USER ?= $(shell id -un)
 
-VERSION ?= $(shell git describe --always --tags --dirty)
-COMMIT  ?= $(shell git rev-parse HEAD)
-DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
+LDFLAGS = -w -s
 
 CNINFRA := go.ligato.io/cn-infra/v2/agent
-LDFLAGS = -w -s \
+LDFLAGS += \
 	-X $(CNINFRA).BuildVersion=$(VERSION) \
 	-X $(CNINFRA).CommitHash=$(COMMIT) \
 	-X $(CNINFRA).BuildDate=$(DATE)
+
+VERSION_PKG := go.pantheon.tech/stonework/pkg/version
+LDFLAGS += \
+	-X $(VERSION_PKG).version=$(VERSION) \
+	-X $(VERSION_PKG).commit=$(COMMIT)-$(DATE) \
+	-X $(VERSION_PKG).branch=$(BRANCH) \
+	-X $(VERSION_PKG).buildStamp=$(BUILD_DATE) \
+	-X $(VERSION_PKG).buildHost=$(BUILD_HOST) \
+	-X $(VERSION_PKG).buildUser=$(BUILD_USER)
 
 RELEASE_TAG ?= $(shell git describe --always --tags --dirty --exact-match 2>/dev/null)
 
@@ -64,12 +78,14 @@ help:
 
 build:
 	@cd cmd/stonework && go build -v -ldflags "${LDFLAGS}"
+	@cd cmd/swctl && go build -v -ldflags "${LDFLAGS}"
 	@cd cmd/stonework-init && go build -v -ldflags "${LDFLAGS}"
 	@cd cmd/mockcnf && go build -v -ldflags "${LDFLAGS}"
 	@cd cmd/proto-rootgen && go build -v -ldflags "${LDFLAGS}"
 
 install:
 	go install -v -ldflags "${LDFLAGS}" ./cmd/stonework
+	go install -v -ldflags "${LDFLAGS}" ./cmd/swctl
 	go install -v -ldflags "${LDFLAGS}" ./cmd/stonework-init
 
 install-mockcnf:
@@ -77,6 +93,9 @@ install-mockcnf:
 
 install-proto-rootgen:
 	@cd cmd/proto-rootgen && go install -v -ldflags "${LDFLAGS}"
+
+install-swctl:
+	@cd cmd/swctl && go install -v -ldflags "$(LDFLAGS)"
 
 # -------------------------------
 #  Images
