@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
+	github.com/vishvananda/netns v0.0.4
 	go.fd.io/govpp v0.7.0
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
 	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230313160121-631c8f60947a
