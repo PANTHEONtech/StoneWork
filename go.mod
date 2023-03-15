@@ -19,8 +19,8 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.fd.io/govpp v0.7.0
-	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220610112835-012faf45555e
-	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230126124733-c2ca78897a92
+	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
+	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230313160121-631c8f60947a
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.1
 )

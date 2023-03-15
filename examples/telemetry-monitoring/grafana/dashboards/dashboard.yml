@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: dashboards
+    orgId: 1
+    folder: 'dashboards'
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 10
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true
