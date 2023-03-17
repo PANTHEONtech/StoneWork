@@ -16,8 +16,6 @@
 
 package cnfreg
 
-import "time"
-
 const (
 	// Start of the gRPC port range for StoneWork modules
 	defaultSwModGrpcBasePort = 19000
@@ -31,10 +29,6 @@ type Config struct {
 	SwModGrpcBasePort int `json:"sw-module-grpc-base-port"`
 	// Start of the HTTP port range for StoneWork modules
 	SwModHttpBasePort int `json:"sw-module-http-base-port"`
-	// The maximum amount of time StoneWork will wait for all CNFs (SW-Modules) to register themselves.
-	CnfDiscoveryTimeout time.Duration `json:"cnf-discovery-timeout"`
-	// Time interval between checks for StoneWork module registration.
-	CnfDiscoveryPollingRate time.Duration `json:"cnf-discovery-polling-rate"`
 }
 
 // loadConfig returns PuntMgr plugin file configuration if exists.
