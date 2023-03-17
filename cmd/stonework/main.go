@@ -28,8 +28,6 @@ import (
 
 	"go.pantheon.tech/stonework/cmd/stonework/app"
 
-	_ "go.pantheon.tech/stonework/proto/mockcnf"
-
 	_ "go.pantheon.tech/stonework/proto/bgp"
 	_ "go.pantheon.tech/stonework/proto/dhcp4"
 	_ "go.pantheon.tech/stonework/proto/isis"
