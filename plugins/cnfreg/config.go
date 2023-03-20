@@ -16,6 +16,8 @@
 
 package cnfreg
 
+import "time"
+
 const (
 	// Start of the gRPC port range for StoneWork modules
 	defaultSwModGrpcBasePort = 19000
@@ -29,6 +31,8 @@ type Config struct {
 	SwModGrpcBasePort int `json:"sw-module-grpc-base-port"`
 	// Start of the HTTP port range for StoneWork modules
 	SwModHttpBasePort int `json:"sw-module-http-base-port"`
+	// Deprecated. Using this option will result in a warning
+	CnfDiscoveryTimeout time.Duration `json:"cnf-discovery-timeout"`
 }
 
 // loadConfig returns PuntMgr plugin file configuration if exists.
@@ -47,5 +51,9 @@ func (p *Plugin) loadConfig() (*Config, error) {
 	}
 
 	p.Log.Debugf("CnfRegistry config found: %+v", cfg)
+	var durZeroVal time.Duration
+	if cfg.CnfDiscoveryTimeout != durZeroVal {
+		p.Log.Warn("Option CnfDiscoveryTimeout is deprecated and setting it has no effect")
+	}
 	return cfg, err
 }
