@@ -20,10 +20,7 @@ test:
 dump-logs-ignore-errors:
 	@make dump-logs || true
 
-exec-test: stop-example-ignore-errors start-example init-sleep test-stonework dump-logs-ignore-errors stop-example
-
-init-sleep:
-	@sleep 2
+exec-test: stop-example-ignore-errors start-example test-stonework stop-example
 
 start-example:
 	@docker-compose up -d

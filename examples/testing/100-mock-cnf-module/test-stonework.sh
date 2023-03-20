@@ -42,8 +42,6 @@ function check_in_sync {
     check_rv $? 1 "StoneWork is not in-sync"
 }
 
-sleep 10
-
 check_in_sync
 
 # test JSON schema
