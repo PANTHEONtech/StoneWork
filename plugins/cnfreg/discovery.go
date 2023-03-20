@@ -64,6 +64,11 @@ func (p *Plugin) cnfDiscovery(done <-chan struct{}) {
 	}()
 
 	_ = os.Mkdir(pidFileDir, os.ModeDir)
+
+	if err := watcher.Add(pidFileDir); err != nil {
+		p.Log.Errorf("failed to add pid file directory to watch into file watcher: %v", err)
+	}
+
 	pidFiles, err := os.ReadDir(pidFileDir)
 	if err != nil {
 		p.Log.Errorf("failed to read pid file directory: %v", err)
@@ -74,12 +79,10 @@ func (p *Plugin) cnfDiscovery(done <-chan struct{}) {
 			p.Log.Errorf("loading StoneWork module from file failed: %v", err)
 			continue
 		}
-		p.sw.modules[swMod.cnfMsLabel] = swMod
-		p.initCnfProxy(swMod)
-	}
-
-	if err := watcher.Add(pidFileDir); err != nil {
-		p.Log.Errorf("failed to add pid file directory to watch into file watcher: %v", err)
+		if _, ok := p.sw.modules[swMod.cnfMsLabel]; !ok {
+			p.sw.modules[swMod.cnfMsLabel] = swMod
+			p.initCnfProxy(swMod)
+		}
 	}
 
 	go p.discovery(watcher)
@@ -108,6 +111,7 @@ func (p *Plugin) discovery(w *fsnotify.Watcher) {
 			swMod, err := p.loadSwModFromFile(ev.Name)
 			if err != nil {
 				p.Log.Errorf("loading StoneWork module from file failed: %v", err)
+				continue
 			}
 			p.sw.modules[swMod.cnfMsLabel] = swMod
 			p.initCnfProxy(swMod)
