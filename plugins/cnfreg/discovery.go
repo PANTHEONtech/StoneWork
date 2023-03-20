@@ -79,8 +79,8 @@ func (p *Plugin) cnfDiscovery(done <-chan struct{}) {
 			p.Log.Errorf("loading StoneWork module from file failed: %v", err)
 			continue
 		}
-		if _, ok := p.sw.modules[swMod.cnfMsLabel]; !ok {
-			p.sw.modules[swMod.cnfMsLabel] = swMod
+		if _, ok := p.sw.modules.Get(swMod.cnfMsLabel); !ok {
+			p.sw.modules.Set(swMod.cnfMsLabel, swMod)
 			p.initCnfProxy(swMod)
 		}
 	}
@@ -113,7 +113,7 @@ func (p *Plugin) discovery(w *fsnotify.Watcher) {
 				p.Log.Errorf("loading StoneWork module from file failed: %v", err)
 				continue
 			}
-			p.sw.modules[swMod.cnfMsLabel] = swMod
+			p.sw.modules.Set(swMod.cnfMsLabel, swMod)
 			p.initCnfProxy(swMod)
 		}
 	}

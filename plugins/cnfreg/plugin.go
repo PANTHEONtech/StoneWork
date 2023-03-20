@@ -37,6 +37,7 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 
+	"go.pantheon.tech/stonework/pkg/conc"
 	pb "go.pantheon.tech/stonework/proto/cnfreg"
 	"go.pantheon.tech/stonework/proto/puntmgr"
 )
@@ -162,7 +163,7 @@ type PuntManagerAPI interface {
 
 // Attributes specific to StoneWork (i.e. not used by CNF).
 type swAttrs struct {
-	modules map[string]swModule // key = cnf microservice label
+	modules conc.Map[string, swModule] // key = cnf microservice label
 }
 
 // CNF used as a StoneWork Module.
@@ -257,7 +258,7 @@ func (p *Plugin) Init() (err error) {
 		pb.RegisterCnfDiscoveryServer(grpcServer, p)
 
 	case pb.CnfMode_STONEWORK:
-		p.sw.modules = make(map[string]swModule)
+		p.sw.modules = conc.NewMap[string, swModule]()
 		// CNF discovery
 		go p.cnfDiscovery(make(chan struct{}))
 	}
@@ -358,8 +359,7 @@ func (p *Plugin) GetCnfGrpcConn(cnfMsLabel string) (conn grpc.ClientConnInterfac
 	if p.cnfMode != pb.CnfMode_STONEWORK {
 		panic(fmt.Errorf("method GetCnfGrpcConn is not available in the CNF mode %v", p.cnfMode))
 	}
-	// No need to lock p.sw - it is not changed anymore after Init
-	swModule, loaded := p.sw.modules[cnfMsLabel]
+	swModule, loaded := p.sw.modules.Get(cnfMsLabel)
 	if !loaded {
 		return nil, fmt.Errorf("CNF %s is not loaded as StoneWork Module", cnfMsLabel)
 	}
@@ -372,15 +372,15 @@ func (p *Plugin) GetCnfGrpcConn(cnfMsLabel string) (conn grpc.ClientConnInterfac
 // Returns remote configuration client connected with the given SW-Module CNF.
 func (p *Plugin) GetCnfCfgClient(cnfMsLabel string) (cfgClient client.GenericClient, err error) {
 	if p.cnfMode != pb.CnfMode_STONEWORK {
-		panic(fmt.Errorf("method GetCnfGrpcConn is not available in the CNF mode %v", p.cnfMode))
+		panic(fmt.Errorf("method GetCnfCfgClient is not available in the CNF mode %v", p.cnfMode))
 	}
 	// No need to lock p.sw - it is not changed anymore after Init
-	swModule, loaded := p.sw.modules[cnfMsLabel]
+	swModule, loaded := p.sw.modules.Get(cnfMsLabel)
 	if !loaded {
 		return nil, fmt.Errorf("CNF %s is not loaded as StoneWork Module", cnfMsLabel)
 	}
 	if swModule.cfgClient == nil {
-		return nil, fmt.Errorf("gRPC connection with CNF %s is not yet established", cnfMsLabel)
+		return nil, fmt.Errorf("configuration client for CNF %s does not exist yet", cnfMsLabel)
 	}
 	return swModule.cfgClient, nil
 }
