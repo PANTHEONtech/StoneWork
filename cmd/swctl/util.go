@@ -65,8 +65,8 @@ func downloadVppProbe() (string, error) {
 
 	if installedVersion != "" {
 		logrus.Debugf("installed version of vpp-probe: %v", installedVersion)
-		if time.Since(lastCheck) < latestVersionCheckPeriod {
-			logrus.Debugf("last check or download happened less than %v ago, skipping latest release check", latestVersionCheckPeriod)
+		if d := time.Since(lastCheck); d < latestVersionCheckPeriod {
+			logrus.Debugf("last check or download occurred recently %v ago (less than %v), skipping check for the latest release", d.Round(time.Minute), latestVersionCheckPeriod)
 			return installPath, nil
 		}
 	}

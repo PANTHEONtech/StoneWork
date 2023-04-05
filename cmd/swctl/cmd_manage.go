@@ -126,20 +126,33 @@ var funcMap = map[string]any{
 		}
 		for i := 1; i <= inc; i++ {
 			x = x.Next()
+			if !x.IsValid() {
+				return "", fmt.Errorf("no next ip: %w", err)
+			}
 		}
 		return x.String(), nil
 	},
-	"nextsubnet": func(addr string) (string, error) {
+	"subnet": func(addr string, inc int) (string, error) {
 		_, ipnet, err := net.ParseCIDR(addr)
 		if err != nil {
 			return "", err
 		}
-		_, bits := ipnet.Mask.Size()
-		next, ok := cidr.NextSubnet(ipnet, bits)
-		if !ok {
-			return "", fmt.Errorf("failed")
+		if inc <= 0 {
+			return ipnet.String(), nil
 		}
-		return next.String(), nil
+		ones, _ := ipnet.Mask.Size()
+		ipnet.Mask = net.CIDRMask(ones-8, 32)
+		ipnet, err = cidr.Subnet(ipnet, 8, inc)
+		if err != nil {
+			return "", err
+		}
+		return ipnet.String(), nil
+	},
+	"trimsuffix": func(s, suffix string) string {
+		return strings.TrimSuffix(s, suffix)
+	},
+	"trimprefix": func(s, prefix string) string {
+		return strings.TrimPrefix(s, prefix)
 	},
 }
 
