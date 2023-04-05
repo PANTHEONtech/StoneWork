@@ -17,6 +17,7 @@ import (
 type Cli interface {
 	Initialize(opts Options) error
 	Client() client.API
+	Entities() []Entity
 	Exec(cmd string, args []string) (string, error)
 
 	Out() *streams.Out
@@ -29,6 +30,7 @@ type Cli interface {
 type CLI struct {
 	client client.API
 
+	entities     []Entity
 	vppProbePath string
 
 	out *streams.Out
@@ -63,15 +65,18 @@ func (cli *CLI) Initialize(opts Options) (err error) {
 		return fmt.Errorf("init error: %w", err)
 	}
 
-	if os.Getenv(EnvVarVppProbeNoDownload) == "" {
-		vppProbePath, err := getVppProbe()
-		if err != nil {
-			logrus.Errorf("getting vpp-probe failed: %v", err)
-		} else {
-			cli.vppProbePath = vppProbePath
-		}
+	// load entity file
+	cli.entities, err = loadEntityFiles(opts.EntityFiles)
+	if err != nil {
+		logrus.Errorf("failed to load entity files %s: %v", opts.EntityFiles, err)
+	}
+
+	// get vpp-probe
+	vppProbePath, err := initVppProbe()
+	if err != nil {
+		logrus.Errorf("vpp-probe error: %v", err)
 	} else {
-		logrus.Debugf("vpp-probe downloading disabled by user")
+		cli.vppProbePath = vppProbePath
 	}
 
 	return nil
@@ -86,22 +91,41 @@ func initClient(opts Options) (*client.Client, error) {
 	return c, nil
 }
 
+func initVppProbe() (string, error) {
+	if os.Getenv(EnvVarVppProbeNoDownload) != "" {
+		logrus.Debugf("vpp-probe download disabled by user")
+		return "", fmt.Errorf("downloading disabled by user")
+	}
+
+	vppProbePath, err := downloadVppProbe()
+	if err != nil {
+		return "", fmt.Errorf("downloading vpp-probe failed: %w", err)
+	}
+
+	return vppProbePath, nil
+}
+
 func (cli *CLI) Client() client.API {
 	return cli.client
+}
+
+func (cli *CLI) Entities() []Entity {
+	return cli.entities
 }
 
 const programVppProbe = "vpp-probe"
 
 func (cli *CLI) Exec(cmd string, args []string) (string, error) {
-	if cli.Out().IsTerminal() {
-		if strings.HasPrefix(cmd, programVppProbe) {
+
+	if strings.HasPrefix(cmd, programVppProbe) {
+		if cli.Out().IsTerminal() {
 			cmd = programVppProbe + " --color=always" + strings.TrimPrefix(cmd, programVppProbe)
 		}
-	}
 
-	// Use downloaded VPP probe
-	if cli.vppProbePath != "" && strings.HasPrefix(cmd, programVppProbe) {
-		cmd = fmt.Sprintf("%s %s", cli.vppProbePath, strings.TrimPrefix(cmd, programVppProbe))
+		// Use downloaded VPP probe
+		if cli.vppProbePath != "" {
+			cmd = fmt.Sprintf("%s %s", cli.vppProbePath, strings.TrimPrefix(cmd, programVppProbe))
+		}
 	}
 
 	return execCmd(cmd, args)

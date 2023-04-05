@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"go.pantheon.tech/stonework/pkg/version"
@@ -33,7 +34,16 @@ func NewRootCmd(cli Cli) *cobra.Command {
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			InitGlobalOptions(cli, &glob)
 
-			return cli.Initialize(opts)
+			logrus.Tracef("global options: %+v", glob)
+
+			err := cli.Initialize(opts)
+			if err != nil {
+				return err
+			}
+
+			logrus.Tracef("initialized CLI options: %+v", opts)
+
+			return nil
 		},
 		TraverseChildren:  true,
 		CompletionOptions: cobra.CompletionOptions{HiddenDefaultCmd: true},
@@ -60,6 +70,7 @@ func NewRootCmd(cli Cli) *cobra.Command {
 		NewStatusCmd(cli),
 		NewTraceCmd(cli),
 		NewSupportCmd(cli),
+		NewManageCmd(cli),
 	)
 
 	cmd.InitDefaultHelpCmd()

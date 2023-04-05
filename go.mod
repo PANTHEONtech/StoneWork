@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/apparentlymart/go-cidr v1.1.0
+	github.com/buildkite/interpolate v0.0.0-20200526001904-07f35b4ae251
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.4.2
@@ -20,9 +21,10 @@ require (
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.fd.io/govpp v0.7.0
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
-	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230313160121-631c8f60947a
+	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230316224910-41aaca425cf7
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.1
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
@@ -117,5 +119,4 @@ require (
 	google.golang.org/genproto v0.0.0-20220607223854-30acc4cbd2aa // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
