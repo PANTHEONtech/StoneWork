@@ -18,10 +18,11 @@ type EntityOption struct {
 }
 
 type Entity struct {
-	Name    string         `json:"name"`
-	Plural  string         `json:"plural"`
-	Options []EntityOption `json:"options"`
-	Config  string         `json:"config"`
+	Name        string         `json:"name"`
+	Plural      string         `json:"plural"`
+	Description string         `json:"description"`
+	Options     []EntityOption `json:"options"`
+	Config      string         `json:"config"`
 }
 
 func (e Entity) GetName() string {

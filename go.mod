@@ -27,7 +27,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
+//replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect

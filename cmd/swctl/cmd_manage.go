@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"os"
+	"path"
 	"strings"
 	"text/template"
 
@@ -17,11 +19,16 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type ManageOptions struct {
-	Count uint
-	Force bool
+	Format string
+	Target string
+	Count  uint
+	Force  bool
+	Offset int
+	DryRun bool
 }
 
 func NewManageCmd(cli Cli) *cobra.Command {
@@ -42,7 +49,7 @@ func NewManageCmd(cli Cli) *cobra.Command {
 
 				fmt.Printf("Entities:\n")
 				for _, e := range cli.Entities() {
-					fmt.Printf(" - %s\n", e.GetName())
+					fmt.Printf(" - %s (%d options)\n", e.GetName(), len(e.GetOptions()))
 				}
 				return nil
 			}
@@ -52,6 +59,11 @@ func NewManageCmd(cli Cli) *cobra.Command {
 	}
 
 	cmd.PersistentFlags().UintVarP(&opts.Count, "count", "c", 1, "Number of instances for an action")
+	cmd.PersistentFlags().IntVar(&opts.Offset, "offset", 0, "Offset for the starting index")
+	cmd.PersistentFlags().BoolVar(&opts.Force, "force", false, "Force the action")
+	cmd.PersistentFlags().StringVar(&opts.Target, "target", "", "Target config file to update")
+	cmd.PersistentFlags().StringVar(&opts.Format, "format", "", "Format for the output")
+	cmd.PersistentFlags().BoolVar(&opts.DryRun, "dryrun", false, "Do not modify anything")
 
 	return cmd
 }
@@ -59,6 +71,7 @@ func NewManageCmd(cli Cli) *cobra.Command {
 func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 	logrus.Tracef("running manage with args: %q %+v", args, opts)
 
+	// lookup entity
 	entityName := strings.ToLower(args[0])
 	var entity Entity
 	for _, e := range cli.Entities() {
@@ -73,15 +86,42 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 
 	logrus.Debugf("entity: %v (%d options) and config (%d bytes)", entity.GetName(), len(entity.GetOptions()), len(entity.Config))
 
+	// print entity detail
+	if len(args) == 1 {
+		fmt.Fprintf(cli.Out(), "Entity: %s\n", entity.Name)
+		fmt.Fprintf(cli.Out(), "Options:\n")
+		for _, o := range entity.Options {
+			fmt.Fprintf(cli.Out(), " - %s: %q\n", o.Name, o.Value)
+		}
+		fmt.Fprintf(cli.Out(), "Config:\n%s\n", entity.Config)
+		return nil
+	} else if len(args) > 2 {
+		return fmt.Errorf("expected 2 arguments (ENTITY ACTION), got %d arguments: %q", len(args), args)
+	}
+
+	action := args[1]
+	switch action {
+	case "add", "create", "new":
+		action = "ADD"
+	case "del", "delete", "remove":
+		action = "DEL"
+		if opts.Target == "" {
+			return fmt.Errorf("target config file must be specified for delete action")
+		}
+	default:
+		return fmt.Errorf("unknown action %q", action)
+	}
+
+	// build config
 	allConf, err := client.NewDynamicConfig(allModels())
 	if err != nil {
 		return fmt.Errorf("failed to create dynamic config for all models")
 	}
 
-	logrus.Tracef("generating entity with count %d", opts.Count)
+	logrus.Tracef("generating entity config (count: %d, offset: %d)", opts.Count, opts.Offset)
 
 	for i := 0; i < int(opts.Count); i++ {
-		params, err := renderEntityOptions(entity, i)
+		params, err := renderEntityOptions(entity, i+opts.Offset)
 		if err != nil {
 			return fmt.Errorf("failed to render parameters (idx: %v): %w", i, err)
 		}
@@ -101,15 +141,139 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		}
 		err = protojson.Unmarshal(bj, conf)
 		if err != nil {
-			return fmt.Errorf("cannot unmarshall init file data into dynamic config due to: %w", err)
+			return fmt.Errorf("cannot unmarshall data into dynamic config due to: %w", err)
 		}
+
+		logrus.Tracef("CONFIG(%d):\n%v", i, yamlTmpl(conf))
 
 		proto.Merge(allConf, conf)
 	}
 
-	logrus.Debugf("CONFIG:\n%v", yamlTmpl(allConf))
+	ckeys := extractModelKeys(allConf)
+
+	if opts.Target != "" {
+		config, err := os.ReadFile(opts.Target)
+		if err != nil {
+			return fmt.Errorf("failed to read target config file: %w", err)
+		}
+
+		tconf := allConf.New().Interface()
+
+		bj, err := yaml2.YAMLToJSON(config)
+		if err != nil {
+			return fmt.Errorf("cannot convert YAML to JSON: %w", err)
+		}
+		err = protojson.Unmarshal(bj, tconf)
+		if err != nil {
+			return fmt.Errorf("cannot unmarshall data into dynamic config due to: %w", err)
+		}
+
+		logrus.Tracef("TARGET CONFIG:\n%s", yamlTmpl(tconf))
+
+		tkeys := extractModelKeys(tconf)
+
+		if action == "ADD" {
+			conflicts := findConflictingStrings(ckeys, tkeys)
+
+			if len(conflicts) > 0 {
+				for _, c := range conflicts {
+					logrus.Debugf(" - %v", c)
+				}
+				return fmt.Errorf("%d conflicting config items", len(conflicts))
+			}
+
+			proto.Merge(tconf, allConf)
+
+			logrus.Tracef("MERGED CONFIG:\n%s", yamlTmpl(tconf))
+
+			items, err := client.DynamicConfigExport(tconf.(*dynamicpb.Message))
+			if err != nil {
+				return err
+			}
+
+			logrus.Debugf("extracted %d items", len(items))
+			for _, item := range items {
+				model, err := models.GetModelFor(item)
+				if err != nil {
+					logrus.Tracef("failed to get model for item: %+v", item)
+					continue
+				}
+				name, err := model.InstanceName(item)
+				if err != nil {
+					logrus.Tracef("cannot compute instance name due to: %v", err)
+					continue
+				}
+				key := path.Join(model.KeyPrefix(), name)
+
+				data := protojson.MarshalOptions{EmitUnpopulated: true}.Format(item)
+				logrus.Tracef(" - %s [%s] %v", model.ProtoName(), key, data)
+			}
+
+			if opts.Format == "" {
+				opts.Format = "yaml"
+			}
+			if err := formatAsTemplate(cli.Out(), opts.Format, tconf); err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("not yet supported")
+		}
+
+		return nil
+	}
+
+	if opts.Format == "" {
+		opts.Format = "yaml"
+	}
+	if err := formatAsTemplate(cli.Out(), opts.Format, allConf); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func extractModelKeys(m proto.Message) []string {
+	items, err := client.DynamicConfigExport(m.(*dynamicpb.Message))
+	if err != nil {
+		logrus.Debugf("DynamicConfigExport error: %v", err)
+		return nil
+	}
+	logrus.Debugf("extracted %d items", len(items))
+
+	var keys []string
+	for _, item := range items {
+		model, err := models.GetModelFor(item)
+		if err != nil {
+			logrus.Debugf("failed to get model for item: %+v", item)
+			continue
+		}
+		name, err := model.InstanceName(item)
+		if err != nil {
+			logrus.Debugf("cannot compute instance name due to: %v", err)
+			continue
+		}
+		if name == "" {
+			logrus.Debugf("skipping model %v", model.ProtoName())
+			continue
+		}
+		key := path.Join(model.KeyPrefix(), name)
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func findConflictingStrings(slice1 []string, slice2 []string) []string {
+	conflicts := []string{}
+
+	for _, str1 := range slice1 {
+		for _, str2 := range slice2 {
+			if str1 == str2 {
+				conflicts = append(conflicts, str1)
+			}
+		}
+	}
+
+	return conflicts
 }
 
 var funcMap = map[string]any{
