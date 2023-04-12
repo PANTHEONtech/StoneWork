@@ -8,6 +8,4 @@ import (
 	_ "go.pantheon.tech/stonework/proto/abx"
 	_ "go.pantheon.tech/stonework/proto/bfd"
 	_ "go.pantheon.tech/stonework/proto/isisx"
-
-	_ "go.pantheon.tech/stonework/proto/dhcp4"
 )
