@@ -375,10 +375,8 @@ func listOptions(str string) []string {
 
 func interpolateStr(str string, vars map[string]string) (string, error) {
 	env := interpolate.NewMapEnv(vars)
-
 	//opts := listOptions(str)
 	//logrus.Infof("opts: %+v", opts)
-
 	output, err := interpolate.Interpolate(env, str)
 	if err != nil {
 		return "", err
