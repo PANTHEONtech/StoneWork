@@ -42,17 +42,16 @@ func execCmd(cmd string, args []string) (string, error) {
 	err := c.Run()
 	out := strings.TrimRight(stdout.String(), "\n")
 	took := time.Since(t).Seconds()
-
+	l := logrus.WithField("took", fmt.Sprintf("%.3f", took))
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			ee.Stderr = stderr.Bytes()
 		}
-		logrus.WithField("took", fmt.Sprintf("%.3f", took)).
-			Tracef("[%s] %q (%v)\n%s\n", color.Red.Sprint("ERR"), c.Args, color.Red.Sprint(err), color.LightRed.Sprint(stderr.String()))
+
+		l.Tracef("[%s] %q (%v)\n%s\n", color.Red.Sprint("ERR"), c.Args, color.Red.Sprint(err), color.LightRed.Sprint(stderr.String()))
 		return stdout.String(), err
 	} else {
-		logrus.WithField("took", fmt.Sprintf("%.3f", took)).
-			Tracef("[%s] %q\n%s\n", color.Green.Sprint("OK"), c.Args, color.FgGray.Sprint(out))
+		l.Tracef("[%s] %q\n%s\n", color.Green.Sprint("OK"), c.Args, color.FgGray.Sprint(out))
 	}
 
 	return stdout.String(), nil

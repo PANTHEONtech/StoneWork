@@ -12,6 +12,7 @@ import (
 	"github.com/apparentlymart/go-cidr/cidr"
 	"github.com/buildkite/interpolate"
 	yaml2 "github.com/ghodss/yaml"
+	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -19,7 +20,9 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"gopkg.in/yaml.v3"
 )
 
 type ManageOptions struct {
@@ -36,39 +39,47 @@ func NewManageCmd(cli Cli) *cobra.Command {
 		opts ManageOptions
 	)
 	cmd := &cobra.Command{
-		Use:              "manage ENTITY",
-		Short:            "Manage entities in StoneWork",
+		Use:              "manage ENTITY [add|remove]",
+		Short:            "Manage config changes with entities",
 		Args:             cobra.ArbitraryArgs,
 		TraverseChildren: true,
 		//DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Tracef("running manage with %d args: %v", len(args), args)
-
-			if len(args) == 0 {
-				logrus.Tracef("listing %d entities", len(cli.Entities()))
-
-				fmt.Printf("Entities:\n")
-				for _, e := range cli.Entities() {
-					fmt.Printf(" - %s (%d options)\n", e.GetName(), len(e.GetOptions()))
-				}
-				return nil
+			if len(cli.Entities()) == 0 {
+				return fmt.Errorf("no entities defined, use --entityfile=FILE to specify file to load from or add 'entities.yaml' to work directory")
 			}
-
 			return runManageCmd(cli, opts, args)
 		},
 	}
 
-	cmd.PersistentFlags().UintVarP(&opts.Count, "count", "c", 1, "Number of instances for an action")
+	cmd.PersistentFlags().UintVarP(&opts.Count, "count", "c", 1, "Number of instances to add")
 	cmd.PersistentFlags().IntVar(&opts.Offset, "offset", 0, "Offset for the starting index")
 	cmd.PersistentFlags().BoolVar(&opts.Force, "force", false, "Force the action")
-	cmd.PersistentFlags().StringVar(&opts.Target, "target", "", "Target config file to update")
-	cmd.PersistentFlags().StringVar(&opts.Format, "format", "", "Format for the output")
-	cmd.PersistentFlags().BoolVar(&opts.DryRun, "dryrun", false, "Do not modify anything")
+	cmd.PersistentFlags().StringVar(&opts.Target, "target", "", "Location of target config file base")
+	cmd.PersistentFlags().StringVar(&opts.Format, "format", "", "Format for the output (yaml, json, proto, go template..)")
+	cmd.PersistentFlags().BoolVar(&opts.DryRun, "dryrun", false, "Run without actually modifying anything")
 
 	return cmd
 }
 
 func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
+	if len(args) > 2 {
+		return fmt.Errorf("expected at most 2 arguments (ENTITY ACTION), got %d arguments: %q", len(args), args)
+	}
+
+	// list all entities
+	if len(args) == 0 {
+		fmt.Fprintf(cli.Out(), "ENTITIES (%d):\n", len(cli.Entities()))
+		for _, e := range cli.Entities() {
+			name := e.Name
+			if e.Description != "" {
+				name = fmt.Sprintf("%s: %s", name, e.Description)
+			}
+			fmt.Fprintf(cli.Out(), " - %s (%d vars)\n", name, len(e.GetVariables()))
+		}
+		return nil
+	}
+
 	logrus.Tracef("running manage with args: %q %+v", args, opts)
 
 	// lookup entity
@@ -84,35 +95,50 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		return fmt.Errorf("entity %q not found", entityName)
 	}
 
-	logrus.Debugf("entity: %v (%d options) and config (%d bytes)", entity.GetName(), len(entity.GetOptions()), len(entity.Config))
+	logrus.Debugf("managing entity: %v (%d vars), config has %d bytes", entity.GetName(), len(entity.GetVariables()), len(entity.Config))
 
 	// print entity detail
 	if len(args) == 1 {
-		fmt.Fprintf(cli.Out(), "Entity: %s\n", entity.Name)
-		fmt.Fprintf(cli.Out(), "Options:\n")
-		for _, o := range entity.Options {
-			fmt.Fprintf(cli.Out(), " - %s: %q\n", o.Name, o.Value)
+		fmt.Fprintf(cli.Out(), "ENTITY: %s\n", color.HiYellow.Sprint(entity.Name))
+		if len(entity.Description) > 0 {
+			fmt.Fprintf(cli.Out(), "DESCRIPTION: %s\n", entity.Description)
 		}
-		fmt.Fprintf(cli.Out(), "Config:\n%s\n", entity.Config)
+		fmt.Fprintf(cli.Out(), "ORIGIN: %s\n", entity.Origin)
+		fmt.Fprintf(cli.Out(), "VARS (%d):\n", len(entity.Vars))
+		maxLen := getEntityVarMaxLen(entity)
+		for _, v := range entity.Vars {
+			name := color.Style{color.Bold, color.HiWhite}.Sprintf("%"+fmt.Sprint(maxLen)+"s", v.Name)
+			val := color.HiCyan.Sprint(v.Value)
+			if v.Type != "" {
+				val = fmt.Sprintf("%v (%v)", val, v.Type)
+			}
+			if v.Description != "" {
+				fmt.Fprintf(cli.Out(), " %v: %v (%v)\n", name, val, v.Description)
+			} else {
+				fmt.Fprintf(cli.Out(), " %v: %v\n", name, val)
+			}
+		}
+		fmt.Fprintf(cli.Out(), "CONFIG:\n%s\n", color.Yellow.Sprint(prefixTmpl(entity.Config, "  ")))
 		return nil
-	} else if len(args) > 2 {
-		return fmt.Errorf("expected 2 arguments (ENTITY ACTION), got %d arguments: %q", len(args), args)
 	}
 
+	// determine action
 	action := args[1]
-	switch action {
-	case "add", "create", "new":
+	switch strings.ToLower(action) {
+	case "add", "create", "new", "gen":
 		action = "ADD"
-	case "del", "delete", "remove":
-		action = "DEL"
+	case "del", "delete", "rem", "remove":
 		if opts.Target == "" {
 			return fmt.Errorf("target config file must be specified for delete action")
 		}
+		action = "DEL"
 	default:
-		return fmt.Errorf("unknown action %q", action)
+		return fmt.Errorf("unknown action %q, supported actions are: 'add' and 'del'", action)
 	}
 
-	// build config
+	var finalConf protoreflect.ProtoMessage
+
+	// prepare config
 	allConf, err := client.NewDynamicConfig(allModels())
 	if err != nil {
 		return fmt.Errorf("failed to create dynamic config for all models")
@@ -120,20 +146,22 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 
 	logrus.Tracef("generating entity config (count: %d, offset: %d)", opts.Count, opts.Offset)
 
+	// repeat for given count
 	for i := 0; i < int(opts.Count); i++ {
-		params, err := renderEntityOptions(entity, i+opts.Offset)
+		vars, err := renderEntityVars(entity, i+opts.Offset)
 		if err != nil {
-			return fmt.Errorf("failed to render parameters (idx: %v): %w", i, err)
+			return fmt.Errorf("failed to render vars (idx: %v): %w", i, err)
+		}
+		config, err := renderEntityConfig(entity, vars)
+		if err != nil {
+			return fmt.Errorf("failed to render config (idx: %v): %w", i, err)
 		}
 
-		config, err := interpolateStr(entity.Config, params)
-		if err != nil {
-			return fmt.Errorf("failed to interpolate parameters (idx: %v): %w", i, err)
-		}
-
-		logrus.Tracef(" - [#%d] params: %+v\n%v", i, params, config)
+		logrus.Tracef(" - [#%d] vars: %+v\n%v", i, vars, config)
 
 		conf := allConf.New().Interface()
+
+		playWithYaml(config)
 
 		bj, err := yaml2.YAMLToJSON([]byte(config))
 		if err != nil {
@@ -149,9 +177,10 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		proto.Merge(allConf, conf)
 	}
 
-	ckeys := extractModelKeys(allConf)
+	ckeys := extractModelKeysFromConfig(allConf)
 
 	if opts.Target != "" {
+		// load target file config
 		config, err := os.ReadFile(opts.Target)
 		if err != nil {
 			return fmt.Errorf("failed to read target config file: %w", err)
@@ -170,16 +199,16 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 
 		logrus.Tracef("TARGET CONFIG:\n%s", yamlTmpl(tconf))
 
-		tkeys := extractModelKeys(tconf)
+		tkeys := extractModelKeysFromConfig(tconf)
 
 		if action == "ADD" {
-			conflicts := findConflictingStrings(ckeys, tkeys)
-
-			if len(conflicts) > 0 {
-				for _, c := range conflicts {
-					logrus.Debugf(" - %v", c)
+			conflictKeys := findConflictingKeys(ckeys, tkeys)
+			if len(conflictKeys) > 0 {
+				logrus.Debugf("listing %d conflicting keys:", len(conflictKeys))
+				for _, c := range conflictKeys {
+					logrus.Debugf(" - conflict key %v", c)
 				}
-				return fmt.Errorf("%d conflicting config items", len(conflicts))
+				return fmt.Errorf("found %d conflicting keys in target config", len(conflictKeys))
 			}
 
 			proto.Merge(tconf, allConf)
@@ -192,6 +221,7 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 			}
 
 			logrus.Debugf("extracted %d items", len(items))
+
 			for _, item := range items {
 				model, err := models.GetModelFor(item)
 				if err != nil {
@@ -208,63 +238,84 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 				data := protojson.MarshalOptions{EmitUnpopulated: true}.Format(item)
 				logrus.Tracef(" - %s [%s] %v", model.ProtoName(), key, data)
 			}
-
-			if opts.Format == "" {
-				opts.Format = "yaml"
-			}
-			if err := formatAsTemplate(cli.Out(), opts.Format, tconf); err != nil {
-				return err
-			}
 		} else {
 			return fmt.Errorf("not yet supported")
 		}
 
-		return nil
+		finalConf = tconf
+	} else {
+		finalConf = allConf
 	}
 
+	// format final output
 	if opts.Format == "" {
 		opts.Format = "yaml"
 	}
-	if err := formatAsTemplate(cli.Out(), opts.Format, allConf); err != nil {
+	if err := formatAsTemplate(cli.Out(), opts.Format, finalConf); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func extractModelKeys(m proto.Message) []string {
-	items, err := client.DynamicConfigExport(m.(*dynamicpb.Message))
+func playWithYaml(config string) {
+	dec := yaml.NewDecoder(strings.NewReader(config))
+
+	var node yaml.Node
+	if err := dec.Decode(&node); err != nil {
+		logrus.Warnf("yaml decode error: %v", err)
+	}
+
+	logrus.Infof("NODE:\n%s\n", yamlTmpl(node))
+}
+
+func getEntityVarMaxLen(entity Entity) int {
+	var max = 3
+	for _, v := range entity.Vars {
+		if len(v.Name) > max {
+			max = len(v.Name)
+		}
+	}
+	return max
+}
+
+func extractModelKeysFromConfig(configMsg proto.Message) []string {
+	items, err := client.DynamicConfigExport(configMsg.(*dynamicpb.Message))
 	if err != nil {
 		logrus.Debugf("DynamicConfigExport error: %v", err)
 		return nil
 	}
 	logrus.Debugf("extracted %d items", len(items))
-
 	var keys []string
-	for _, item := range items {
+	for i, item := range items {
+		l := logrus.WithFields(map[string]interface{}{
+			"item":      fmt.Sprintf("%d/%d", i+1, len(items)),
+			"protoName": item.ProtoReflect().Descriptor().FullName(),
+		})
 		model, err := models.GetModelFor(item)
 		if err != nil {
-			logrus.Debugf("failed to get model for item: %+v", item)
+			l.Debugf("no model found for item: %v", item)
 			continue
 		}
+		l = l.WithField("model", model.Name())
 		name, err := model.InstanceName(item)
 		if err != nil {
-			logrus.Debugf("cannot compute instance name due to: %v", err)
+			l.Debugf("instance name error: %v", err)
 			continue
 		}
 		if name == "" {
-			logrus.Debugf("skipping model %v", model.ProtoName())
+			l.Debugf("intance has empty name, skipping item")
 			continue
 		}
 		key := path.Join(model.KeyPrefix(), name)
+		l.Tracef("extracted key: %q", key)
 		keys = append(keys, key)
 	}
 	return keys
 }
 
-func findConflictingStrings(slice1 []string, slice2 []string) []string {
-	conflicts := []string{}
-
+func findConflictingKeys(slice1 []string, slice2 []string) []string {
+	var conflicts []string
 	for _, str1 := range slice1 {
 		for _, str2 := range slice2 {
 			if str1 == str2 {
@@ -272,7 +323,6 @@ func findConflictingStrings(slice1 []string, slice2 []string) []string {
 			}
 		}
 	}
-
 	return conflicts
 }
 
@@ -322,7 +372,7 @@ var funcMap = map[string]any{
 
 func renderTmpl(t string, data any) (string, error) {
 	tmpl := template.Must(
-		template.New("params").Funcs(funcMap).Option("missingkey=error").Parse(t),
+		template.New("entity").Funcs(funcMap).Option("missingkey=error").Parse(t),
 	)
 	var b strings.Builder
 	if err := tmpl.Execute(&b, data); err != nil {
@@ -331,24 +381,36 @@ func renderTmpl(t string, data any) (string, error) {
 	return b.String(), nil
 }
 
-func renderEntityOptions(e Entity, idx int) (map[string]string, error) {
+func renderEntityConfig(e Entity, evars map[string]string) (string, error) {
+	tmpl, err := interpolateStr(e.Config, evars)
+	if err != nil {
+		return "", err
+	}
+	config, err := renderTmpl(tmpl, evars)
+	if err != nil {
+		return "", err
+	}
+	return config, nil
+}
+
+func renderEntityVars(e Entity, idx int) (map[string]string, error) {
 	id := idx + 1
-	opts := map[string]string{
+	evars := map[string]string{
 		"IDX": fmt.Sprint(idx),
 		"ID":  fmt.Sprint(id),
 	}
-	for _, o := range e.Options {
-		tmpl, err := interpolateStr(o.Value, opts)
+	for _, v := range e.Vars {
+		tmpl, err := interpolateStr(v.Value, evars)
 		if err != nil {
 			return nil, err
 		}
-		val, err := renderTmpl(tmpl, opts)
+		val, err := renderTmpl(tmpl, evars)
 		if err != nil {
 			return nil, err
 		}
-		opts[o.Name] = val
+		evars[v.Name] = val
 	}
-	return opts, nil
+	return evars, nil
 }
 
 func listOptions(str string) []string {
@@ -359,7 +421,7 @@ func listOptions(str string) []string {
 	}
 	//logrus.Infof("IDENTS: %+v", idents)
 
-	var opts []string
+	var vrs []string
 	uniq := map[string]struct{}{}
 
 	for _, ident := range idents {
@@ -367,10 +429,10 @@ func listOptions(str string) []string {
 			continue
 		}
 		uniq[ident] = struct{}{}
-		opts = append(opts, ident)
+		vrs = append(vrs, ident)
 	}
 
-	return opts
+	return vrs
 }
 
 func interpolateStr(str string, vars map[string]string) (string, error) {
@@ -399,7 +461,7 @@ func allModels() []*models.ModelInfo {
 
 func flagValuesFromActionOptions(set *pflag.FlagSet, entity Entity) map[string]string {
 	opts := make(map[string]string)
-	for _, opt := range entity.Options {
+	for _, opt := range entity.Vars {
 		if opt.Type == "" || opt.Type == "string" {
 			var str string
 			if set.Changed(opt.Name) {
@@ -419,7 +481,7 @@ func flagValuesFromActionOptions(set *pflag.FlagSet, entity Entity) map[string]s
 
 func flagSetFromActionOptions(entity Entity) *pflag.FlagSet {
 	set := pflag.NewFlagSet(entity.Name, pflag.ContinueOnError)
-	for _, opt := range entity.Options {
+	for _, opt := range entity.Vars {
 		switch opt.Type {
 		case "":
 			fallthrough

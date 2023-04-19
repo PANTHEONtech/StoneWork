@@ -6,7 +6,7 @@ import "go.pantheon.tech/stonework/proto/cnfreg"
 // a CNF connected to it or other Ligato service in connected to StoneWork.
 type Component interface {
 	Name() string
-	CnfMode() cnfreg.CnfMode
+	Mode() cnfreg.CnfMode
 }
 
 type component struct {
@@ -18,6 +18,6 @@ func (c *component) Name() string {
 	return c.name
 }
 
-func (c *component) CnfMode() cnfreg.CnfMode {
+func (c *component) Mode() cnfreg.CnfMode {
 	return c.mode
 }

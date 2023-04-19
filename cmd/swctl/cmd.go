@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -10,12 +11,12 @@ import (
 )
 
 const logo = `
- ███████╗██╗    ██╗ ██████╗████████╗██╗     
- ██╔════╝██║    ██║██╔════╝╚══██╔══╝██║     
- ███████╗██║ █╗ ██║██║        ██║   ██║       %s
- ╚════██║██║███╗██║██║        ██║   ██║       %s
- ███████║╚███╔███╔╝╚██████╗   ██║   ███████╗  %s
- ╚══════╝ ╚══╝╚══╝  ╚═════╝   ╚═╝   ╚══════╝
+<lightblue>  ███████╗██╗    ██╗ ██████╗████████╗██╗      </>
+<lightblue>  ██╔════╝██║    ██║██╔════╝╚══██╔══╝██║      </>
+<lightblue>  ███████╗██║ █╗ ██║██║        ██║   ██║      </><lightyellow> %s </>
+<lightblue>  ╚════██║██║███╗██║██║        ██║   ██║      </><lightyellow> %s </>
+<lightblue>  ███████║╚███╔███╔╝╚██████╗   ██║   ███████╗ </><lightyellow> %s </>
+<lightblue>  ╚══════╝ ╚══╝╚══╝  ╚═════╝   ╚═╝   ╚══════╝ </>
 
 `
 
@@ -27,7 +28,7 @@ func NewRootCmd(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "swctl [options] [command]",
 		Short:         "swctl is CLI app to manage StoneWork and its components",
-		Long:          fmt.Sprintf(logo, version.Short(), version.BuildTime(), version.BuiltBy()),
+		Long:          color.Sprintf(logo, version.Short(), version.BuildTime(), version.BuiltBy()),
 		Version:       version.String(),
 		SilenceUsage:  true,
 		SilenceErrors: true,

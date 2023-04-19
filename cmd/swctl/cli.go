@@ -16,6 +16,7 @@ import (
 // Cli is a client API for CLI application.
 type Cli interface {
 	Initialize(opts Options) error
+	Apply(...CliOption) error
 	Client() client.API
 	Entities() []Entity
 	Exec(cmd string, args []string) (string, error)
@@ -23,7 +24,6 @@ type Cli interface {
 	Out() *streams.Out
 	Err() io.Writer
 	In() *streams.In
-	Apply(...CliOption) error
 }
 
 // CLI implements Cli interface.
@@ -65,10 +65,10 @@ func (cli *CLI) Initialize(opts Options) (err error) {
 		return fmt.Errorf("init error: %w", err)
 	}
 
-	// load entity file
+	// load entity files
 	cli.entities, err = loadEntityFiles(opts.EntityFiles)
 	if err != nil {
-		logrus.Errorf("failed to load entity files %s: %v", opts.EntityFiles, err)
+		return fmt.Errorf("loading entity files failed: %v", err)
 	}
 
 	// get vpp-probe

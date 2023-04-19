@@ -89,7 +89,7 @@ type Options struct {
 func (opts *Options) InstallFlags(flags *pflag.FlagSet) {
 	flags.StringSliceVar(&opts.ComposeFiles, "composefile", nil, "Docker Compose configuration files")
 	must(cobra.MarkFlagFilename(flags, "composefile", "yaml", "yml"))
-	flags.StringSliceVar(&opts.EntityFiles, "entityfile", nil, "Entity definition files")
+	flags.StringSliceVar(&opts.EntityFiles, "entityfile", nil, "Entity configuration files")
 	must(cobra.MarkFlagFilename(flags, "entityfile", "yaml", "yml"))
 }
 
