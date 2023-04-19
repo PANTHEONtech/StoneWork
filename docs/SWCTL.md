@@ -182,7 +182,7 @@ swctl status
 ```
 
 > **Note**
-> The `config` command is a simple wrapper for `vpp-prove discover`.
+> The `config` command is a simple wrapper for `vpp-probe discover`.
 
 #### Trace
 
@@ -194,7 +194,7 @@ swctl trace
 ```
 
 > **Note**
-> The `config` command is a simple wrapper for `vpp-prove trace`.
+> The `config` command is a simple wrapper for `vpp-probe trace`.
 
 #### Support
 
