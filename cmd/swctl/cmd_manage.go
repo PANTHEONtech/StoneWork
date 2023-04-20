@@ -15,7 +15,6 @@ import (
 	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -32,6 +31,7 @@ type ManageOptions struct {
 	Force  bool
 	Offset int
 	DryRun bool
+	Vars   map[string]string
 }
 
 func NewManageCmd(cli Cli) *cobra.Command {
@@ -58,6 +58,7 @@ func NewManageCmd(cli Cli) *cobra.Command {
 	cmd.PersistentFlags().StringVar(&opts.Target, "target", "", "Location of target config file base")
 	cmd.PersistentFlags().StringVar(&opts.Format, "format", "", "Format for the output (yaml, json, proto, go template..)")
 	cmd.PersistentFlags().BoolVar(&opts.DryRun, "dryrun", false, "Run without actually modifying anything")
+	cmd.PersistentFlags().StringToStringVar(&opts.Vars, "var", nil, "Override variable values (--var VAR_NAME=value)")
 
 	return cmd
 }
@@ -148,10 +149,37 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 
 	// repeat for given count
 	for i := 0; i < int(opts.Count); i++ {
-		vars, err := renderEntityVars(entity, i+opts.Offset)
+		idx := i + opts.Offset
+		id := idx + 1
+
+		// prepare vars
+		evars := map[string]string{
+			"IDX": fmt.Sprint(idx),
+			"ID":  fmt.Sprint(id),
+		}
+		// apply overrides
+		for k, v := range opts.Vars {
+			if isBuiltinVar(k) {
+				return fmt.Errorf("cannot override internal variables ID and IDX")
+			}
+			var ok bool
+			for _, evar := range entity.Vars {
+				if k == evar.Name {
+					ok = true
+					break
+				}
+			}
+			if !ok {
+				return fmt.Errorf("override for variable %q that is not defined for entity", k)
+			}
+			evars[k] = v
+		}
+		vars, err := renderEntityVars(entity, evars)
 		if err != nil {
 			return fmt.Errorf("failed to render vars (idx: %v): %w", i, err)
 		}
+
+		// generate config
 		config, err := renderEntityConfig(entity, vars)
 		if err != nil {
 			return fmt.Errorf("failed to render config (idx: %v): %w", i, err)
@@ -330,6 +358,28 @@ var funcMap = map[string]any{
 	"add": func(a, b int) int {
 		return a + b
 	},
+	"inc": func(a int) int {
+		return a + 1
+	},
+	"dec": func(a int) int {
+		return a - 1
+	},
+	"previp": func(ip string, dec int) (string, error) {
+		x, err := netip.ParseAddr(ip)
+		if err != nil {
+			return "", err
+		}
+		if dec <= 0 {
+			return x.String(), nil
+		}
+		for i := 1; i <= dec; i++ {
+			x = x.Prev()
+			if !x.IsValid() {
+				return "", fmt.Errorf("no previous IP: %w", err)
+			}
+		}
+		return x.String(), nil
+	},
 	"nextip": func(ip string, inc int) (string, error) {
 		x, err := netip.ParseAddr(ip)
 		if err != nil {
@@ -341,7 +391,7 @@ var funcMap = map[string]any{
 		for i := 1; i <= inc; i++ {
 			x = x.Next()
 			if !x.IsValid() {
-				return "", fmt.Errorf("no next ip: %w", err)
+				return "", fmt.Errorf("no next IP: %w", err)
 			}
 		}
 		return x.String(), nil
@@ -393,14 +443,13 @@ func renderEntityConfig(e Entity, evars map[string]string) (string, error) {
 	return config, nil
 }
 
-func renderEntityVars(e Entity, idx int) (map[string]string, error) {
-	id := idx + 1
-	evars := map[string]string{
-		"IDX": fmt.Sprint(idx),
-		"ID":  fmt.Sprint(id),
-	}
+func renderEntityVars(e Entity, evars map[string]string) (map[string]string, error) {
 	for _, v := range e.Vars {
-		tmpl, err := interpolateStr(v.Value, evars)
+		vv := v.Value
+		if ov, ok := evars[v.Name]; ok {
+			vv = ov
+		}
+		tmpl, err := interpolateStr(vv, evars)
 		if err != nil {
 			return nil, err
 		}
@@ -413,32 +462,8 @@ func renderEntityVars(e Entity, idx int) (map[string]string, error) {
 	return evars, nil
 }
 
-func listOptions(str string) []string {
-	idents, err := interpolate.Identifiers(str)
-	if err != nil {
-		logrus.Error(err)
-		return nil
-	}
-	//logrus.Infof("IDENTS: %+v", idents)
-
-	var vrs []string
-	uniq := map[string]struct{}{}
-
-	for _, ident := range idents {
-		if _, ok := uniq[ident]; ok {
-			continue
-		}
-		uniq[ident] = struct{}{}
-		vrs = append(vrs, ident)
-	}
-
-	return vrs
-}
-
 func interpolateStr(str string, vars map[string]string) (string, error) {
 	env := interpolate.NewMapEnv(vars)
-	//opts := listOptions(str)
-	//logrus.Infof("opts: %+v", opts)
 	output, err := interpolate.Interpolate(env, str)
 	if err != nil {
 		return "", err
@@ -457,37 +482,4 @@ func allModels() []*models.ModelInfo {
 		}
 	}
 	return knownModels
-}
-
-func flagValuesFromActionOptions(set *pflag.FlagSet, entity Entity) map[string]string {
-	opts := make(map[string]string)
-	for _, opt := range entity.Vars {
-		if opt.Type == "" || opt.Type == "string" {
-			var str string
-			if set.Changed(opt.Name) {
-				var err error
-				str, err = set.GetString(opt.Name)
-				if err != nil {
-					str = err.Error()
-				}
-			} else {
-				str = opt.Value
-			}
-			opts[opt.Name] = str
-		}
-	}
-	return opts
-}
-
-func flagSetFromActionOptions(entity Entity) *pflag.FlagSet {
-	set := pflag.NewFlagSet(entity.Name, pflag.ContinueOnError)
-	for _, opt := range entity.Vars {
-		switch opt.Type {
-		case "":
-			fallthrough
-		case "string":
-			set.String(opt.Name, opt.Value, opt.Description)
-		}
-	}
-	return set
 }

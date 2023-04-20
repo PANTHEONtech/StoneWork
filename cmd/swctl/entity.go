@@ -118,17 +118,22 @@ func validateEntity(entity *Entity) error {
 		return nil
 	}
 
-	// TODO: validate name
+	// TODO: validate entity name
 
 	// validate variables
 	vars := make(map[string]EntityVar)
 	for i, v := range entity.Vars {
 		v.Index = i
+
+		// TODO: validate variable name
+
+		// check if variable name is unique
 		if dup, ok := vars[v.Name]; ok {
 			return fmt.Errorf("duplicate var %v on index %d, previous on index %d", v.Name, i, dup.Index)
 		}
 		vars[v.Name] = v
 
+		// check if variable value references only variables defined earlier
 		idents, err := interpolate.Identifiers(v.Value)
 		if err != nil {
 			return fmt.Errorf("invalid var reference in value of var %v: %w", v.Name, err)

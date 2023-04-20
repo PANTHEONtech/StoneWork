@@ -142,7 +142,7 @@ swctl manage ENTITY add
 swctl manage ENTITY add --offset=100 
 ```
 
-To generate combined config for multiple entites, run:
+To generate merged config for multiple entites, run:
 
 ```bash
 # Generate config for multiple entities
@@ -153,6 +153,12 @@ To merge an existing config file with generated config, run:
 
 ```bash
 swctl manage ENTITY add --target=config.yaml
+```
+
+To override value(s) of a specific entity variable, run:
+
+```bash
+swctl manage ENTITY add --var MY_VAR="my-value"
 ```
 
 #### Config
