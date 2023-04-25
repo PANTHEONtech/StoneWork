@@ -70,7 +70,7 @@ func InitGlobalOptions(cli Cli, opts *GlobalOptions) {
 	} else if opts.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
 	} else {
-		logrus.SetLevel(logrus.InfoLevel)
+		logrus.SetLevel(logrus.ErrorLevel)
 		//infralogrus.DefaultLogger().SetLevel(logging.ErrorLevel)
 	}
 }
