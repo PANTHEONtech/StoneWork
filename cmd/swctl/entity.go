@@ -9,8 +9,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// EntityVar is a variable of an entity defined with a template to render its
-// value.
+const defaultEntityFile = "entities.yaml"
+
+// EntityVar is a variable of an entity defined with a template to render its value.
 type EntityVar struct {
 	Index int `json:"-"`
 
@@ -20,8 +21,7 @@ type EntityVar struct {
 	Type        string `json:"type"`
 }
 
-// Entity is a blueprint for an object defined with a config template of
-// related parts.
+// Entity is a blueprint for an object defined with a config template of related parts.
 type Entity struct {
 	Origin string `json:"-"`
 
@@ -30,6 +30,7 @@ type Entity struct {
 	Description string      `json:"description"`
 	Vars        []EntityVar `json:"vars"`
 	Config      string      `json:"config"`
+	Single      bool        `json:"single"`
 }
 
 func (e Entity) GetName() string {
@@ -43,11 +44,9 @@ func (e Entity) GetPlural() string {
 	return e.Plural
 }
 
-func (e Entity) GetVariables() []EntityVar {
+func (e Entity) GetVars() []EntityVar {
 	return e.Vars
 }
-
-const defaultEntityFile = "entities.yaml"
 
 // EntityFile is a file containing entities loaded during initialization.
 type EntityFile struct {
@@ -139,7 +138,10 @@ func validateEntity(entity *Entity) error {
 			return fmt.Errorf("invalid var reference in value of var %v: %w", v.Name, err)
 		}
 		for _, ident := range idents {
-			if isBuiltinVar(ident) {
+			if isIndexVar(ident) {
+				if entity.Single {
+					return fmt.Errorf("single instance entity does not have internal index var: %v", ident)
+				}
 				continue
 			}
 			if _, ok := vars[ident]; !ok {
@@ -154,7 +156,10 @@ func validateEntity(entity *Entity) error {
 		return fmt.Errorf("invalid var reference in config: %w", err)
 	}
 	for _, ident := range idents {
-		if isBuiltinVar(ident) {
+		if isIndexVar(ident) {
+			if entity.Single {
+				return fmt.Errorf("single instance entity does not have internal index var: %v", ident)
+			}
 			continue
 		}
 		if _, ok := vars[ident]; !ok {
@@ -164,7 +169,7 @@ func validateEntity(entity *Entity) error {
 	return nil
 }
 
-func isBuiltinVar(name string) bool {
+func isIndexVar(name string) bool {
 	if name == "ID" || name == "IDX" {
 		return true
 	}

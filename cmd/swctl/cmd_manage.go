@@ -25,13 +25,14 @@ import (
 )
 
 type ManageOptions struct {
-	Format string
-	Target string
-	Count  uint
-	Force  bool
-	Offset int
-	DryRun bool
-	Vars   map[string]string
+	Format     string
+	Target     string
+	Count      uint
+	Force      bool
+	Offset     int
+	DryRun     bool
+	Vars       map[string]string
+	ShowConfig bool
 }
 
 func NewManageCmd(cli Cli) *cobra.Command {
@@ -39,7 +40,7 @@ func NewManageCmd(cli Cli) *cobra.Command {
 		opts ManageOptions
 	)
 	cmd := &cobra.Command{
-		Use:              "manage ENTITY [add|remove]",
+		Use:              "manage ENTITY [add|del]",
 		Short:            "Manage config changes with entities",
 		Args:             cobra.ArbitraryArgs,
 		TraverseChildren: true,
@@ -55,10 +56,11 @@ func NewManageCmd(cli Cli) *cobra.Command {
 	cmd.PersistentFlags().UintVarP(&opts.Count, "count", "c", 1, "Number of instances to add")
 	cmd.PersistentFlags().IntVar(&opts.Offset, "offset", 0, "Offset for the starting index")
 	cmd.PersistentFlags().BoolVar(&opts.Force, "force", false, "Force the action")
-	cmd.PersistentFlags().StringVar(&opts.Target, "target", "", "Location of target config file base")
+	cmd.PersistentFlags().StringVar(&opts.Target, "target", "", "Target config file used as base")
 	cmd.PersistentFlags().StringVar(&opts.Format, "format", "", "Format for the output (yaml, json, proto, go template..)")
 	cmd.PersistentFlags().BoolVar(&opts.DryRun, "dryrun", false, "Run without actually modifying anything")
-	cmd.PersistentFlags().StringToStringVar(&opts.Vars, "var", nil, "Override variable values (--var VAR_NAME=value)")
+	cmd.PersistentFlags().BoolVar(&opts.ShowConfig, "show-config", false, "Print config for entity detail")
+	cmd.PersistentFlags().StringToStringVar(&opts.Vars, "var", nil, "Override values for variables (--var VAR_NAME=value)")
 
 	return cmd
 }
@@ -70,13 +72,14 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 
 	// list all entities
 	if len(args) == 0 {
-		fmt.Fprintf(cli.Out(), "ENTITIES (%d):\n", len(cli.Entities()))
+		color.Fprintf(cli.Out(), "Listing <bold>%d</> loaded entities:\n\n", len(cli.Entities()))
 		for _, e := range cli.Entities() {
 			name := e.Name
+			desc := ""
 			if e.Description != "" {
-				name = fmt.Sprintf("%s: %s", name, e.Description)
+				desc = prefixTmpl(e.Description, "   ") + "\n"
 			}
-			fmt.Fprintf(cli.Out(), " - %s (%d vars)\n", name, len(e.GetVariables()))
+			color.Fprintf(cli.Out(), " - <cyan>%s</> <gray>(%v vars)</>\n<gray>%s</>", name, len(e.GetVars()), desc)
 		}
 		return nil
 	}
@@ -96,43 +99,49 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		return fmt.Errorf("entity %q not found", entityName)
 	}
 
-	logrus.Debugf("managing entity: %v (%d vars), config has %d bytes", entity.GetName(), len(entity.GetVariables()), len(entity.Config))
+	logrus.Debugf("managing entity: %v (%d vars), config has %d bytes", entity.GetName(), len(entity.GetVars()), len(entity.Config))
 
 	// print entity detail
 	if len(args) == 1 {
-		fmt.Fprintf(cli.Out(), "ENTITY: %s\n", color.HiYellow.Sprint(entity.Name))
+		fmt.Fprintf(cli.Out(), "ENTITY: %s\n", color.Yellow.Sprint(entity.Name))
 		if len(entity.Description) > 0 {
-			fmt.Fprintf(cli.Out(), "DESCRIPTION: %s\n", entity.Description)
+			desc := strings.TrimSpace(entity.Description)
+			fmt.Fprintf(cli.Out(), "DESCRIPTION: %s\n", color.LightWhite.Sprint(desc))
 		}
-		fmt.Fprintf(cli.Out(), "ORIGIN: %s\n", entity.Origin)
-		fmt.Fprintf(cli.Out(), "VARS (%d):\n", len(entity.Vars))
+		fmt.Fprintf(cli.Out(), "ORIGIN: %s\n", color.LightWhite.Sprint(entity.Origin))
+		fmt.Fprintf(cli.Out(), "VARS:\n")
 		maxLen := getEntityVarMaxLen(entity)
 		for _, v := range entity.Vars {
-			name := color.Style{color.Bold, color.HiWhite}.Sprintf("%"+fmt.Sprint(maxLen)+"s", v.Name)
-			val := color.HiCyan.Sprint(v.Value)
+			name := color.Style{color.Bold, color.HiWhite}.Sprintf("%-"+fmt.Sprint(maxLen)+"s", v.Name)
+			valclr := color.Style{color.OpBold, color.FgLightCyan}
+			val := valclr.Sprint(v.Value)
 			if v.Type != "" {
-				val = fmt.Sprintf("%v (%v)", val, v.Type)
+				val = fmt.Sprintf("%v (%v)", val, color.FgGray.Sprint(v.Type))
 			}
 			if v.Description != "" {
-				fmt.Fprintf(cli.Out(), " %v: %v (%v)\n", name, val, v.Description)
+				fmt.Fprintf(cli.Out(), "  %v: %v\n%v\n", color.Notice.Sprint(name), val, prefixTmpl(v.Description, "   "))
 			} else {
-				fmt.Fprintf(cli.Out(), " %v: %v\n", name, val)
+				fmt.Fprintf(cli.Out(), "  %v: %v\n", name, val)
 			}
 		}
-		fmt.Fprintf(cli.Out(), "CONFIG:\n%s\n", color.Yellow.Sprint(prefixTmpl(entity.Config, "  ")))
+		if opts.ShowConfig {
+			fmt.Fprintf(cli.Out(), "CONFIG:\n%s\n", color.LightWhite.Sprint(prefixTmpl(entity.Config, "   ")))
+		}
 		return nil
 	}
 
 	// determine action
 	action := args[1]
 	switch strings.ToLower(action) {
-	case "add", "create", "new", "gen":
+	case "create", "new", "gen", "generate", "make":
+		fallthrough
+	case "add", "append":
 		action = "ADD"
 	case "del", "delete", "rem", "remove":
+		action = "DEL"
 		if opts.Target == "" {
 			return fmt.Errorf("target config file must be specified for delete action")
 		}
-		action = "DEL"
 	default:
 		return fmt.Errorf("unknown action %q, supported actions are: 'add' and 'del'", action)
 	}
@@ -152,15 +161,20 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		idx := i + opts.Offset
 		id := idx + 1
 
-		// prepare vars
-		evars := map[string]string{
-			"IDX": fmt.Sprint(idx),
-			"ID":  fmt.Sprint(id),
+		// prepare entity vars
+		evars := map[string]string{}
+		if !entity.Single {
+			evars["IDX"] = fmt.Sprint(idx)
+			evars["ID"] = fmt.Sprint(id)
 		}
+
 		// apply overrides
 		for k, v := range opts.Vars {
-			if isBuiltinVar(k) {
-				return fmt.Errorf("cannot override internal variables ID and IDX")
+			if isIndexVar(k) {
+				if entity.Single {
+					return fmt.Errorf("single instance entity does not have internal index var: %v", k)
+				}
+				return fmt.Errorf("cannot override internal var: %q", k)
 			}
 			var ok bool
 			for _, evar := range entity.Vars {
@@ -170,10 +184,12 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 				}
 			}
 			if !ok {
-				return fmt.Errorf("override for variable %q that is not defined for entity", k)
+				return fmt.Errorf("found override for undefined variable %q", k)
 			}
 			evars[k] = v
 		}
+
+		// render vars
 		vars, err := renderEntityVars(entity, evars)
 		if err != nil {
 			return fmt.Errorf("failed to render vars (idx: %v): %w", i, err)
@@ -230,6 +246,7 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		tkeys := extractModelKeysFromConfig(tconf)
 
 		if action == "ADD" {
+			// check for conflicts
 			conflictKeys := findConflictingKeys(ckeys, tkeys)
 			if len(conflictKeys) > 0 {
 				logrus.Debugf("listing %d conflicting keys:", len(conflictKeys))
@@ -243,13 +260,14 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 
 			logrus.Tracef("MERGED CONFIG:\n%s", yamlTmpl(tconf))
 
+			// extract items
 			items, err := client.DynamicConfigExport(tconf.(*dynamicpb.Message))
 			if err != nil {
 				return err
 			}
-
 			logrus.Debugf("extracted %d items", len(items))
 
+			// list extracted items
 			for _, item := range items {
 				model, err := models.GetModelFor(item)
 				if err != nil {
@@ -291,10 +309,10 @@ func playWithYaml(config string) {
 
 	var node yaml.Node
 	if err := dec.Decode(&node); err != nil {
-		logrus.Warnf("yaml decode error: %v", err)
+		logrus.Tracef("ERROR: yaml decode: %v", err)
 	}
 
-	logrus.Infof("NODE:\n%s\n", yamlTmpl(node))
+	logrus.Tracef("NODE:\n%s\n", yamlTmpl(node))
 }
 
 func getEntityVarMaxLen(entity Entity) int {
