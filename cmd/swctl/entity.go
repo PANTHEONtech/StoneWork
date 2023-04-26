@@ -9,44 +9,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const defaultEntityFile = "entities.yaml"
-
-// EntityVar is a variable of an entity defined with a template to render its value.
-type EntityVar struct {
-	Index int `json:"-"`
-
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Value       string `json:"default"`
-	Type        string `json:"type"`
-}
-
-// Entity is a blueprint for an object defined with a config template of related parts.
-type Entity struct {
-	Origin string `json:"-"`
-
-	Name        string      `json:"name"`
-	Plural      string      `json:"plural"`
-	Description string      `json:"description"`
-	Vars        []EntityVar `json:"vars"`
-	Config      string      `json:"config"`
-	Single      bool        `json:"single"`
-}
-
-func (e Entity) GetName() string {
-	return e.Name
-}
-
-func (e Entity) GetPlural() string {
-	if e.Plural == "" {
-		return e.Name + "s"
-	}
-	return e.Plural
-}
-
-func (e Entity) GetVars() []EntityVar {
-	return e.Vars
-}
+const (
+	defaultEntityFile = "entities.yaml"
+)
 
 // EntityFile is a file containing entities loaded during initialization.
 type EntityFile struct {
@@ -112,6 +77,43 @@ func loadEntityFiles(files []string) ([]Entity, error) {
 	return entities, nil
 }
 
+// EntityVar is a variable of an entity defined with a template to render its value.
+type EntityVar struct {
+	Index int `json:"-"`
+
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Value       string `json:"default"`
+	Type        string `json:"type"`
+}
+
+// Entity is a blueprint for an object defined with a config template of related parts.
+type Entity struct {
+	Origin string `json:"-"`
+
+	Name        string      `json:"name"`
+	Plural      string      `json:"plural"`
+	Description string      `json:"description"`
+	Vars        []EntityVar `json:"vars"`
+	Config      string      `json:"config"`
+	Single      bool        `json:"single"`
+}
+
+func (e Entity) GetName() string {
+	return e.Name
+}
+
+func (e Entity) GetPlural() string {
+	if e.Plural == "" {
+		return e.Name + "s"
+	}
+	return e.Plural
+}
+
+func (e Entity) GetVars() []EntityVar {
+	return e.Vars
+}
+
 func validateEntity(entity *Entity) error {
 	if entity == nil {
 		return nil
@@ -119,20 +121,20 @@ func validateEntity(entity *Entity) error {
 
 	// TODO: validate entity name
 
-	// validate variables
+	// validate vars
 	vars := make(map[string]EntityVar)
 	for i, v := range entity.Vars {
 		v.Index = i
 
 		// TODO: validate variable name
 
-		// check if variable name is unique
+		// check if var name is unique
 		if dup, ok := vars[v.Name]; ok {
-			return fmt.Errorf("duplicate var %v on index %d, previous on index %d", v.Name, i, dup.Index)
+			return fmt.Errorf("duplicate var %v, index %d, previously %d", v.Name, i, dup.Index)
 		}
 		vars[v.Name] = v
 
-		// check if variable value references only variables defined earlier
+		// check if var value references only variables defined earlier
 		idents, err := interpolate.Identifiers(v.Value)
 		if err != nil {
 			return fmt.Errorf("invalid var reference in value of var %v: %w", v.Name, err)
@@ -166,11 +168,19 @@ func validateEntity(entity *Entity) error {
 			return fmt.Errorf("undefined var reference %v found in config", ident)
 		}
 	}
+
+	// TODO: check if the entity can generate a valid config data
+
 	return nil
 }
 
+const (
+	varID  = "ID"
+	varIDX = "IDX"
+)
+
 func isIndexVar(name string) bool {
-	if name == "ID" || name == "IDX" {
+	if name == varID || name == varIDX {
 		return true
 	}
 	return false

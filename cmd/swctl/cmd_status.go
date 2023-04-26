@@ -7,6 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// TODO: improve status overview, show status of components (CNFs)
+//   - instead of using raw output from vpp-probe, retrieve the important info
+//     about the running/deployed components of StoneWork and show those by default
+//   - optionally allow user to set more details which shows the more detailed output
+//     similar to vpp-probe discover
+
 const statusExample = `
   <white># Show status for all components</>
   $ <yellow>swctl status</>
@@ -35,10 +41,8 @@ func NewStatusCmd(cli Cli) *cobra.Command {
 }
 
 func runStatusCmd(cli Cli, opts StatusCmdOptions) error {
-
-	// TODO: improve status overview, show status of components (CNFs)
-
-	out, err := cli.Exec("vpp-probe --env=docker discover", opts.Args)
+	cmd := fmt.Sprintf("vpp-probe --env=%q discover", defaultVppProbeEnv)
+	out, err := cli.Exec(cmd, opts.Args)
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			return fmt.Errorf("%v: %s", ee.String(), ee.Stderr)
@@ -47,6 +51,5 @@ func runStatusCmd(cli Cli, opts StatusCmdOptions) error {
 	}
 
 	fmt.Fprintln(cli.Out(), out)
-
 	return nil
 }

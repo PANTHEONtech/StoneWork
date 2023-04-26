@@ -13,6 +13,10 @@ import (
 	"go.pantheon.tech/stonework/client"
 )
 
+// TODO: to be refactored:
+//   - refactor the usage of external apps: agentctl, vpp-probe
+//   - set the log level / debug mode on the external apps to match the swctl settings
+
 // Cli is a client API for CLI application.
 type Cli interface {
 	Initialize(opts Options) error

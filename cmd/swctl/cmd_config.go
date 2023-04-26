@@ -6,7 +6,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TODO: add support for showing only non-internal user config - which excludes stonework-CNF wiring (punts)
+// TODO:
+// - internal config: add support for showing only non-internal user config - which excludes stonework-CNF wiring (punts)
+// - run the agentctl with the default host set to stonework (using the -H or running inside stonework image)
 
 type ConfigCmdOptions struct {
 	Args []string
@@ -36,7 +38,7 @@ func runConfigCmd(cli Cli, opts ConfigCmdOptions) error {
 	if err != nil {
 		return err
 	}
-	
+
 	fmt.Fprintln(cli.Out(), out)
 	return nil
 }

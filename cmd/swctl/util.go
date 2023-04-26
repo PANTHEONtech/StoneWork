@@ -17,8 +17,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+
 var (
-	installDir = filepath.Join(os.Getenv("HOME"), ".cache", "stonework", "bin")
+	installDir = filepath.Join(os.Getenv("HOME"), ".cache", "stonework", "bin"
+
+	defaultVppProbeEnv = "docker"
 )
 
 type GitHubRelease struct {
