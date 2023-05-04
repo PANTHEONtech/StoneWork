@@ -144,7 +144,7 @@ func newDeploymentServices(cli Cli) *cobra.Command {
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := cli.Exec("docker compose services", args)
+			out, err := cli.Exec("docker compose ps --services", args)
 			if err != nil {
 				return err
 			}

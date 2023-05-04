@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +22,7 @@ func NewStatusCmd(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "status [flags]",
 		Short:   "Show status of StoneWork components",
-		Example: statusExample,
+		Example: color.Sprint(statusExample),
 		Args:    cobra.ArbitraryArgs,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{
 			UnknownFlags: true,
