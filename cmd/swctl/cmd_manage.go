@@ -25,7 +25,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
-	"gopkg.in/yaml.v3"
 )
 
 const exampleManageCmd = `
@@ -375,17 +374,6 @@ func mergeConfigs(dst proto.Message, src proto.Message) error {
 	return nil
 }
 
-func playWithYaml(config string) {
-	dec := yaml.NewDecoder(strings.NewReader(config))
-
-	var node yaml.Node
-	if err := dec.Decode(&node); err != nil {
-		logrus.Tracef("ERROR: yaml decode: %v", err)
-	}
-
-	logrus.Tracef("NODE:\n%s\n", yamlTmpl(node))
-}
-
 func getEntityVarMaxLen(entity Entity) int {
 	var max = 3
 	for _, v := range entity.Vars {
@@ -574,10 +562,7 @@ func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string)
 		}
 		vv := v.Value
 		if ov, ok := evars[v.Name]; ok {
-			//color.Fprintf(w, "%v=%s --> %s (override): ", color.LightCyan.Sprint(v.Name), color.Gray.Sprint(vv), color.LightYellow.Sprint(ov))
 			vv = ov
-		} else {
-			//color.Fprintf(w, "%v=%s: ", color.LightCyan.Sprint(v.Name), color.LightBlue.Sprint(vv))
 		}
 
 		color.Fprintf(w, "-> <lightBlue>Set value for:</> %v <gray>(press ENTER to confirm)</>\n", color.White.Sprint(v.Name))
@@ -592,7 +577,6 @@ func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string)
 			return nil, err
 		} else {
 			if vv != cval {
-				//color.Fprintf(w, "  %s --> %s\n", color.Gray.Sprint(vv), color.LightYellow.Sprint(cval))
 				vv = cval
 			}
 		}
