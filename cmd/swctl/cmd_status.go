@@ -41,7 +41,7 @@ func NewStatusCmd(cli Cli) *cobra.Command {
 }
 
 func runStatusCmd(cli Cli, opts StatusCmdOptions) error {
-	cmd := fmt.Sprintf("vpp-probe --env=%q discover", defaultVppProbeEnv)
+	cmd := fmt.Sprintf("vpp-probe --env=%s discover", defaultVppProbeEnv)
 	out, err := cli.Exec(cmd, opts.Args)
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {

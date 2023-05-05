@@ -101,7 +101,7 @@ swctl deploy services
 
 #### Manage
 
-For managing complex configuration changes, the manage command uses _entities_ loaded from entity file. The _entity_ is a special config template that uses variables as input. The parameters use templating for their value to automatically render a value or let user override it. This allows for very quick config generation of any complexity.
+The manage command offers user-friendly and flexible way to manage configuration. Manage command helps users with building their initial config file, updating running config or performing various operations with config. It uses _entities_ loaded from _entity file_. The _entity_ is a special config template that uses variables as input. The parameters use templating for their value to automatically render a value or let user override it. This allows for very quick config generation of any complexity.
 
 ```go
 // EntityVar is a variable of an entity defined with a template to render its value.
@@ -112,6 +112,7 @@ type EntityVar struct {
 	Description string `json:"description"`
 	Value       string `json:"default"`
 	Type        string `json:"type"`
+    When        string `json:"when"`
 }
 
 // Entity is a blueprint for an object defined with a config template of related parts.
@@ -126,7 +127,6 @@ type Entity struct {
 	Single      bool        `json:"single"`
 }
 ```
-
 
 By default, the entities are loaded from entity file - `entities.yaml` file in current working directory when running `swctl manage`. The expected format of the entity file is defined as:
 
@@ -181,8 +181,8 @@ To generate config for a single entity, run:
 # Generate entity config
 swctl manage ENTITY add
 
-# Generate entity config with an offset for IDX & ID
-swctl manage ENTITY add --offset=100 
+# Generate entity config for specific instance ID
+swctl manage ENTITY add --id=100 
 ```
 
 To generate merged config for multiple entites, run:

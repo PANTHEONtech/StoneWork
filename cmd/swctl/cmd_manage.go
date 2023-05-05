@@ -7,6 +7,7 @@ import (
 	"net/netip"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -27,12 +28,38 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const exampleManageCmd = `
+  <white># List all available entities</>
+  $ <yellow>swctl manage</>
+
+  <white># Show specific entity info</>
+  $ <yellow>swctl manage ENTITY</>
+
+  <white># Create entity config with defaults</>
+  $ <yellow>swctl manage ENTITY create</>
+
+  <white># With an offset for ID/IDX vars</>
+  $ <yellow>swctl manage ENTITY create --id=100</>
+
+  <white># Create multiple entity instances</>
+  $ <yellow>swctl manage ENTITY create --count=5</>
+
+  <white># Merge with existing config file</>
+  $ <yellow>swctl manage ENTITY add --target="config.yaml""</>
+
+  <white># Override default value of entity variables</>
+  $ <yellow>swctl manage ENTITY create --var "VAR=VAL" --var "VAR2=VAL2"</>
+
+  <white># Use interactive mode</>
+  $ <yellow>swctl manage ENTITY create --interactive</>
+`
+
 type ManageOptions struct {
 	Format      string
 	Target      string
 	Count       uint
 	Force       bool
-	Offset      int
+	IdOffset    int
 	DryRun      bool
 	Vars        map[string]string
 	ShowConfig  bool
@@ -41,7 +68,7 @@ type ManageOptions struct {
 
 func (opts *ManageOptions) InstallFlags(flagset *pflag.FlagSet) {
 	flagset.UintVarP(&opts.Count, "count", "c", 1, "Number of instances to add")
-	flagset.IntVar(&opts.Offset, "offset", 0, "Offset for the starting index")
+	flagset.IntVar(&opts.IdOffset, "id", 0, "Offset for the starting ID")
 	flagset.BoolVar(&opts.Force, "force", false, "Force the action")
 	flagset.StringVar(&opts.Target, "target", "", "Target config file used as base")
 	flagset.StringVar(&opts.Format, "format", "", "Format for the output (yaml, json, proto, go template..)")
@@ -55,7 +82,9 @@ func NewManageCmd(cli Cli) *cobra.Command {
 	var opts ManageOptions
 	cmd := &cobra.Command{
 		Use:              "manage ENTITY [ACTION]",
-		Short:            "Manage config changes with entities",
+		Short:            "Manage config with entities",
+		Long:             "Manages initial config setup and updates to config using entities",
+		Example:          color.Sprint(exampleManageCmd),
 		Args:             cobra.ArbitraryArgs,
 		TraverseChildren: true,
 		//DisableFlagParsing: true,
@@ -84,7 +113,8 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 			if e.Description != "" {
 				desc = prefixTmpl(e.Description, "   ") + "\n"
 			}
-			color.Fprintf(cli.Out(), " - <cyan>%s</> <gray>(%v vars)</>\n<gray>%s</>", name, len(e.GetVars()), desc)
+			color.Fprintf(cli.Out(), " - %s <gray>(%v vars)</>\n%s",
+				color.Yellow.Sprint(name), len(e.GetVars()), desc)
 		}
 		return nil
 	}
@@ -108,29 +138,39 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 
 	// print entity detail
 	if len(args) == 1 {
-		fmt.Fprintf(cli.Out(), "ENTITY: %s\n", color.Yellow.Sprint(entity.Name))
+		color.Fprintf(cli.Out(), "<lightWhite>ENTITY</>:      %s\n", color.Yellow.Sprint(entity.Name))
 		if len(entity.Description) > 0 {
 			desc := strings.TrimSpace(entity.Description)
-			fmt.Fprintf(cli.Out(), "DESCRIPTION: %s\n", color.LightWhite.Sprint(desc))
+			color.Fprintf(cli.Out(), "<lightWhite>DESCRIPTION</>: %s\n", color.FgDefault.Sprint(desc))
 		}
-		fmt.Fprintf(cli.Out(), "ORIGIN: %s\n", color.LightWhite.Sprint(entity.Origin))
-		fmt.Fprintf(cli.Out(), "VARS:\n")
-		maxLen := getEntityVarMaxLen(entity)
+		color.Fprintf(cli.Out(), "<lightWhite>ORIGIN</>: %s\n", color.Gray.Sprint(entity.Origin))
+		if entity.Single {
+			color.Fprintf(cli.Out(), "<lightWhite>TYPE</>: %s\n", color.Blue.Sprint("single instance"))
+		} else {
+			color.Fprintf(cli.Out(), "<lightWhite>TYPE</>: %s\n", color.Blue.Sprint("multi instance"))
+		}
+		color.Fprintf(cli.Out(), "<lightWhite>VARS</>:\n")
+		maxLen := getEntityVarMaxLen(entity) + 1
 		for _, v := range entity.Vars {
-			name := color.Style{color.Bold, color.HiWhite}.Sprintf("%-"+fmt.Sprint(maxLen)+"s", v.Name)
-			valclr := color.Style{color.OpBold, color.FgLightCyan}
+			name := color.Style{color.Bold}.Sprintf("%-"+fmt.Sprint(maxLen)+"s", v.Name+":")
+			valclr := color.Style{color.FgCyan}
 			val := valclr.Sprint(v.Value)
 			if v.Type != "" {
 				val = fmt.Sprintf("%v (%v)", val, color.FgGray.Sprint(v.Type))
 			}
 			if v.Description != "" {
-				fmt.Fprintf(cli.Out(), "  %v: %v\n%v\n", color.Notice.Sprint(name), val, prefixTmpl(v.Description, "   "))
+				desc := prefixTmpl(v.Description, "   ")
+				color.Fprintf(cli.Out(), "  %v %v\n<gray>%v</>\n", color.Bold.Sprint(name), val, desc)
 			} else {
-				fmt.Fprintf(cli.Out(), "  %v: %v\n", name, val)
+				color.Fprintf(cli.Out(), "  %v %v\n", color.Bold.Sprint(name), val)
 			}
 		}
 		if opts.ShowConfig {
-			fmt.Fprintf(cli.Out(), "CONFIG:\n%s\n", color.LightWhite.Sprint(prefixTmpl(entity.Config, "   ")))
+			color.Fprintf(cli.Out(), "<lightWhite>CONFIG</>:\n%s\n", color.LightWhite.Sprint(prefixTmpl(entity.Config, "   ")))
+		} else {
+			configLen := len(entity.Config)
+			configLines := strings.Count(entity.Config, "\n")
+			color.Fprintf(cli.Out(), "<lightWhite>CONFIG</>: %s %s\n", color.White.Sprintf("%d lines", configLines), color.Gray.Sprintf("(%d bytes)", configLen))
 		}
 		return nil
 	}
@@ -182,11 +222,11 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		return fmt.Errorf("failed to create dynamic config for all models")
 	}
 
-	logrus.Tracef("generating config (count: %d, offset: %d)", opts.Count, opts.Offset)
+	logrus.Tracef("generating config (count: %d, offset: %d)", opts.Count, opts.IdOffset)
 
 	// repeat for given count
 	for i := 0; i < int(opts.Count); i++ {
-		idx := i + opts.Offset
+		idx := i + opts.IdOffset
 		id := idx + 1
 
 		// prepare vars
@@ -202,7 +242,7 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		var vars map[string]string
 		// render values
 		if opts.Interactive {
-			color.Fprintf(cli.Out(), "Setup values for vars (IDX: %v):\n\n", idx)
+			color.Fprintf(cli.Out(), "=> <fg=blue;op=bold>Set entity var values for instance</> <bold>ID</>=<white>%v</>\n\n", id)
 			vars, err = prepareVarValuesInteractive(cli.Out(), entity, evars)
 			if err != nil {
 				return fmt.Errorf("failed to render vars (idx: %v): %w", i, err)
@@ -512,6 +552,26 @@ func prepareVarValues(e Entity, evars map[string]string) (map[string]string, err
 
 func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string) (map[string]string, error) {
 	for _, v := range e.Vars {
+		if v.When != "" {
+			tmpl, err := interpolateStr(v.When, evars)
+			if err != nil {
+				return nil, err
+			}
+			res, err := renderTmpl(tmpl, evars)
+			if err != nil {
+				return nil, err
+			}
+			ok, err := strconv.ParseBool(res)
+			if err != nil {
+				logrus.Tracef("parse bool err: %v", err)
+				continue
+			}
+			logrus.Tracef("when returned %q (%v)", res, ok)
+			if !ok {
+				logrus.Tracef("skipping var %v", res, ok, v.Name)
+				continue
+			}
+		}
 		vv := v.Value
 		if ov, ok := evars[v.Name]; ok {
 			//color.Fprintf(w, "%v=%s --> %s (override): ", color.LightCyan.Sprint(v.Name), color.Gray.Sprint(vv), color.LightYellow.Sprint(ov))
@@ -519,6 +579,14 @@ func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string)
 		} else {
 			//color.Fprintf(w, "%v=%s: ", color.LightCyan.Sprint(v.Name), color.LightBlue.Sprint(vv))
 		}
+
+		color.Fprintf(w, "-> <lightBlue>Set value for:</> %v <gray>(press ENTER to confirm)</>\n", color.White.Sprint(v.Name))
+		if v.Description != "" {
+			desc := prefixTmpl(v.Description, "   ")
+			color.Fprintln(w, color.Gray.Sprint(desc))
+		}
+		fmt.Fprintln(w)
+		fmt.Fprintf(w, "    ")
 		cval, err := promptUserValue(v.Name, vv)
 		if err != nil {
 			return nil, err
@@ -546,9 +614,13 @@ func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string)
 
 func promptUserValue(label string, defval string) (string, error) {
 	prompt := promptui.Prompt{
-		Label:   label,
-		Default: defval,
-		Pointer: promptui.PipeCursor,
+		Label:     label,
+		Default:   defval,
+		AllowEdit: true,
+		Pointer:   promptui.PipeCursor,
+		Templates: &promptui.PromptTemplates{
+			Prompt: color.Sprintf("    <bold>{{ . }}:</b> "),
+		},
 		// TODO: validate values
 	}
 	result, err := prompt.Run()

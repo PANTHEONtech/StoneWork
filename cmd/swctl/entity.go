@@ -85,6 +85,7 @@ type EntityVar struct {
 	Description string `json:"description"`
 	Value       string `json:"default"`
 	Type        string `json:"type"`
+	When        string `json:"when"`
 }
 
 // Entity is a blueprint for an object defined with a config template of related parts.
