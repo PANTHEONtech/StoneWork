@@ -41,7 +41,7 @@ jobs:
         run: |
           sudo apt-get update && \
           sudo apt-get install -y linux-modules-extra-$(uname -r) && \
-          sudo modprobe -v vrf
+          sudo modprobe -v vrf || echo >&2 "FAILURE"
       - name: "Build images"
         run: make images
       - name: "Run Tests"
