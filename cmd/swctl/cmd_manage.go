@@ -142,7 +142,7 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 			desc := strings.TrimSpace(entity.Description)
 			color.Fprintf(cli.Out(), "<lightWhite>DESCRIPTION</>: %s\n", color.FgDefault.Sprint(desc))
 		}
-		color.Fprintf(cli.Out(), "<lightWhite>ORIGIN</>: %s\n", color.Gray.Sprint(entity.Origin))
+		color.Fprintf(cli.Out(), "<lightWhite>ORIGIN</>: %s\n", color.Cyan.Sprint(entity.Origin))
 		if entity.Single {
 			color.Fprintf(cli.Out(), "<lightWhite>TYPE</>: %s\n", color.Blue.Sprint("single instance"))
 		} else {
@@ -554,9 +554,8 @@ func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string)
 				logrus.Tracef("parse bool err: %v", err)
 				continue
 			}
-			logrus.Tracef("when returned %q (%v)", res, ok)
+			logrus.Tracef("when %s returned %q (%v)", v.Name, res, ok)
 			if !ok {
-				logrus.Tracef("skipping var %v", res, ok, v.Name)
 				continue
 			}
 		}

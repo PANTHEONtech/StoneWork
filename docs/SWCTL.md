@@ -101,7 +101,7 @@ swctl deploy services
 
 #### Manage
 
-The manage command offers user-friendly and flexible way to manage configuration. Manage command helps users with building their initial config file, updating running config or performing various operations with config. It uses _entities_ loaded from _entity file_. The _entity_ is a special config template that uses variables as input. The parameters use templating for their value to automatically render a value or let user override it. This allows for veryf quick config generation of any complexity.
+The manage command offers user-friendly and flexible way to manage configuration. Manage command helps users with building their initial config file, updating running config or performing various operations with config. It uses _entities_ loaded from _entity file_. The _entity_ is a special config template that uses variables as input. The parameters use templating for their value to automatically render a value or let user override it. This allows for very quick config generation of any complexity.
 
 ```go
 // EntityVar is a variable of an entity defined with a template to render its value.
