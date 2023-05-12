@@ -70,24 +70,27 @@ func InitGlobalOptions(cli Cli, opts *GlobalOptions) {
 	} else if opts.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
 	} else {
-		logrus.SetLevel(logrus.InfoLevel)
+		logrus.SetLevel(logrus.ErrorLevel)
 		//infralogrus.DefaultLogger().SetLevel(logging.ErrorLevel)
 	}
 }
 
 func (glob *GlobalOptions) InstallFlags(flags *pflag.FlagSet) {
 	flags.BoolVarP(&glob.Debug, "debug", "D", false, "Enable debug mode")
-	flags.StringVarP(&glob.LogLevel, "loglevel", "L", "", "Set logging level")
+	flags.StringVarP(&glob.LogLevel, "log-level", "L", "", "Set logging level")
 	flags.StringVar(&glob.Color, "color", "", "Color mode; auto/always/never")
 }
 
 type Options struct {
 	ComposeFiles []string
+	EntityFiles  []string
 }
 
 func (opts *Options) InstallFlags(flags *pflag.FlagSet) {
-	flags.StringSliceVarP(&opts.ComposeFiles, "composefile", "f", nil, "Docker Compose configuration files")
+	flags.StringSliceVar(&opts.ComposeFiles, "composefile", nil, "Docker Compose configuration files")
 	must(cobra.MarkFlagFilename(flags, "composefile", "yaml", "yml"))
+	flags.StringSliceVar(&opts.EntityFiles, "entityfile", nil, "Entity configuration files")
+	must(cobra.MarkFlagFilename(flags, "entityfile", "yaml", "yml"))
 }
 
 func must(err error) {

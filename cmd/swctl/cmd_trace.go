@@ -26,12 +26,14 @@ func NewTraceCmd(cli Cli) *cobra.Command {
 }
 
 func runTraceCmd(cli Cli, opts TraceCmdOptions) error {
-
-	// TODO: improve tracing usage
-
 	args := append([]string{"--print"}, opts.Args...)
 
-	out, err := cli.Exec("vpp-probe --env=docker trace", args)
+	// TODO: improve usage of trace command
+	// - automatically use ping as default command
+	// - consider selecting IP and source network namespace automatically
+	// - cibsuder allowing users to simply select component names for ping src/dst
+
+	out, err := cli.Exec(fmt.Sprintf("vpp-probe --env=%s trace", defaultVppProbeEnv), args)
 	if err != nil {
 		return err
 	}
