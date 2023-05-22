@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/apparentlymart/go-cidr v1.1.0
+	github.com/bufbuild/protocompile v0.5.1
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/ghodss/yaml v1.0.0
@@ -21,9 +22,9 @@ require (
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.fd.io/govpp v0.7.0
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
-	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230313160121-631c8f60947a
+	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230518104332-63ef115e3f6f
 	google.golang.org/grpc v1.47.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.28.2-0.20230222093303-bc1253ad3743
 )
 
 replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
@@ -110,6 +111,7 @@ require (
 	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9 // indirect
 	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
