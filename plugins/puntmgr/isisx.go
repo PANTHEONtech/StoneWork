@@ -28,8 +28,7 @@ import (
 )
 
 // isisxPunt implements PuntHandler for PuntRequest_ISISX
-type isisxPunt struct {
-}
+type isisxPunt struct{}
 
 func NewIsisxPuntHandler() PuntHandler {
 	return &isisxPunt{}
