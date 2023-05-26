@@ -20,12 +20,22 @@ package mockcnf;
 
 option go_package = "go.pantheon.tech/stonework/proto/mockcnf;mockcnf";
 
+import "ligato/generic/options.proto";
+
 // MockCnf is used for testing of CNFRegistry and PuntManager.
 // Note: two different CNFs cannot use proto messages from the same proto files,
 //       because otherwise two distinct copies of the same file descriptor would be
 //       received over separate gRPC calls to KnownModels service, while only
 //       one descriptor can be registered for the same proto file.
 message MockCnf1 {
+	option (ligato.generic.model) = {
+		module: "mock1"
+		version: "v1"
+		type: "mock-type"
+		class: "config"
+	};
+	option (ligato.generic.model_name_template) = "{{.IpProtocol}}";
+	
 	uint32 ip_protocol = 1;
 	// Reference to VPP logical name.
 	string vpp_interface = 2;

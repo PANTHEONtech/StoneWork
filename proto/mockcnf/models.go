@@ -24,6 +24,15 @@ import (
 )
 
 var (
+	ModelMockCnf1 models.KnownModel
+	ModelMockCnf2 models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_mockcnf_mockcnf_proto_init()
+	file_mockcnf_mockcnf2_proto_init()
+
 	ModelMockCnf1 = models.Register(&MockCnf1{}, models.Spec{
 		Module:  "mock1",
 		Version: "v1",
@@ -35,7 +44,7 @@ var (
 		Version: "v1",
 		Type:    "mock-type",
 	}, models.WithNameTemplate("{{.VppInterface}}"))
-)
+}
 
 func MockCnfIndex() int {
 	index, err := strconv.Atoi(os.Getenv("MOCK_CNF_INDEX"))
