@@ -226,6 +226,7 @@ type ConfigItemDependency struct {
 
 	Label string `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
 	// Types that are assignable to Dep:
+	//
 	//	*ConfigItemDependency_Key_
 	//	*ConfigItemDependency_Anyof
 	Dep isConfigItemDependency_Dep `protobuf_oneof:"dep"`
