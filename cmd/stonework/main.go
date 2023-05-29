@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/protocompile/linker"
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/logging"
-
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
@@ -74,9 +73,9 @@ func findProtoFiles(dir string) []string {
 	})
 	if err != nil {
 		// TODO: better error handling here
+		logging.DefaultLogger.Errorf("error when searching for proto files: %w", err)
 		return nil
 	}
-	logging.DefaultLogger.Warnf("found proto files: %v", files)
 	return files
 }
 
