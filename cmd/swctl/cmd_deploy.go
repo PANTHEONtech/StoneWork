@@ -29,8 +29,11 @@ const deploymentExample = `
 
 func NewDeploymentCmd(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "deployment [flags] COMMAND",
-		Short:   "Manage deployments of StoneWork",
+		Use:   "deployment [flags] COMMAND",
+		Short: "Manage deployments of StoneWork",
+		Long: `Command deploy manages deployment of StoneWork.
+It hides the specifics of a deployment and provides unified interface to user. 
+Currently only Docker Compose is supported, for which the deploy command offers a wrapper.`,
 		Example: color.Sprint(deploymentExample),
 		Aliases: []string{"deploy"},
 		Args:    cobra.ArbitraryArgs,
@@ -144,7 +147,7 @@ func newDeploymentServices(cli Cli) *cobra.Command {
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := cli.Exec("docker compose services", args)
+			out, err := cli.Exec("docker compose ps --services", args)
 			if err != nil {
 				return err
 			}

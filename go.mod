@@ -5,12 +5,14 @@ go 1.18
 require (
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/bufbuild/protocompile v0.5.1
+	github.com/buildkite/interpolate v0.0.0-20200526001904-07f35b4ae251
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.4.2
 	github.com/goccy/go-yaml v1.8.0
 	github.com/gookit/color v1.5.2
+	github.com/manifoldco/promptui v0.9.0
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635
 	github.com/namsral/flag v1.7.4-pre
 	github.com/onsi/gomega v1.24.1
@@ -25,9 +27,10 @@ require (
 	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230518104332-63ef115e3f6f
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.2-0.20230222093303-bc1253ad3743
+	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
+//replace github.com/hashicorp/consul => github.com/hashicorp/consul v1.5.1
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
@@ -38,6 +41,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2 // indirect
 	github.com/containerd/cgroups v1.0.4 // indirect
 	github.com/containerd/containerd v1.5.13 // indirect
@@ -119,5 +123,4 @@ require (
 	google.golang.org/genproto v0.0.0-20220607223854-30acc4cbd2aa // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

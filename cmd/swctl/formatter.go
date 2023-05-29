@@ -34,7 +34,7 @@ func formatAsTemplate(w io.Writer, format string, data interface{}) error {
 	case "yaml", "yml":
 		b.WriteString(yamlTmpl(data))
 	case "proto":
-		b.WriteString(protoTmpl(data))
+		b.WriteString(protoTmplMulti(data))
 	default:
 		t := template.New("format")
 		t.Funcs(tmplFuncs)

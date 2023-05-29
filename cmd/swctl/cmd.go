@@ -3,18 +3,20 @@ package main
 import (
 	"fmt"
 
+	"github.com/gookit/color"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"go.pantheon.tech/stonework/pkg/version"
 )
 
 const logo = `
- ███████╗██╗    ██╗ ██████╗████████╗██╗     
- ██╔════╝██║    ██║██╔════╝╚══██╔══╝██║     
- ███████╗██║ █╗ ██║██║        ██║   ██║       %s
- ╚════██║██║███╗██║██║        ██║   ██║       %s
- ███████║╚███╔███╔╝╚██████╗   ██║   ███████╗  %s
- ╚══════╝ ╚══╝╚══╝  ╚═════╝   ╚═╝   ╚══════╝
+<lightblue>  ███████╗██╗    ██╗ ██████╗████████╗██╗      </>
+<lightblue>  ██╔════╝██║    ██║██╔════╝╚══██╔══╝██║      </>
+<lightblue>  ███████╗██║ █╗ ██║██║        ██║   ██║      </><lightyellow> %s </>
+<lightblue>  ╚════██║██║███╗██║██║        ██║   ██║      </><lightyellow> %s </>
+<lightblue>  ███████║╚███╔███╔╝╚██████╗   ██║   ███████╗ </><lightyellow> %s </>
+<lightblue>  ╚══════╝ ╚══╝╚══╝  ╚═════╝   ╚═╝   ╚══════╝ </>
 
 `
 
@@ -26,14 +28,23 @@ func NewRootCmd(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "swctl [options] [command]",
 		Short:         "swctl is CLI app to manage StoneWork and its components",
-		Long:          fmt.Sprintf(logo, version.Short(), version.BuildTime(), version.BuiltBy()),
+		Long:          color.Sprintf(logo, version.Short(), version.BuildTime(), version.BuiltBy()),
 		Version:       version.String(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			InitGlobalOptions(cli, &glob)
 
-			return cli.Initialize(opts)
+			logrus.Tracef("global options: %+v", glob)
+
+			err := cli.Initialize(opts)
+			if err != nil {
+				return err
+			}
+
+			logrus.Tracef("initialized CLI options: %+v", opts)
+
+			return nil
 		},
 		TraverseChildren:  true,
 		CompletionOptions: cobra.CompletionOptions{HiddenDefaultCmd: true},
@@ -60,6 +71,7 @@ func NewRootCmd(cli Cli) *cobra.Command {
 		NewStatusCmd(cli),
 		NewTraceCmd(cli),
 		NewSupportCmd(cli),
+		NewManageCmd(cli),
 	)
 
 	cmd.InitDefaultHelpCmd()
