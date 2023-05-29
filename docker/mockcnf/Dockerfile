@@ -106,6 +106,10 @@ COPY ./docker/mockcnf/initfileregistry-novpp.conf /etc/mockcnf-novpp/initfilereg
 COPY ./docker/mockcnf/supervisor-novpp.conf /etc/mockcnf-novpp/supervisor.conf
 COPY ./docker/mockcnf/init_hook-novpp.sh /usr/bin/init_hook-novpp.sh
 
+# Copy proto api (mockcnf models)
+RUN mkdir -p /run/stonework
+RUN cp -r ./proto/mockcnf /run/stonework/proto
+
 # Install script for packet tracing on VPP
 COPY ./docker/vpptrace.sh /usr/bin/vpptrace.sh
 RUN chmod u+x /usr/bin/vpptrace.sh
