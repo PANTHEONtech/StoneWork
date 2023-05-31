@@ -112,18 +112,26 @@ func registerModels(files linker.Files, specExtDesc, tmplExtDesc protoreflect.Ex
 		for i := 0; i < msgs.Len(); i++ {
 			msgDesc := msgs.Get(i)
 			opts := msgDesc.Options().(*descriptorpb.MessageOptions)
+			if !proto.HasExtension(opts, specExtDesc.Type()) {
+				// this msg is not a model, continue with next message
+				continue
+			}
 			dynSpec, ok := proto.GetExtension(opts, specExtDesc.Type()).(*dynamicpb.Message)
 			if !ok {
-				// no spec detected, continue with next message
+				// no model spec detected, continue with next message
 				continue
 			}
 			spec, err := util.ConvertProto(&generic.ModelSpec{}, dynSpec)
 			if err != nil {
 				return err
 			}
-			tmpl := proto.GetExtension(opts, tmplExtDesc.Type()).(string)
+			var modelOpts []models.ModelOption
+			if proto.HasExtension(opts, tmplExtDesc.Type()) {
+				tmpl := proto.GetExtension(opts, tmplExtDesc.Type()).(string)
+				modelOpts = append(modelOpts, models.WithNameTemplate(tmpl))
+			}
 			modelMsg := dynamicpb.NewMessage(msgDesc)
-			_, err = models.DefaultRegistry.Register(modelMsg, models.ToSpec(spec.(*generic.ModelSpec)), models.WithNameTemplate(tmpl))
+			_, err = models.DefaultRegistry.Register(modelMsg, models.ToSpec(spec.(*generic.ModelSpec)), modelOpts...)
 			if err != nil {
 				return err
 			}
