@@ -104,21 +104,8 @@ swctl deploy services
 The manage command offers user-friendly and flexible way to manage configuration. Manage command helps users with building their initial config file, updating running config or performing various operations with config. It uses _entities_ loaded from _entity file_. The _entity_ is a special config template that uses variables as input. The parameters use templating for their value to automatically render a value or let user override it. This allows for very quick config generation of any complexity.
 
 ```go
-// EntityVar is a variable of an entity defined with a template to render its value.
-type EntityVar struct {
-	Index int `json:"-"`
-
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Value       string `json:"default"`
-	Type        string `json:"type"`
-    When        string `json:"when"`
-}
-
 // Entity is a blueprint for an object defined with a config template of related parts.
 type Entity struct {
-	Origin string `json:"-"`
-
 	Name        string      `json:"name"`
 	Plural      string      `json:"plural"`
 	Description string      `json:"description"`
@@ -126,13 +113,23 @@ type Entity struct {
 	Config      string      `json:"config"`
 	Single      bool        `json:"single"`
 }
+
+// EntityVar is a variable of an entity defined with a template to render its value.
+type EntityVar struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Value       string `json:"default"`
+	Type        string `json:"type"`
+	When        string `json:"when"`
+}
 ```
 
 By default, the entities are loaded from entity file - `entities.yaml` file in current working directory when running `swctl manage`. The expected format of the entity file is defined as:
 
-```
+```yaml
 ---
 entities:
+
   - name: ENTITY_NAME
     description: ENTITY_DESCRIPTION
     vars:
@@ -140,6 +137,7 @@ entities:
         value: VAR_VALUE
     config: |
       ENTITY_CONFIG
+
 # - name: ENTITY2_NAME
 #   ...     
 ```
