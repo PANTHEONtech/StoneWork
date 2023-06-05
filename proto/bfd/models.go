@@ -20,19 +20,18 @@ import "go.ligato.io/vpp-agent/v3/pkg/models"
 
 const ModuleName = "vpp.bfd"
 
-var (
-	ModelBFD = models.Register(
-		&BFD{},
-		models.Spec{
-			Module:  ModuleName,
-			Version: "v1",
-			Type:    "bfd",
-			Class:   "config",
-		},
-		models.WithNameTemplate(
-			"{{.Interface}}/peer/{{.PeerIp}}",
-		))
-)
+var ModelBFD models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_bfd_bfd_proto_init()
+
+	ModelBFD = models.Register(&BFD{}, models.Spec{
+		Module:  ModuleName,
+		Version: "v1",
+		Type:    "bfd",
+	}, models.WithNameTemplate("{{.Interface}}/peer/{{.PeerIp}}"))
+}
 
 // BFDKey returns key for the given BFD configuration.
 func BFDKey(ifName, peerIP string) string {

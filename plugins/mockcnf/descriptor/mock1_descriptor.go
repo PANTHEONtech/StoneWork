@@ -62,10 +62,10 @@ func NewMockCnf1Descriptor(cnfReg cnfreg.CnfAPI, puntMgr puntmgr_plugin.PuntMana
 
 	typedDescr := &adapter.MockCnf1Descriptor{
 		Name:          Mock1DescrName,
-		NBKeyPrefix:   mockcnf.ModelMockCnf.KeyPrefix(),
-		ValueTypeName: mockcnf.ModelMockCnf.ProtoName(),
-		KeySelector:   mockcnf.ModelMockCnf.IsKeyValid,
-		KeyLabel:      mockcnf.ModelMockCnf.StripKeyPrefix,
+		NBKeyPrefix:   mockcnf.ModelMockCnf1.KeyPrefix(),
+		ValueTypeName: mockcnf.ModelMockCnf1.ProtoName(),
+		KeySelector:   mockcnf.ModelMockCnf1.IsKeyValid,
+		KeyLabel:      mockcnf.ModelMockCnf1.StripKeyPrefix,
 		Create:        ctx.Create,
 		Delete:        ctx.Delete,
 		Retrieve:      ctx.Retrieve,

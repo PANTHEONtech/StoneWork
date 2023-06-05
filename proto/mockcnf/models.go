@@ -17,40 +17,33 @@
 package mockcnf
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
-	ModelMockCnf = models.Register(getModelProto(), models.Spec{
-		Module:  fmt.Sprintf("mock%d", MockCnfIndex()),
-		Version: "v1",
-		Type:    "mock-type",
-	}, models.WithNameTemplate(getModelNameTemplate()))
+	ModelMockCnf1 models.KnownModel
+	ModelMockCnf2 models.KnownModel
 )
 
-func getModelProto() proto.Message {
-	switch MockCnfIndex() {
-	case 1:
-		return &MockCnf1{}
-	case 2:
-		return &MockCnf2{}
-	}
-	return nil
-}
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_mockcnf_mockcnf_proto_init()
+	file_mockcnf_mockcnf2_proto_init()
 
-func getModelNameTemplate() string {
-	switch MockCnfIndex() {
-	case 1:
-		return "{{.IpProtocol}}"
-	case 2:
-		return "{{.VppInterface}}"
-	}
-	return ""
+	ModelMockCnf1 = models.Register(&MockCnf1{}, models.Spec{
+		Module:  "mock1",
+		Version: "v1",
+		Type:    "mock-type",
+	}, models.WithNameTemplate("{{.IpProtocol}}"))
+
+	ModelMockCnf2 = models.Register(&MockCnf2{}, models.Spec{
+		Module:  "mock2",
+		Version: "v1",
+		Type:    "mock-type",
+	}, models.WithNameTemplate("{{.VppInterface}}"))
 }
 
 func MockCnfIndex() int {

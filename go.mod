@@ -4,8 +4,10 @@ go 1.18
 
 require (
 	github.com/apparentlymart/go-cidr v1.1.0
+	github.com/bufbuild/protocompile v0.5.1
 	github.com/buildkite/interpolate v0.0.0-20200526001904-07f35b4ae251
 	github.com/docker/cli v20.10.17+incompatible
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.4.2
 	github.com/goccy/go-yaml v1.8.0
@@ -22,9 +24,9 @@ require (
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.fd.io/govpp v0.7.0
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
-	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230316224910-41aaca425cf7
+	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20230518104332-63ef115e3f6f
 	google.golang.org/grpc v1.47.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.28.2-0.20230222093303-bc1253ad3743
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -53,7 +55,6 @@ require (
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/fluent/fluent-logger-golang v1.3.0 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/fsouza/go-dockerclient v1.7.1 // indirect
 	github.com/ftrvxmtrx/fd v0.0.0-20150925145434-c6d800382fff // indirect
 	github.com/goccy/go-graphviz v0.0.6 // indirect
@@ -115,6 +116,7 @@ require (
 	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9 // indirect
 	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect

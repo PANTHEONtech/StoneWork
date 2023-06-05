@@ -23,10 +23,15 @@ import (
 // ModuleName is the name of the module used for models.
 const ModuleName = "vpp.isisx"
 
-var (
+var ModelISISX models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_isisx_isisx_proto_init()
+
 	ModelISISX = models.Register(&ISISXConnection{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v1",
 		Type:    "connection",
 	}, models.WithNameTemplate("fromInterface/{{.InputInterface}}/toInterface/{{.OutputInterface}}"))
-)
+}
