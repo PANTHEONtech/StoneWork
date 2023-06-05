@@ -23,6 +23,16 @@ import (
 const ModuleName = "vpp.nat"
 
 var (
+	ModelNat64IPv6Prefix  models.KnownModel
+	ModelNat64Interface   models.KnownModel
+	ModelNat64AddressPool models.KnownModel
+	ModelNat64StaticBIB   models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_nat64_nat64_proto_init()
+
 	ModelNat64IPv6Prefix = models.Register(&Nat64IPv6Prefix{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "nat64-prefix",
@@ -53,7 +63,7 @@ var (
 		"vrf/{{.VrfId}}/proto/{{.Protocol}}"+
 			"/inaddr/{{.InsideIpv6Address}}/inport/{{.InsidePort}}"+
 			"/outaddr/{{.OutsideIpv4Address}}/outport/{{.OutsidePort}}"))
-)
+}
 
 // Nat64IPv6PrefixKey returns the key used in NB DB to store the configuration of a NAT64 IPv6 prefix
 // inside a given VRF.

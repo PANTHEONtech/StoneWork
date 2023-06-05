@@ -19,9 +19,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/ghodss/yaml"
-	"github.com/namsral/flag"
-	"google.golang.org/protobuf/encoding/protojson"
 	"io/ioutil"
 	"os"
 	"path"
@@ -29,9 +26,11 @@ import (
 	"strings"
 	"text/template"
 
-	"go.ligato.io/vpp-agent/v3/client"
+	"github.com/ghodss/yaml"
+	"github.com/namsral/flag"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // TemplateData encapsulates input arguments for the template.
@@ -102,13 +101,13 @@ func main() {
 		model := &Model{
 			ProtoMessage: cnfModel.ProtoName,
 		}
-		if protoFile, err := client.ModelOptionFor("protoFile", cnfModel.Options); err == nil {
+		if protoFile, err := models.ModelOptionFor("protoFile", cnfModel.Options); err == nil {
 			imports[protoFile] = struct{}{}
 		}
 		spec := models.ToSpec(cnfModel.Spec)
 		groupName := fmt.Sprintf("%v%v", modulePrefix(spec.ModelName()), groupSuffix)
 		model.Name = simpleProtoName(cnfModel.ProtoName)
-		if _, err = client.ModelOptionFor("nameTemplate", cnfModel.Options); err == nil {
+		if _, err = models.ModelOptionFor("nameTemplate", cnfModel.Options); err == nil {
 			model.Name += repeatedFieldSuffix
 			model.Repeated = true
 		}
@@ -166,7 +165,7 @@ func main() {
 	}
 
 	// output the generated proto file
-	protoFile := path.Join(*apiDir, strings.ToLower(*cnfName) + "-root.proto")
+	protoFile := path.Join(*apiDir, strings.ToLower(*cnfName)+"-root.proto")
 	err = ioutil.WriteFile(protoFile, buf.Bytes(), 0644)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ERROR WriteFile: ", err)

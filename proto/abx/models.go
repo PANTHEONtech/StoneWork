@@ -26,13 +26,18 @@ import (
 // ModuleName is the name of the module used for models.
 const ModuleName = "vpp.abx"
 
-var (
+var ModelABX models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_abx_abx_proto_init()
+
 	ModelABX = models.Register(&ABX{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v1",
 		Type:    "abx",
 	}, models.WithNameTemplate("{{.Index}}"))
-)
+}
 
 // Key returns the prefix used in the ETCD to store VPP ACL-based forwarding
 // config of a particular ABX in selected vpp instance.

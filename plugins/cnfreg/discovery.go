@@ -21,13 +21,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/vishvananda/netlink"
 	"google.golang.org/grpc"
 
@@ -50,51 +51,95 @@ type PidFile struct {
 	HttpPort  int    `json:"http-port"`
 }
 
-// cnfDiscovery discovers all CNFs that should be loaded into StoneWork (as StoneWork modules).
-// Currently this is a very simple procedure - StoneWork will just wait configured amount of time and each CNF should
-// in the meantime write pid file under the filepath /run/stonework/discovery/<cnf-name>.pid, containing pid, IP address,
-// gRPC and http port numbers.
-// StoneWork will then connect to each CNF over gRPC and discovers all CNF-specific configuration models.
-// Downside of this trivial approach for discovery is that the Init phase will take longer and most of that time nothing
-// actually happens (agent sleeps).
-func (p *Plugin) cnfDiscovery() error {
-	// Give CNFs some time to write pid files.
-	time.Sleep(p.config.CnfDiscoveryTimeout)
-
-	// Load all pid files written by SW-Module CNFs.
-	p.sw.modules = make(map[string]swModule)
-	pidFiles, err := ioutil.ReadDir(pidFileDir)
+func (p *Plugin) cnfDiscovery(done <-chan struct{}) {
+	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		if os.IsNotExist(err) {
-			p.Log.Warnf("Directory \"%s\" does not exist, no CNFs will be loaded", pidFileDir)
-			return nil
-		}
-		p.Log.Errorf("failed to read directory with PID files: %v", err)
-		return err
+		p.Log.Errorf("failed to create file watcher: %v", err)
+		return
 	}
-	for _, pidFile := range pidFiles {
-		if !strings.HasSuffix(pidFile.Name(), pidFileExt) {
-			continue
+	defer func() {
+		if err := watcher.Close(); err != nil {
+			p.Log.Errorf("failed to close file watcher: %v", err)
 		}
-		content, err := ioutil.ReadFile(path.Join(pidFileDir, pidFile.Name()))
-		if err != nil {
-			p.Log.Errorf("failed to read PID file %s: %v", pidFile.Name(), err)
-			continue
-		}
-		var pf PidFile
-		err = json.Unmarshal(content, &pf)
-		if err != nil {
-			p.Log.Errorf("failed to parse PID file %s: %v", pidFile.Name(), err)
-			continue
-		}
-		swMod, err := p.getCnfModels(pf.IpAddress, pf.GrpcPort, pf.HttpPort)
-		if err != nil {
-			p.Log.Errorf("failed to obtain CNF models (pid file: %v): %v", pidFile.Name(), err)
-			continue
-		}
-		p.sw.modules[swMod.cnfMsLabel] = swMod
+	}()
+
+	_ = os.Mkdir(pidFileDir, os.ModeDir)
+
+	if err := watcher.Add(pidFileDir); err != nil {
+		p.Log.Errorf("failed to add pid file directory to watch into file watcher: %v", err)
 	}
-	return nil
+
+	pidFiles, err := os.ReadDir(pidFileDir)
+	if err != nil {
+		p.Log.Errorf("failed to read pid file directory: %v", err)
+	}
+	for _, pf := range pidFiles {
+		swMod, err := p.loadSwModFromFile(pidFileDir + "/" + pf.Name())
+		if err != nil {
+			p.Log.Errorf("loading StoneWork module from file failed: %v", err)
+			continue
+		}
+		if _, ok := p.sw.modules.Get(swMod.cnfMsLabel); !ok {
+			p.sw.modules.Set(swMod.cnfMsLabel, swMod)
+			p.initCnfProxy(swMod)
+		}
+	}
+
+	go p.discovery(watcher)
+	<-done
+}
+
+func (p *Plugin) discovery(w *fsnotify.Watcher) {
+	for {
+		select {
+		case err, ok := <-w.Errors:
+			// channel was closed (Watcher.Close())
+			if !ok {
+				return
+			}
+			p.Log.Errorf("file watcher error: %v", err)
+		case ev, ok := <-w.Events:
+			// channel was closed (Watcher.Close())
+			if !ok {
+				return
+			}
+
+			if !ev.Has(fsnotify.Create) && !ev.Has(fsnotify.Write) {
+				continue
+			}
+
+			swMod, err := p.loadSwModFromFile(ev.Name)
+			if err != nil {
+				p.Log.Errorf("loading StoneWork module from file failed: %v", err)
+				continue
+			}
+			p.sw.modules.Set(swMod.cnfMsLabel, swMod)
+			p.initCnfProxy(swMod)
+		}
+	}
+}
+
+// Load all pid files written by SW-Module CNFs.
+func (p *Plugin) loadSwModFromFile(fpath string) (swModule, error) {
+	var swMod swModule
+	fname := filepath.Base(fpath)
+	if !strings.HasSuffix(fpath, pidFileExt) {
+		return swMod, fmt.Errorf("PID file name %s does not have suffix %s", fname, pidFileExt)
+	}
+	content, err := os.ReadFile(fpath)
+	if err != nil {
+		return swMod, fmt.Errorf("failed to read PID file %s: %v", fname, err)
+	}
+	var pf PidFile
+	err = json.Unmarshal(content, &pf)
+	if err != nil {
+		return swMod, fmt.Errorf("failed to parse PID file %s: %v", fname, err)
+	}
+	swMod, err = p.getCnfModels(pf.IpAddress, pf.GrpcPort, pf.HttpPort)
+	if err != nil {
+		return swMod, fmt.Errorf("failed to obtain CNF models (pid file: %v): %v", fname, err)
+	}
+	return swMod, nil
 }
 
 func (p *Plugin) getCnfModels(ipAddress string, grpcPort, httpPort int) (swMod swModule, err error) {
@@ -225,7 +270,7 @@ func (p *Plugin) writePidFile() error {
 		return err
 	}
 	_ = os.Mkdir(pidFileDir, os.ModeDir)
-	err = ioutil.WriteFile(
+	err = os.WriteFile(
 		path.Join(pidFileDir, p.ServiceLabel.GetAgentLabel()+pidFileExt),
 		content, 0644)
 	return err

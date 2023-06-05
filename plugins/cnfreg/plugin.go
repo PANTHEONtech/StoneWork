@@ -37,6 +37,7 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 
+	"go.pantheon.tech/stonework/pkg/conc"
 	pb "go.pantheon.tech/stonework/proto/cnfreg"
 	"go.pantheon.tech/stonework/proto/puntmgr"
 )
@@ -49,23 +50,23 @@ import (
 // (e.g. to use OSPF-learned routes to connect with a BGP peer).
 // The plugin operates in one of the 3 following modes depending on the value of the "CNF_MODE" environment variable:
 //  1. STANDALONE (default, i.e. assumed if the variable is not defined):
-//      - CNF is used on its own, potentially chained with other CNFs using for example NSM
-//        (i.e. each VPP-based CNF runs its own VPP instance)
-//      - The CNF Registry plugin is also used by a Standalone CNF, but merely to keep track of CNF Index ID .
+//     - CNF is used on its own, potentially chained with other CNFs using for example NSM
+//     (i.e. each VPP-based CNF runs its own VPP instance)
+//     - The CNF Registry plugin is also used by a Standalone CNF, but merely to keep track of CNF Index ID .
 //  2. STONEWORK_MODULE:
-//      - CNF used as a SW-module
-//      - VPP-based CNFs do not run VPP inside their container, instead they connect with the all-in-one VPP of StoneWork
-//      - in this mode the Registry acts as a client of the Registry running by the StoneWork agent
-//      - internally the plugin uses gRPC to exchange all the information needed between the Registries of CNF and SW
-//        to load the CNF and use with the all-in-one VPP
-//      - CNF should use only those methods of the plugin which are defined by the CnfAPI interface
+//     - CNF used as a SW-module
+//     - VPP-based CNFs do not run VPP inside their container, instead they connect with the all-in-one VPP of StoneWork
+//     - in this mode the Registry acts as a client of the Registry running by the StoneWork agent
+//     - internally the plugin uses gRPC to exchange all the information needed between the Registries of CNF and SW
+//     to load the CNF and use with the all-in-one VPP
+//     - CNF should use only those methods of the plugin which are defined by the CnfAPI interface
 //  3. STONEWORK:
-//      - CNF Registry plugin is used by StoneWork firstly to discover all the enabled CNFs and then to collect
-//        all the information about them to be able to integrate them with the all-in-one VPP
-//      - for each CNF, StoneWork needs to learn the NB-facing configuration models, traffic Punting to use (some
-//        subset of the traffic typically needs to be diverted from VPP into the Linux network stack for the Linux-based
-//        CNF to process)
-//      - StoneWork should use only those methods of the plugin which are defined by the StoneWorkAPI interface
+//     - CNF Registry plugin is used by StoneWork firstly to discover all the enabled CNFs and then to collect
+//     all the information about them to be able to integrate them with the all-in-one VPP
+//     - for each CNF, StoneWork needs to learn the NB-facing configuration models, traffic Punting to use (some
+//     subset of the traffic typically needs to be diverted from VPP into the Linux network stack for the Linux-based
+//     CNF to process)
+//     - StoneWork should use only those methods of the plugin which are defined by the StoneWorkAPI interface
 type Plugin struct {
 	Deps
 	pb.UnimplementedCnfDiscoveryServer
@@ -162,7 +163,7 @@ type PuntManagerAPI interface {
 
 // Attributes specific to StoneWork (i.e. not used by CNF).
 type swAttrs struct {
-	modules map[string]swModule // key = cnf microservice label
+	modules conc.Map[string, swModule] // key = cnf microservice label
 }
 
 // CNF used as a StoneWork Module.
@@ -206,13 +207,14 @@ type cnfModel struct {
 // Init initializes internal attributes and depending on the mode does the following:
 // case STONEWORK_MODULE:
 //   - registers gRPC handler for DiscoverCnf and GetPuntRequests
+//
 // case STONEWORK:
 //   - waits few seconds for all CNFs to write pid files
 //   - then for each CNF:
-//         - creates grpcConnection with the CNF
-//         - obtains models using the meta service
-//         - register models (exposed by Cnf)
-//         - creates CnfDescriptorProxy for each module
+//   - creates grpcConnection with the CNF
+//   - obtains models using the meta service
+//   - register models (exposed by Cnf)
+//   - creates CnfDescriptorProxy for each module
 func (p *Plugin) Init() (err error) {
 	if p.GetCnfMode() != pb.CnfMode_STONEWORK {
 		// check CNF dependencies
@@ -256,20 +258,9 @@ func (p *Plugin) Init() (err error) {
 		pb.RegisterCnfDiscoveryServer(grpcServer, p)
 
 	case pb.CnfMode_STONEWORK:
-		// CNF "discovery"
-		err = p.cnfDiscovery()
-		if err != nil {
-			return err
-		}
-		p.Log.Debugf("Discovered CNFs: %+v", p.sw.modules)
-
-		// setup proxy for each config module exposed by every CNF
-		for _, swMod := range p.sw.modules {
-			err := p.initCnfProxy(swMod)
-			if err != nil {
-				return err
-			}
-		}
+		p.sw.modules = conc.NewMap[string, swModule]()
+		// CNF discovery
+		go p.cnfDiscovery(make(chan struct{}))
 	}
 	return nil
 }
@@ -368,8 +359,7 @@ func (p *Plugin) GetCnfGrpcConn(cnfMsLabel string) (conn grpc.ClientConnInterfac
 	if p.cnfMode != pb.CnfMode_STONEWORK {
 		panic(fmt.Errorf("method GetCnfGrpcConn is not available in the CNF mode %v", p.cnfMode))
 	}
-	// No need to lock p.sw - it is not changed anymore after Init
-	swModule, loaded := p.sw.modules[cnfMsLabel]
+	swModule, loaded := p.sw.modules.Get(cnfMsLabel)
 	if !loaded {
 		return nil, fmt.Errorf("CNF %s is not loaded as StoneWork Module", cnfMsLabel)
 	}
@@ -382,15 +372,15 @@ func (p *Plugin) GetCnfGrpcConn(cnfMsLabel string) (conn grpc.ClientConnInterfac
 // Returns remote configuration client connected with the given SW-Module CNF.
 func (p *Plugin) GetCnfCfgClient(cnfMsLabel string) (cfgClient client.GenericClient, err error) {
 	if p.cnfMode != pb.CnfMode_STONEWORK {
-		panic(fmt.Errorf("method GetCnfGrpcConn is not available in the CNF mode %v", p.cnfMode))
+		panic(fmt.Errorf("method GetCnfCfgClient is not available in the CNF mode %v", p.cnfMode))
 	}
 	// No need to lock p.sw - it is not changed anymore after Init
-	swModule, loaded := p.sw.modules[cnfMsLabel]
+	swModule, loaded := p.sw.modules.Get(cnfMsLabel)
 	if !loaded {
 		return nil, fmt.Errorf("CNF %s is not loaded as StoneWork Module", cnfMsLabel)
 	}
 	if swModule.cfgClient == nil {
-		return nil, fmt.Errorf("gRPC connection with CNF %s is not yet established", cnfMsLabel)
+		return nil, fmt.Errorf("configuration client for CNF %s does not exist yet", cnfMsLabel)
 	}
 	return swModule.cfgClient, nil
 }

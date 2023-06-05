@@ -23,9 +23,6 @@ const (
 	defaultSwModGrpcBasePort = 19000
 	// Start of the HTTP port range for StoneWork modules
 	defaultSwModHttpBasePort = 19100
-	// by default StoneWork will wait 5 seconds in the Init phase for all CNFs to write lock files,
-	// based on which they are discovered by StoneWork.
-	defaultSwCnfDiscoveryTimeout = 5 * time.Second
 )
 
 // Config file for CnfRegistry plugin.
@@ -34,16 +31,15 @@ type Config struct {
 	SwModGrpcBasePort int `json:"sw-module-grpc-base-port"`
 	// Start of the HTTP port range for StoneWork modules
 	SwModHttpBasePort int `json:"sw-module-http-base-port"`
-	// The maximum amount of time StoneWork will wait for all CNFs (SW-Modules) to register themselves.
+	// Deprecated. Using this option will result in a warning
 	CnfDiscoveryTimeout time.Duration `json:"cnf-discovery-timeout"`
 }
 
 // loadConfig returns PuntMgr plugin file configuration if exists.
 func (p *Plugin) loadConfig() (*Config, error) {
 	cfg := &Config{
-		SwModGrpcBasePort:   defaultSwModGrpcBasePort,
-		SwModHttpBasePort:   defaultSwModHttpBasePort,
-		CnfDiscoveryTimeout: defaultSwCnfDiscoveryTimeout,
+		SwModGrpcBasePort: defaultSwModGrpcBasePort,
+		SwModHttpBasePort: defaultSwModHttpBasePort,
 	}
 	found, err := p.Cfg.LoadValue(cfg)
 	if err != nil {
@@ -55,5 +51,11 @@ func (p *Plugin) loadConfig() (*Config, error) {
 	}
 
 	p.Log.Debugf("CnfRegistry config found: %+v", cfg)
+	var durZeroVal time.Duration
+	if cfg.CnfDiscoveryTimeout != durZeroVal {
+		p.Log.Warn("Option CnfDiscoveryTimeout is deprecated and setting it has no effect. " +
+			"CNF discovery now runs continuously in the background by watching for filesystem changes (pid files created by CNFs). " +
+			"The discovery starts immediately after StoneWork initialization without any timeout period.")
+	}
 	return cfg, err
 }

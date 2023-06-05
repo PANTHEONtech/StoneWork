@@ -101,7 +101,9 @@ const (
 	// Punt is not required.
 	PuntRequest_NO_PUNT PuntRequest_PuntType = 0
 	// Create an L2 "hairpin x-connect" using TAPs or MEMIFs:
-	//   vpp_interface1 <-> vpp tap/memif 1 <-> linux tap/memif 1 -- CNF -- linux tap/memif 2 <-> vpp tap/memif 2 <-> vpp_interface2
+	//
+	//	vpp_interface1 <-> vpp tap/memif 1 <-> linux tap/memif 1 -- CNF -- linux tap/memif 2 <-> vpp tap/memif 2 <-> vpp_interface2
+	//
 	// (i.e. hairpinning over linux network stack or via memif-enabled CNF)
 	PuntRequest_HAIRPIN_XCONNECT PuntRequest_PuntType = 1
 	// Like HAIRPIN x-connect except that while one side is attached to an existing L2 VPP interface, the other side
@@ -114,14 +116,17 @@ const (
 	// Copy traffic arriving and/or leaving via L2/L3 interface and send it to Linux or memif-enabled CNF.
 	PuntRequest_SPAN PuntRequest_PuntType = 3
 	// Effectively replicate L3 VPP interface in Linux using ACL-based xConnect as follows:
-	//   vpp-interface with IP  <-- ABX --> unnumbered vpp memif/tap interface <-> Linux Tap / CNF memif
+	//
+	//	vpp-interface with IP  <-- ABX --> unnumbered vpp memif/tap interface <-> Linux Tap / CNF memif
 	PuntRequest_ABX PuntRequest_PuntType = 4
 	// Punt traffic matching given conditions (received through any interface) and punt it over a AF_UNIX socket.
 	PuntRequest_PUNT_TO_SOCKET PuntRequest_PuntType = 5
 	// Proxy DHCP requests for a given (L3) VRF into the Linux network stack or into a memif-enabled CNF.
 	PuntRequest_DHCP_PROXY PuntRequest_PuntType = 6
 	// Effectively replicate L3 VPP interface in Linux for ISIS protocol packets using xConnect as follows:
-	//   vpp-interface with IP  <-- ISISX --> unnumbered vpp memif/tap interface <-> Linux Tap / CNF memif
+	//
+	//	vpp-interface with IP  <-- ISISX --> unnumbered vpp memif/tap interface <-> Linux Tap / CNF memif
+	//
 	// Basically it has the same goal as ABX, but ABX can't be used for ISIS protocol packets as packets
 	// for this protocol get dropped in VPP before reaching ACL VPP node.
 	PuntRequest_ISISX PuntRequest_PuntType = 7
@@ -243,6 +248,7 @@ type PuntRequest struct {
 	InterconnectType PuntRequest_InterconnectType `protobuf:"varint,3,opt,name=interconnect_type,json=interconnectType,proto3,enum=puntmgr.PuntRequest_InterconnectType" json:"interconnect_type,omitempty"`
 	EnableGso        bool                         `protobuf:"varint,4,opt,name=enable_gso,json=enableGso,proto3" json:"enable_gso,omitempty"`
 	// Types that are assignable to Config:
+	//
 	//	*PuntRequest_HairpinXConnect_
 	//	*PuntRequest_Hairpin_
 	//	*PuntRequest_Span_
@@ -853,9 +859,9 @@ type PuntRequest_Abx struct {
 	// Enable if VRF is not used on the CNF side.
 	WithoutCnfVrf bool `protobuf:"varint,3,opt,name=without_cnf_vrf,json=withoutCnfVrf,proto3" json:"without_cnf_vrf,omitempty"`
 	// DestinationNetwork and SourceNetwork are allowed to contain special constants:
-	//  - "any": match any source/destination IPv4/IPv6 address
-	//  - "" (empty string): same as "any"
-	//  - "local": match traffic destined to one of the IP addresses assigned to vpp_interface
+	//   - "any": match any source/destination IPv4/IPv6 address
+	//   - "" (empty string): same as "any"
+	//   - "local": match traffic destined to one of the IP addresses assigned to vpp_interface
 	IngressAclRules []*acl.ACL_Rule_IpRule `protobuf:"bytes,4,rep,name=ingress_acl_rules,json=ingressAclRules,proto3" json:"ingress_acl_rules,omitempty"`
 	EgressAclRules  []*acl.ACL_Rule_IpRule `protobuf:"bytes,5,rep,name=egress_acl_rules,json=egressAclRules,proto3" json:"egress_acl_rules,omitempty"`
 }
@@ -933,6 +939,7 @@ type PuntRequest_PuntToSocket struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Config:
+	//
 	//	*PuntRequest_PuntToSocket_ToHost
 	//	*PuntRequest_PuntToSocket_Exception
 	Config isPuntRequest_PuntToSocket_Config `protobuf_oneof:"config"`
