@@ -53,7 +53,9 @@ func (p *Plugin) loadConfig() (*Config, error) {
 	p.Log.Debugf("CnfRegistry config found: %+v", cfg)
 	var durZeroVal time.Duration
 	if cfg.CnfDiscoveryTimeout != durZeroVal {
-		p.Log.Warn("Option CnfDiscoveryTimeout is deprecated and setting it has no effect")
+		p.Log.Warn("Option CnfDiscoveryTimeout is deprecated and setting it has no effect. " +
+			"CNF discovery now runs continuously in the background by watching for filesystem changes (pid files created by CNFs). " +
+			"The discovery starts immediately after StoneWork initialization without any timeout period.")
 	}
 	return cfg, err
 }
