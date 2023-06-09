@@ -23,13 +23,17 @@ import (
 	"net"
 	"sync"
 
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/rpc/grpc"
 	"go.ligato.io/cn-infra/v2/servicelabel"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 
@@ -38,7 +42,12 @@ import (
 	pb "go.pantheon.tech/stonework/proto/puntmgr"
 )
 
-// Punt Manager plugins allows for multiple ligato plugins and even distributed agents to request packet punting
+// These constants specify label for Internal StoneWork configuration (that is configuration
+// not configured by the user or SW-Modules).
+const InternalConfigLabelKey = "io.ligato.from-client"
+const InternalConfigLabelValue = "stonework"
+
+// Punt icManager plugins allows for multiple ligato plugins and even distributed agents to request packet punting
 // between VPP and the same or distinct Linux network namespace(s). Unless there is a conflict between punt requests,
 // the manager will ensure that common configuration items are shared and properly updated (e.g. ABX rules, TAP
 // connection, etc.). The manager supports different kinds of packet punting approaches for L2 or L3 source VPP
@@ -101,8 +110,9 @@ type PuntManagerNamingAPI interface {
 }
 
 // InterconnectLink is one of the:
-//  - AF-UNIX socket
-//  - pair of interfaces (memif or TAP)
+//   - AF-UNIX socket
+//   - pair of interfaces (memif or TAP)
+//
 // and each type has type-specific parameters.
 type InterconnectLink interface {
 	isInterconnectLink()
@@ -368,7 +378,7 @@ func (p *Plugin) AddPunt(cnfMsLabel, key string, puntReq *pb.PuntRequest) error 
 	icReqs := puntHandler.GetInterconnectReqs(puntReq)
 
 	// try to create interconnects
-	localTxn := p.CfgClient.ChangeRequest()
+	localTxn := newPuntChangeRequest(map[string]string{InternalConfigLabelKey: InternalConfigLabelValue})
 	icType := puntReq.InterconnectType
 	enableGso := puntReq.EnableGso
 	interconnects, err := p.icManager.AddInterconnects(localTxn, remoteTxn, id, icReqs, icType, enableGso, withMultiplex)
@@ -658,4 +668,58 @@ func isSubsetOf(slice1, slice2 []string) bool {
 		}
 	}
 	return true
+}
+
+type puntChangeRequest struct {
+	txn    *client.LazyValTxn
+	labels map[string]string
+	err    error
+}
+
+func newPuntChangeRequest(labels map[string]string) *puntChangeRequest {
+	return &puntChangeRequest{
+		txn:    client.NewLazyValTxn(local.DefaultRegistry.PropagateChanges),
+		labels: labels,
+	}
+}
+
+func (r *puntChangeRequest) Update(items ...proto.Message) client.ChangeRequest {
+	if r.err != nil {
+		return r
+	}
+	for _, item := range items {
+		key, err := models.GetKey(item)
+		if err != nil {
+			r.err = err
+			return r
+		}
+		r.txn.Put(key, client.UpdateItem{Message: item, Labels: r.labels})
+	}
+	return r
+}
+
+func (r *puntChangeRequest) Delete(items ...proto.Message) client.ChangeRequest {
+	if r.err != nil {
+		return r
+	}
+	for _, item := range items {
+		key, err := models.GetKey(item)
+		if err != nil {
+			r.err = err
+			return r
+		}
+		r.txn.Delete(key)
+	}
+	return r
+}
+
+func (r *puntChangeRequest) Send(ctx context.Context) error {
+	if r.err != nil {
+		return r.err
+	}
+	_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
+	if !withDataSrc {
+		ctx = contextdecorator.DataSrcContext(ctx, "localclient")
+	}
+	return r.txn.Commit(ctx)
 }
