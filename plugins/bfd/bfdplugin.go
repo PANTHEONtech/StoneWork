@@ -40,6 +40,7 @@ import (
 	_ "go.pantheon.tech/stonework/plugins/bfd/vppcalls/vpp2106"
 	_ "go.pantheon.tech/stonework/plugins/bfd/vppcalls/vpp2202"
 	_ "go.pantheon.tech/stonework/plugins/bfd/vppcalls/vpp2210"
+	_ "go.pantheon.tech/stonework/plugins/bfd/vppcalls/vpp2306"
 )
 
 // BfdPlugin groups required BFD dependencies and descriptors

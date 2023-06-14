@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG VPP_VERSION=22.10
+ARG VPP_VERSION=23.06
 ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE}
@@ -76,7 +76,7 @@ RUN set -ex; \
 # there is a bug in VPP 21.06 that api files are not built on standard location
 # for external plugins, to reproduce it is enough to try to build sample-plugin
 RUN set -ex; \
-    if [ "$VPP_VERSION" = "22.10" ] || [ "$VPP_VERSION" = "22.02" ]; \
+    if [ "$VPP_VERSION" = "23.06" ] || [ "$VPP_VERSION" = "22.10" ] || [ "$VPP_VERSION" = "22.02" ]; \
     then \
       cp abx/build/CMakeFiles/vpp-api/vapi/* /usr/include/vapi/; \
     elif [ "$VPP_VERSION" = "21.06" ]; \
