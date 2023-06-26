@@ -35,9 +35,9 @@ vpp)
     -f ./docker/vpp.Dockerfile .
   ;;
 vpp-test)
-  docker build --build-arg VPP_IMAGE="${VPP_IMAGE}" \
+  docker build --progress=plain --build-arg VPP_IMAGE="${VPP_IMAGE}" \
     -t ${IMAGE_TAG} \
-    -f ./docker/vpp-test.Dockerfile . 2>&1 | cat
+    -f ./docker/vpp-test.Dockerfile .
   ;;
 tester)
   docker build \
