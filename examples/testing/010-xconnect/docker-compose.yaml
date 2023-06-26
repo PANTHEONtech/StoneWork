@@ -18,7 +18,7 @@ version: '3.3'
 
 services:
   stonework:
-    image: ${STONEWORK_IMAGE:-ghcr.io/pantheontech/stonework:22.10}
+    image: ${STONEWORK_IMAGE:-ghcr.io/pantheontech/stonework:23.06}
     depends_on:
       - tester1
       - tester2
@@ -36,7 +36,7 @@ services:
       - ./config:/etc/stonework/config
 
   tester1:
-    image: stonework-tester:22.10
+    image: stonework-tester:23.06
     privileged: true
     environment:
       MICROSERVICE_LABEL: tester1
@@ -47,7 +47,7 @@ services:
       '
 
   tester2:
-    image: stonework-tester:22.10
+    image: stonework-tester:23.06
     privileged: true
     environment:
       MICROSERVICE_LABEL: tester2

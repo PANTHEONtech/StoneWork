@@ -27,7 +27,7 @@
 # host network_mode (besides making it privileged and mounting /dev volume as
 # ussual with DPDK), to use StoneWork with this VPP under the hood.
 
-ARG VPP_VERSION=22.10
+ARG VPP_VERSION=23.06
 ARG VPP_IMAGE=ligato/vpp-base:$VPP_VERSION
 
 FROM ${VPP_IMAGE} AS base
@@ -60,7 +60,7 @@ RUN cd vpp && yes | make install-dep install-ext-deps && make pkg-deb
 
 #-----------------
 # build ABX plugin
-ARG VPP_VERSION=22.10
+ARG VPP_VERSION=23.06
 COPY vpp/abx /tmp/abx
 RUN VPPVER=$(echo $VPP_VERSION | tr -d ".") && \
     cp -r /tmp/abx/vpp${VPPVER} /opt/dev/abx

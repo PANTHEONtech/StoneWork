@@ -14,6 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM stonework:22.10
+FROM stonework:23.06
 
 COPY stonework /usr/local/bin/stonework
