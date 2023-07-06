@@ -10,6 +10,8 @@ import (
 	"github.com/moby/term"
 	"github.com/sirupsen/logrus"
 
+	// agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
+
 	"go.pantheon.tech/stonework/client"
 )
 
@@ -64,7 +66,8 @@ func NewCli(opt ...CliOption) (*CLI, error) {
 }
 
 func (cli *CLI) Initialize(opts Options) (err error) {
-	cli.client, err = initClient(opts)
+	// clientCfg, err := agentcli.MakeConfig()
+	cli.client, err = initClient()
 	if err != nil {
 		return fmt.Errorf("init error: %w", err)
 	}
@@ -86,8 +89,25 @@ func (cli *CLI) Initialize(opts Options) (err error) {
 	return nil
 }
 
-func initClient(opts Options) (*client.Client, error) {
-	c, err := client.NewClient()
+func initClient() (*client.Client, error) {
+	// cfg, err := agentcli.MakeConfig()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	opts := []client.Option{
+		// client.WithHost(cfg.Host),
+		// client.WithGRPCPort(uint16(cfg.GRPCPort)),
+		// client.WithHTTPPort(uint16(cfg.HTTPPort)),
+	}
+	// if cfg.ShouldUseSecureGRPC() {
+	// 	opts = append(opts, client.WithGRPCTLS(
+	// 		cfg.GRPCSecure.CertFile,
+	// 		cfg.GRPCSecure.KeyFile,
+	// 		cfg.GRPCSecure.CAFile,
+	// 		cfg.GRPCSecure.SkipVerify,
+	// 	))
+	// }
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}

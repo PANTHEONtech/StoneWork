@@ -1,23 +1,107 @@
 package client
 
-import "go.pantheon.tech/stonework/proto/cnfreg"
+import (
+	"context"
+	"fmt"
+
+	"go.ligato.io/cn-infra/v2/health/probe"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
+
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	"go.pantheon.tech/stonework/plugins/cnfreg"
+	cnfregpb "go.pantheon.tech/stonework/proto/cnfreg"
+)
+
+type ComponentMode int32
+
+const (
+	// Foreign means the component is not managed by StoneWork
+	ComponentForeign ComponentMode = iota
+
+	// Stonework means the component is a StoneWork instance
+	ComponentStonework
+
+	// StoneworkModule means the component is a StoneWork module managed by StoneWork
+	ComponentStoneworkModule
+)
 
 // Component is a component of StoneWork. It can be StoneWork instance itself,
 // a CNF connected to it or other Ligato service in connected to StoneWork.
 type Component interface {
-	Name() string
-	Mode() cnfreg.CnfMode
+	// Client() *client.Client
+	GetName() string
+	GetMode() ComponentMode
+	GetInfo() *cnfreg.Info
+	GetMetadata() map[string]string
+	SchedulerValues() ([]*kvscheduler.BaseValueStatus, error)
 }
 
 type component struct {
-	name string
-	mode cnfreg.CnfMode
+	agentclient *client.Client
+	Name        string
+	Mode        ComponentMode
+	Info        *cnfreg.Info
+	Metadata    map[string]string
 }
 
-func (c *component) Name() string {
-	return c.name
+func (c *component) GetName() string {
+	return c.Name
 }
 
-func (c *component) Mode() cnfreg.CnfMode {
-	return c.mode
+func (c *component) GetMode() ComponentMode {
+	return c.Mode
+}
+
+func (c *component) GetInfo() *cnfreg.Info {
+	return c.Info
+}
+
+func (c *component) Client() *client.Client {
+	return c.agentclient
+}
+
+func (c *component) GetMetadata() map[string]string {
+	return c.Metadata
+}
+
+func (c *component) SchedulerValues() ([]*kvscheduler.BaseValueStatus, error) {
+	if c.Mode == ComponentForeign {
+		return nil, fmt.Errorf("cannot get scheduler values of component %s, this component in not managed by StoneWork", c.Name)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	values, err := c.agentclient.SchedulerValues(ctx, types.SchedulerValuesOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return values, nil
+}
+
+func (c *component) Readiness() (*probe.ExposedStatus, error) {
+	if c.Mode == ComponentForeign {
+		return nil, fmt.Errorf("cannot get readiness of component %s, this component in not managed by StoneWork", c.Name)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	status, err := c.agentclient.Status(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return status, nil
+}
+
+func cnfModeToCompoMode(cm cnfregpb.CnfMode) ComponentMode {
+	switch cm {
+	case cnfregpb.CnfMode_STANDALONE:
+		return ComponentForeign
+	case cnfregpb.CnfMode_STONEWORK_MODULE:
+		return ComponentStoneworkModule
+	case cnfregpb.CnfMode_STONEWORK:
+		return ComponentStonework
+	default:
+		return ComponentForeign
+	}
 }

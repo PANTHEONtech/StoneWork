@@ -135,22 +135,23 @@ func (p *Plugin) loadSwModFromFile(fpath string) (swModule, error) {
 	if err != nil {
 		return swMod, fmt.Errorf("failed to parse PID file %s: %v", fname, err)
 	}
-	swMod, err = p.getCnfModels(pf.IpAddress, pf.GrpcPort, pf.HttpPort)
+	swMod, err = p.getCnfModels(pf)
 	if err != nil {
 		return swMod, fmt.Errorf("failed to obtain CNF models (pid file: %v): %v", fname, err)
 	}
 	return swMod, nil
 }
 
-func (p *Plugin) getCnfModels(ipAddress string, grpcPort, httpPort int) (swMod swModule, err error) {
-	swMod.ipAddress = ipAddress
-	swMod.grpcPort = grpcPort
-	swMod.httpPort = httpPort
+func (p *Plugin) getCnfModels(pf PidFile) (swMod swModule, err error) {
+	swMod.pid = pf.Pid
+	swMod.ipAddress = pf.IpAddress
+	swMod.grpcPort = pf.GrpcPort
+	swMod.httpPort = pf.HttpPort
 
 	// connect to the SW-Module CNF over gRPC
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	swMod.grpcConn, err = grpc.DialContext(ctx, fmt.Sprintf("%s:%d", ipAddress, grpcPort),
+	swMod.grpcConn, err = grpc.DialContext(ctx, fmt.Sprintf("%s:%d", pf.IpAddress, pf.GrpcPort),
 		grpc.WithBlock(), grpc.WithInsecure())
 	if err != nil {
 		return swMod, err

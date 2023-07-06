@@ -168,14 +168,16 @@ type swAttrs struct {
 
 // CNF used as a StoneWork Module.
 type swModule struct {
+	pid        int
 	cnfMsLabel string
 	ipAddress  string
 	grpcPort   int
 	httpPort   int
-	grpcConn   grpc.ClientConnInterface
-	cnfClient  pb.CnfDiscoveryClient
-	cfgClient  client.GenericClient
-	cnfModels  []cnfModel
+	grpcConn   *grpc.ClientConn
+	// grpcConn   grpc.ClientConnInterface
+	cnfClient pb.CnfDiscoveryClient
+	cfgClient client.GenericClient
+	cnfModels []cnfModel
 }
 
 // Attributes specific to StoneWork Module (i.e. not used by standalone CNF or StoneWork itself).
@@ -242,6 +244,10 @@ func (p *Plugin) Init() (err error) {
 		p.Log.Infof("Discovered management IP address: %v", p.ipAddress)
 	}
 
+	grpcServer := p.GRPCPlugin.GetServer()
+	if grpcServer == nil {
+		return errors.New("gRPC server is not initialized")
+	}
 	switch p.cnfMode {
 	case pb.CnfMode_STONEWORK_MODULE:
 		// inject gRPC and HTTP ports to use by SW-Module
@@ -251,14 +257,11 @@ func (p *Plugin) Init() (err error) {
 		}
 
 		// serve CnfDiscovery methods
-		grpcServer := p.GRPCPlugin.GetServer()
-		if grpcServer == nil {
-			return errors.New("gRPC server is not initialized")
-		}
 		pb.RegisterCnfDiscoveryServer(grpcServer, p)
 
 	case pb.CnfMode_STONEWORK:
 		p.sw.modules = conc.NewMap[string, swModule]()
+		p.registerHandlers(p.HTTPPlugin)
 		// CNF discovery
 		go p.cnfDiscovery(make(chan struct{}))
 	}
@@ -296,7 +299,7 @@ func (p *Plugin) GetGrpcPort() (port int) {
 }
 
 // Returns gRPC port that should be used by this CNF.
-// Not to be used by StoneWork or a standalone CFN (they should respect what is in http.conf).
+// Not to be used by StoneWork or a standalone CNF (they should respect what is in http.conf).
 func (p *Plugin) GetHttpPort() (port int) {
 	if p.cnfMode != pb.CnfMode_STONEWORK_MODULE {
 		panic(fmt.Errorf("method GetHttpPort is not available in the CNF mode %v", p.cnfMode))
