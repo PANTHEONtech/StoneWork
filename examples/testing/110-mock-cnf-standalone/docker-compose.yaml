@@ -18,7 +18,7 @@ version: '3.3'
 
 services:
   mockcnf1:
-    image: "stonework-mockcnf:22.10"
+    image: "stonework-mockcnf:23.06"
     privileged: true
     environment:
       INITIAL_LOGLVL: "debug"

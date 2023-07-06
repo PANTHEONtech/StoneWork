@@ -35,6 +35,7 @@ import (
 	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2106"
 	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2202"
 	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2210"
+	_ "go.pantheon.tech/stonework/plugins/abx/vppcalls/vpp2306"
 )
 
 // ABXPlugin is a plugin that manages ACL-based forwarding.
