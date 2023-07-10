@@ -64,8 +64,7 @@ func NewCli(opt ...CliOption) (*CLI, error) {
 }
 
 func (cli *CLI) Initialize(opts Options) (err error) {
-	// clientCfg, err := agentcli.MakeConfig()
-	cli.client, err = initClient()
+	cli.client, err = initClient(opts)
 	if err != nil {
 		return fmt.Errorf("init error: %w", err)
 	}
@@ -87,25 +86,8 @@ func (cli *CLI) Initialize(opts Options) (err error) {
 	return nil
 }
 
-func initClient() (*client.Client, error) {
-	// cfg, err := agentcli.MakeConfig()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	opts := []client.Option{
-		// client.WithHost(cfg.Host),
-		// client.WithGRPCPort(uint16(cfg.GRPCPort)),
-		// client.WithHTTPPort(uint16(cfg.HTTPPort)),
-	}
-	// if cfg.ShouldUseSecureGRPC() {
-	// 	opts = append(opts, client.WithGRPCTLS(
-	// 		cfg.GRPCSecure.CertFile,
-	// 		cfg.GRPCSecure.KeyFile,
-	// 		cfg.GRPCSecure.CAFile,
-	// 		cfg.GRPCSecure.SkipVerify,
-	// 	))
-	// }
-	c, err := client.NewClient(opts...)
+func initClient(opts Options) (*client.Client, error) {
+	c, err := client.NewClient()
 	if err != nil {
 		return nil, err
 	}
