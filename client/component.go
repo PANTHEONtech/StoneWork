@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"go.ligato.io/cn-infra/v2/health/probe"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
 
@@ -19,17 +18,16 @@ const (
 	// Foreign means the component is not managed by StoneWork
 	ComponentForeign ComponentMode = iota
 
-	// Stonework means the component is a StoneWork instance
-	ComponentStonework
-
 	// StoneworkModule means the component is a StoneWork module managed by StoneWork
 	ComponentStoneworkModule
+
+	// Stonework means the component is a StoneWork instance
+	ComponentStonework
 )
 
 // Component is a component of StoneWork. It can be StoneWork instance itself,
 // a CNF connected to it or other Ligato service in connected to StoneWork.
 type Component interface {
-	// Client() *client.Client
 	GetName() string
 	GetMode() ComponentMode
 	GetInfo() *cnfreg.Info
@@ -77,20 +75,6 @@ func (c *component) SchedulerValues() ([]*kvscheduler.BaseValueStatus, error) {
 		return nil, err
 	}
 	return values, nil
-}
-
-func (c *component) Readiness() (*probe.ExposedStatus, error) {
-	if c.Mode == ComponentForeign {
-		return nil, fmt.Errorf("cannot get readiness of component %s, this component in not managed by StoneWork", c.Name)
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	status, err := c.agentclient.Status(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return status, nil
 }
 
 func cnfModeToCompoMode(cm cnfregpb.CnfMode) ComponentMode {

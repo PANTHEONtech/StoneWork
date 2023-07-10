@@ -26,10 +26,8 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/sirupsen/logrus"
 	vppagent "go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client/tlsconfig"
-	linux_nsplugin "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 
 	"go.pantheon.tech/stonework/plugins/cnfreg"
 )
@@ -37,7 +35,6 @@ import (
 const (
 	DefaultHost               = "127.0.0.1"
 	DefaultHTTPClientTimeout  = 60 * time.Second
-	DefaultPortGRPC           = 9991
 	DefaultPortHTTP           = 9191
 	DockerComposeServiceLabel = "com.docker.compose.service"
 )
@@ -75,7 +72,6 @@ type API interface {
 
 // Client implements API interface.
 type Client struct {
-	nsPlugin          *linux_nsplugin.NsPlugin
 	dockerClient      *docker.Client
 	httpClient        *http.Client
 	host              string
@@ -101,7 +97,9 @@ func NewClient(opts ...Option) (*Client, error) {
 		return nil, err
 	}
 	for _, o := range opts {
-		o(c)
+		if err = o(c); err != nil {
+			return nil, err
+		}
 	}
 
 	return c, nil
@@ -172,9 +170,7 @@ func (c *Client) GetComponents() ([]Component, error) {
 			return nil, err
 		}
 		containers = append(containers, c)
-		logrus.Warnf("[WLL] container name: %s, PID: %d, ENV: %+v", c.Name, c.State.Pid, c.Config.Env)
 	}
-	logrus.Warnf("[WLL] number of containers: &d", len(containers))
 
 	cnfInfos := make(map[string]cnfreg.Info)
 	for _, info := range infos {
@@ -201,7 +197,7 @@ func (c *Client) GetComponents() ([]Component, error) {
 		compo := &component{
 			agentclient: client,
 			Name:        info.MsLabel,
-			Mode:        cnfModeToCompoMode(info.Mode),
+			Mode:        cnfModeToCompoMode(info.CnfMode),
 			Info:        &info,
 		}
 		components = append(components, compo)

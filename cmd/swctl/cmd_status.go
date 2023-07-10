@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
@@ -10,7 +11,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/constraints"
+	"github.com/spf13/pflag"
 	"golang.org/x/exp/slices"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
@@ -27,15 +28,23 @@ import (
 const statusExample = `
   <white># Show status for all components</>
   $ <yellow>swctl status</>
+
+  <white># Show interface status of StoneWork VPP instance</>
+  $ <yellow>swctl status --show-interfaces</>
 `
 
-type StatusCmdOptions struct {
-	Args   []string
-	Format string
+type StatusOptions struct {
+	Format         string
+	ShowInterfaces bool
+}
+
+func (opts *StatusOptions) InstallFlags(flagset *pflag.FlagSet) {
+	flagset.StringVar(&opts.Format, "format", "", "Format for the output (yaml, json, go template)")
+	flagset.BoolVar(&opts.ShowInterfaces, "show-interfaces", false, "Show interface status of StoneWork VPP instance")
 }
 
 func NewStatusCmd(cli Cli) *cobra.Command {
-	var opts StatusCmdOptions
+	var opts StatusOptions
 	cmd := &cobra.Command{
 		Use:     "status [flags]",
 		Short:   "Show status of StoneWork components",
@@ -45,10 +54,10 @@ func NewStatusCmd(cli Cli) *cobra.Command {
 			UnknownFlags: true,
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Args = args
 			return runStatusCmd(cli, opts)
 		},
 	}
+	opts.InstallFlags(cmd.PersistentFlags())
 	return cmd
 }
 
@@ -57,7 +66,20 @@ type statusInfo struct {
 	ConfigCounts configCounts
 }
 
-func runStatusCmd(cli Cli, opts StatusCmdOptions) error {
+func runStatusCmd(cli Cli, opts StatusOptions) error {
+	if opts.ShowInterfaces {
+		cmd := fmt.Sprintf("vpp-probe --env=%s --query label=%s=stonework discover", defaultVppProbeEnv, client.DockerComposeServiceLabel)
+		formatArg := fmt.Sprintf("--format=%s", opts.Format)
+		out, err := cli.Exec(cmd, []string{formatArg})
+		if err != nil {
+			if ee, ok := err.(*exec.ExitError); ok {
+				return fmt.Errorf("%v: %s", ee.String(), ee.Stderr)
+			}
+		}
+		fmt.Fprintln(cli.Out(), out)
+		return nil
+	}
+
 	resp, err := cli.Client().GetComponents()
 	if err != nil {
 		return err
@@ -70,11 +92,6 @@ func runStatusCmd(cli Cli, opts StatusCmdOptions) error {
 	var infos []statusInfo
 	var wg sync.WaitGroup
 	infoCh := make(chan infoWithErr)
-
-	type fetched struct {
-		values []*kvscheduler.BaseValueStatus
-		err    error
-	}
 
 	for _, compo := range resp {
 		wg.Add(1)
@@ -108,11 +125,14 @@ func runStatusCmd(cli Cli, opts StatusCmdOptions) error {
 		}
 		infos = append(infos, i.statusInfo)
 	}
-	slices.SortFunc(infos, cmpInfos)
-	// if err := formatAsTemplate(cli.Out(), "json", resp); err != nil {
-	// 	return err
-	// }
-	printStatusTable(cli.Out(), infos)
+	slices.SortFunc(infos, cmpStatus)
+	if opts.Format == "" {
+		printStatusTable(cli.Out(), infos)
+	} else {
+		if err := formatAsTemplate(cli.Out(), opts.Format, infos); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -143,24 +163,12 @@ func countConfig(baseVals []*kvscheduler.BaseValueStatus) configCounts {
 	return res
 }
 
-type comparable interface {
-	constraints.Integer | ~string
-}
-
-func less[T comparable](a, b T) bool {
-	if a > b {
-		return true
+func cmpStatus(a, b statusInfo) bool {
+	greater := a.GetMode() > b.GetMode()
+	if !greater && a.GetMode() == b.GetMode() {
+		greater = a.GetName() > b.GetName()
 	}
-	return false
-}
-
-func cmpInfos(a, b statusInfo) bool {
-	res := less(a.GetMode(), b.GetMode())
-	bLessA := less(b.GetMode(), a.GetMode())
-	if !(res || bLessA) {
-		res = less(a.GetName(), b.GetName())
-	}
-	return res
+	return greater
 }
 
 func printStatusTable(out io.Writer, infos []statusInfo) {
@@ -193,8 +201,8 @@ func printStatusTable(out io.Writer, infos []statusInfo) {
 			table.Rich(row, clrs)
 			continue
 		}
-		config := info.ConfigCounts.String()
-		configColor := info.ConfigCounts.Color()
+		config := info.ConfigCounts.string()
+		configColor := info.ConfigCounts.color()
 		compoInfo := info.GetInfo()
 		grpcState := compoInfo.GRPCConnState.String()
 		var statusClr int
@@ -238,7 +246,7 @@ type configCounts struct {
 	Unimplemented int
 }
 
-func (c configCounts) String() string {
+func (c configCounts) string() string {
 	var fields []string
 	if c.Ok != 0 {
 		fields = append(fields, fmt.Sprintf("%d OK", c.Ok))
@@ -265,7 +273,7 @@ func (c configCounts) String() string {
 	return strings.Join(fields, ", ")
 }
 
-func (c configCounts) Color() int {
+func (c configCounts) color() int {
 	if c.Err > 0 {
 		return tablewriter.FgHiRedColor
 	}

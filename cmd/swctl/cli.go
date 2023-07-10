@@ -10,8 +10,6 @@ import (
 	"github.com/moby/term"
 	"github.com/sirupsen/logrus"
 
-	// agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
-
 	"go.pantheon.tech/stonework/client"
 )
 

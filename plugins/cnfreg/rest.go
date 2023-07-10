@@ -30,7 +30,7 @@ import (
 type Info struct {
 	PID           int
 	MsLabel       string
-	Mode          pb.CnfMode
+	CnfMode       pb.CnfMode
 	IPAddr        string
 	GRPCPort      int
 	HTTPPort      int
@@ -54,7 +54,7 @@ func (p *Plugin) statusHandler(formatter *render.Render) http.HandlerFunc {
 		swInfo := &Info{
 			PID:      os.Getpid(),
 			MsLabel:  p.ServiceLabel.GetAgentLabel(),
-			Mode:     pb.CnfMode_STONEWORK,
+			CnfMode:  pb.CnfMode_STONEWORK,
 			IPAddr:   p.ipAddress.String(),
 			GRPCPort: p.GRPCPlugin.GetPort(),
 			HTTPPort: p.HTTPPlugin.GetPort(),
@@ -66,7 +66,7 @@ func (p *Plugin) statusHandler(formatter *render.Render) http.HandlerFunc {
 			swModInfo := &Info{
 				PID:           swMod.pid,
 				MsLabel:       swMod.cnfMsLabel,
-				Mode:          pb.CnfMode_STONEWORK_MODULE,
+				CnfMode:       pb.CnfMode_STONEWORK_MODULE,
 				IPAddr:        swMod.ipAddress,
 				GRPCPort:      swMod.grpcPort,
 				HTTPPort:      swMod.httpPort,
