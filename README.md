@@ -148,15 +148,12 @@ documentation (`*.md`) and some examples to get you started.
 
 #### Requirements
 
-1. StoneWork requires an **Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **18.04 (Bionic Beaver)**.
+1. StoneWork requires an **Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **20.04 (Focal Fossa)**.
 
 
-2. Next, Docker and docker-compose must be installed.
+2. Next, Docker and Docker Compose plugin must be installed.
 
-   Install with:
-   ```
-   $ apt-get install docker.io docker-compose
-   ```
+   Official manual for installing Docker and Docker Compose can be found [here][install-docker] and [here][install-compose] respectively.
 
 3. **(DPDK Only)** Install/Enable Drivers
    
@@ -203,14 +200,14 @@ documentation (`*.md`) and some examples to get you started.
 
 
 6. Finally, the StoneWork image has to be loaded so that
-   Docker/docker-compose/K8s is able to provision a container instance. Run:
+   Docker/Docker Compose/K8s is able to provision a container instance. Run:
    ```
    $ docker load <./stonework.image
    ```
 
 ## Deployment
 
-StoneWork is deployed using [Docker Compose][docker-compose] version 3.3 or
+StoneWork is deployed using [Docker Compose][compose] version 3.3 or
 newer. StoneWork itself is only a single container (with VPP and StoneWork agent
 inside), but every CNF that is deployed alongside it runs in a **separate
 container**, hence the use of Compose. 
@@ -329,7 +326,9 @@ services:
 [config-pdf]: docs/config/STONEWORK-CONFIG.pdf
 [config-jsonschema]: docs/config/STONEWORK-CONFIG.jsonschema
 [vscode-jsonschema]: https://dev.to/brpaz/how-to-create-your-own-auto-completion-for-json-and-yaml-files-on-vs-code-with-the-help-of-json-schema-k1i
-[docker-compose]: https://docs.docker.com/compose/
+[compose]: https://docs.docker.com/compose/
+[install-docker]: https://docs.docker.com/engine/install/ubuntu/
+[install-compose]: https://docs.docker.com/compose/install/linux/
 [vpp]: https://wiki.fd.io/view/VPP
 [ligato-vpp-agent]: https://github.com/ligato/vpp-agent
 [cdnf-io]: https://cdnf.io/cnf_list/

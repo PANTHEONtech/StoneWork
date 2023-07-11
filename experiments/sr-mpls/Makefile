@@ -15,8 +15,8 @@
 # limitations under the License.
 
 start-topology:
-	docker-compose up -d
+	docker compose up -d
 
 stop-topology:
-	docker-compose down
+	docker compose down
 

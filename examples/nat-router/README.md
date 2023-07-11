@@ -60,14 +60,14 @@ Running the Example
 Once the configuration is updated to match the actual environment, deploy
 StoneWork using:
 ```
-$ docker-compose up -d
+$ docker compose up -d
 ```
 
 Initially, only physical interfaces should be configured.
 
 To verify this, run:
 ```
-$ docker-compose exec stonework vppctl show interface address
+$ docker compose exec stonework vppctl show interface address
 gbe-private-net (up):
   L3 192.168.1.1/24
 gbe-public-net (up):
@@ -77,14 +77,14 @@ local0 (dn):
 
 Explore the CLI provided by StoneWork:
 ```
-$ docker-compose exec stonework agentctl --help
+$ docker compose exec stonework agentctl --help
 ```
 
 ## Add & Enable NAT Config
 
 For example, to **add and enable NAT configuration**, run:
 ```
-$ docker-compose exec stonework agentctl config update /etc/stonework/config/add-nat-config.yaml
+$ docker compose exec stonework agentctl config update /etc/stonework/config/add-nat-config.yaml
 ```
 `add-nat-config.yaml` is mounted from `./config/add-nat-config.yaml`.
 
@@ -97,7 +97,7 @@ network should be able to access servers in the public network(s).
 
 Observe the NAT in process using packet tracing on VPP (only `SYN` packet shown):
 ```
-$ docker-compose exec stonework vpptrace.sh -i dpdk
+$ docker compose exec stonework vpptrace.sh -i dpdk
 
 00:04:40:604246: dpdk-input
   gbe-private-net rx queue 0
