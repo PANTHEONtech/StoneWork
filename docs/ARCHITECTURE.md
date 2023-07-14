@@ -4,7 +4,7 @@ StoneWork Architecture
 CNF Integration
 ---------------
 
-Each CNF remains to be packaged and delivered as a single docker image. The same image can be used to deploy the
+Each CNF remains to be packaged and delivered as a single Docker image. The same image can be used to deploy the
 CNF either as **Standalone** (i.e. inside a chain/mesh of CNFs) or as a **StoneWork Module** or *SW-Module* for short.
 
 Simply by setting the environment variable `CNF_MODE` to `STANDALONE` or `STONEWORK_MODULE`, the CNF will either start
@@ -26,7 +26,7 @@ Instead, every CNF runs as a separate container from its own image, running its 
 manage the single, shared data-plane. 
 
 All (enabled) CNFs and the StoneWork itself are typically orchestrated by
-*docker-compose*. To enable a new CNF feature is then as easy, as to add a container entry into *docker-compose.yaml*
+*Docker Compose*. To enable a new CNF feature is then as easy, as to add a container entry into *docker-compose.yaml*
 for the CNF, restart the deployment and let the StoneWork to discover it.
 
 If a given CNF is never used, it doesn't have to be mentioned in *docker-compose.yaml*

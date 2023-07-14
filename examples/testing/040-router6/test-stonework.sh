@@ -37,33 +37,33 @@ function check_rv { # parameters: actual rv, expected rv, error message
 
 function check_in_sync {
     echo -n "Checking if StoneWork is in-sync ... "
-    docker-compose exec -T stonework agentctl config resync --verbose 2>&1 | grep -qi -E "Executed|error"
+    docker compose exec -T stonework agentctl config resync --verbose 2>&1 | grep -qi -E "Executed|error"
     check_rv $? 1 "StoneWork is not in-sync"
 }
 
 check_in_sync
 
 echo -n "Checking route configuration in StoneWork ... "
-docker-compose exec -T stonework agentctl values 2>/dev/null \
+docker compose exec -T stonework agentctl values 2>/dev/null \
     | grep -q -E "vpp.route.*dst/2001:0:0:3::/64/gw/2001:0:0:2::2.*CONFIGURED"
 check_rv $? 0 "Route configuration missing in StoneWork" 
 
 echo -n "Checking route in VPP ... "
-docker-compose exec -T stonework vppctl sh ip6 fib | grep -q "2001:0:0:3::/64"
+docker compose exec -T stonework vppctl sh ip6 fib | grep -q "2001:0:0:3::/64"
 check_rv $? 0 "Route not configured"
 
-docker-compose exec -T stonework vppctl trace add virtio-input 20
+docker compose exec -T stonework vppctl trace add virtio-input 20
 
 echo -n "Pinging ... "
-docker-compose exec -T tester1 ping -c 1 -w 5 2001:0:0:3::2 >/dev/null
+docker compose exec -T tester1 ping -c 1 -w 5 2001:0:0:3::2 >/dev/null
 check_rv $? 0 "Ping failed"
 
 echo -n "Checking if ping request went through StoneWork ... "
-docker-compose exec -T stonework vppctl show trace | grep -q "ICMP6: 2001:0:0:1::1 -> 2001:0:0:3::2"
+docker compose exec -T stonework vppctl show trace | grep -q "ICMP6: 2001:0:0:1::1 -> 2001:0:0:3::2"
 check_rv $? 0 "Ping request did not go through StoneWork"
 
 echo -n "Checking if ping response went through StoneWork ... "
-docker-compose exec -T stonework vppctl show trace | grep -q "ICMP6: 2001:0:0:3::2 -> 2001:0:0:1::1"
+docker compose exec -T stonework vppctl show trace | grep -q "ICMP6: 2001:0:0:3::2 -> 2001:0:0:1::1"
 check_rv $? 0 "Ping response did not go through StoneWork"
 
 echo "------------------------------------------------"

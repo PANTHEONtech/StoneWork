@@ -24,7 +24,7 @@ Manual Verification
 
 Start the deployment with:
 ```
-$ docker-compose up -d
+$ docker compose up -d
 ```
 
 CNF can be managed through CLI provided by the Ligato framework:
@@ -48,5 +48,5 @@ Automated checks can be found in `test-cnf.sh`.
 
 Bring the deployment down with:
 ```
-$ docker-compose down
+$ docker compose down
 ```

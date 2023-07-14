@@ -21,9 +21,9 @@ Deployment Description
 
 This example consists of two YAML-formatted files:
  - `docker-compose.yaml`: describes how to deploy the StoneWork container in the
-   [Docker-Compose][docker-compose] language. While in this example there is
+   [Docker Compose][compose-plugin] language. While in this example there is
    only **one container** - StoneWork itself - it is still advised to take this
-   opportunity and learn how to work with docker-compose. Extending StoneWork's
+   opportunity and learn how to work with Docker Compose. Extending StoneWork's
    feature-set with any of the CNFs from the PANTHEON.tech
    [cloud-native network functions portfolio][cdnf-portfolio] requires deploying additional containers
    alongside StoneWork, hence the use of *Compose*. The content of
@@ -60,7 +60,7 @@ Interacting with StoneWork
 
 In order to deploy StoneWork, simply run (from within this directory):
 ```
-$ docker-compose up -d
+$ docker compose up -d
 ```
 The StoneWork container should be present almost immediately:
 ```
@@ -101,7 +101,7 @@ rtt min/avg/max/mdev = 0.247/0.492/0.839/0.251 ms
 
 Let's enter the VPP CLI:
 ```
-$ docker-compose exec -it stonework vppctl
+$ docker compose exec -it stonework vppctl
     _______    _        _   _____  ___ 
  __/ __/ _ \  (_)__    | | / / _ \/ _ \
  _/ _// // / / / _ \   | |/ / ___/ ___/
@@ -147,7 +147,7 @@ StoneWork container.
 
 Obtain the currently running configuration with:
 ```
-$ docker-compose exec stonework agentctl config get 2>/dev/null
+$ docker compose exec stonework agentctl config get 2>/dev/null
 netallocConfig: {}
 linuxConfig:
   interfaces:
@@ -210,7 +210,7 @@ linuxConfig:
 Remember, that the config dir is mounted into
 the container under `/etc/stonework/config`. Apply the new, desired config with:
 ```
-$ docker-compose exec stonework agentctl config update --replace /etc/stonework/config/new-config.yaml
+$ docker compose exec stonework agentctl config update --replace /etc/stonework/config/new-config.yaml
 ```
 Observe the performed config changes:
 ```
@@ -223,7 +223,7 @@ vpp: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         RX errors 0  dropped 0  overruns 0  frame 0
         TX packets 77  bytes 11885 (11.8 KB)
         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
-$ docker-compose exec stonework vppctl show interface address
+$ docker compose exec stonework vppctl show interface address
 local0 (dn):
 tap0 (up):
   L3 192.168.222.3/30
@@ -274,18 +274,18 @@ $ curl -v --header "Content-Type: application/yaml" --request PUT --data-binary 
 To observe what is happening behind the scenes and to debug any potential issues,
 obtain StoneWork logs with:
 ```
-$ docker-compose logs stonework
+$ docker compose logs stonework
 ```
 
 ### Shutdown & Undeploy
 
 Finally, to shutdown and undeploy StoneWork container, simply run:
 ```
-$ docker-compose down
+$ docker compose down
 ```
 
 
-[docker-compose]: https://docs.docker.com/compose/
+[compose-plugin]: https://docs.docker.com/compose/
 [config]: ../../docs/config/STONEWORK-CONFIG.md
 [readme]: ../../README.md
 [cdnf-portfolio]: https://cdnf.io/cnf_list/

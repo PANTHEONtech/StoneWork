@@ -229,7 +229,7 @@ see the [StoneWork Architecture][architecture].
        }
    }
    ```
-   Then, inside dockerfile, call (replace `cnf-init` with the name of your init command):
+   Then, inside Dockerfile, call (replace `cnf-init` with the name of your init command):
    ```
    RUN /usr/local/bin/cnf-init --print-spec > /api/models.spec.yaml
    ```
