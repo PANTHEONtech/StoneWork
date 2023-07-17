@@ -57,11 +57,12 @@ func newDeploymentUp(cli Cli) *cobra.Command {
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := cli.Exec("docker compose up", args)
+			stdout, stderr, err := cli.Exec("docker compose up", args)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), out)
+			fmt.Fprintln(cli.Out(), stdout)
+			fmt.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}
@@ -75,11 +76,12 @@ func newDeploymentDown(cli Cli) *cobra.Command {
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := cli.Exec("docker compose down", args)
+			stdout, stderr, err := cli.Exec("docker compose down", args)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), out)
+			fmt.Fprintln(cli.Out(), stdout)
+			fmt.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}
@@ -93,11 +95,12 @@ func newDeploymentConfig(cli Cli) *cobra.Command {
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := cli.Exec("docker compose convert", args)
+			stdout, stderr, err := cli.Exec("docker compose convert", args)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), out)
+			fmt.Fprintln(cli.Out(), stdout)
+			fmt.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}
@@ -111,11 +114,12 @@ func newDeploymentInfo(cli Cli) *cobra.Command {
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := cli.Exec("docker compose ps", args)
+			stdout, stderr, err := cli.Exec("docker compose ps", args)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), out)
+			fmt.Fprintln(cli.Out(), stdout)
+			fmt.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}
@@ -129,11 +133,12 @@ func newDeploymentImages(cli Cli) *cobra.Command {
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := cli.Exec("docker compose images", args)
+			stdout, stderr, err := cli.Exec("docker compose images", args)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), out)
+			fmt.Fprintln(cli.Out(), stdout)
+			fmt.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}
@@ -147,11 +152,12 @@ func newDeploymentServices(cli Cli) *cobra.Command {
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := cli.Exec("docker compose ps --services", args)
+			stdout, stderr, err := cli.Exec("docker compose ps --services", args)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), out)
+			fmt.Fprintln(cli.Out(), stdout)
+			fmt.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}

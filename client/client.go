@@ -62,6 +62,7 @@ func WithHTTPTLS(cert, key, ca string, skipVerify bool) Option {
 // StoneWork.
 type API interface {
 	GetComponents() ([]Component, error)
+	GetHost() string
 }
 
 // Client implements API interface.
@@ -127,6 +128,10 @@ func NewClient(opts ...Option) (*Client, error) {
 	}
 
 	return c, nil
+}
+
+func (c *Client) GetHost() string {
+	return c.host
 }
 
 func (c *Client) DockerClient() *docker.Client {

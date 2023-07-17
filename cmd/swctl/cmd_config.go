@@ -11,7 +11,7 @@ import (
 )
 
 // TODO:
-// - run the agentctl with the default host set to stonework (using the -H or running inside stonework image)
+// - decide when to run agentctl inside docker container or outside of docker container
 
 type ConfigCmdOptions struct {
 	ShowInternal bool
@@ -48,11 +48,12 @@ func runConfigCmd(cli Cli, opts ConfigCmdOptions) error {
 		args = append(args, hideInternalFlag)
 	}
 
-	out, err := cli.Exec("agentctl config", args)
+	stdout, stderr, err := cli.Exec("agentctl config", args)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(cli.Out(), out)
+	fmt.Fprintln(cli.Err(), stderr)
+	fmt.Fprintln(cli.Out(), stdout)
 	return nil
 }

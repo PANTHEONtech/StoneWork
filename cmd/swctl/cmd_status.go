@@ -86,14 +86,15 @@ func runStatusCmd(cli Cli, opts StatusOptions) error {
 			if sn, ok := compo.GetMetadata()["containerServiceName"]; ok {
 				cmd := fmt.Sprintf("vpp-probe --env=%s --query label=%s=%s discover", defaultVppProbeEnv, client.DockerComposeServiceLabel, sn)
 				formatArg := fmt.Sprintf("--format=%s", opts.Format)
-				out, err := cli.Exec(cmd, []string{formatArg})
+				stdout, stderr, err := cli.Exec(cmd, []string{formatArg})
 				if err != nil {
 					if ee, ok := err.(*exec.ExitError); ok {
 						logrus.Tracef("vpp-probe discover failed for service %s with error: %v: %s", sn, ee.String(), ee.Stderr)
 						continue
 					}
 				}
-				fmt.Fprintln(cli.Out(), out)
+				fmt.Fprintln(cli.Out(), stdout)
+				fmt.Fprintln(cli.Err(), stderr)
 			}
 		}
 		return nil
