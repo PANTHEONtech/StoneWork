@@ -41,5 +41,6 @@ RUN set -ex; \
 WORKDIR /opt/dev/vpp
 
 ARG CACHEBUST=1
+RUN yes | make install-dep
 RUN make test TEST=isisx
 RUN make test TEST=abx

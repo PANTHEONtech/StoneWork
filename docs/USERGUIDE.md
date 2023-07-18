@@ -7,11 +7,12 @@ StoneWork introduces a **complete routing platform**, based on VPP, running well
 
 Dependencies
 ============
+StoneWork requires an **Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **20.04 (Focal Fossa)**.
 
-First of all we need to install Docker and *docker-compose*:
-```
-$ apt-get install docker.io docker-compose
-```
+Other required dependencies of StoneWork are Docker and Docker Compose plugin.
+
+Official manual for installing Docker on Ubuntu can be found [here][install-docker] and for Docker Compose [here][install-compose].
+
 First Steps w/ StoneWork
 ========================
 
@@ -35,7 +36,7 @@ $ docker logs stonework
 When working with StoneWork, it is useful to see the logs of control plane transactions. These are actions
 done by StoneWork to set its dataplane - FD.io VPP. 
 
-By looking at the logs, it can be verified whether concrete transaction were successful or not.
+By looking at the logs, it can be verified whether concrete transactions were successful or not.
 
 To access the StoneWork container:
 ```
@@ -165,22 +166,22 @@ root@44480538e5b0:/# ip add
 ```
 But this tap interface is present only inside our StoneWork container. What if we wanted to expose the tap to our host system?
 
-Then we need to use host network mode in our docker run one liner:
+Then we need to use host network mode in our `docker run` one liner:
 ```
 $ docker run -it --rm --name stonework --privileged --network="host" -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework:23.06
 ```
 For more details about tap interfaces and VPP, take a look [at this example][tap-example].
 
-docker-compose Manifest
-=======================
+Docker Compose File
+===================
 
-As our Docker run one-liner grows, it becomes better to use docker-compose, in terms of readability and maintainability.
+As our `docker run` one-liner grows, it becomes better to use Docker Compose, in terms of readability and maintainability.
 
-Lets rewrite the above mentioned docker run command, i.e.:
+Lets rewrite the above mentioned `docker run` command, i.e.:
 ```
 $ docker run -it --rm --name stonework --privileged --network="host" -e ETCD_CONFIG="" ghcr.io/pantheontech/stonework:23.06
 ```
-into *docker-compose.yaml*:
+into `docker-compose.yaml`:
 ```
 version: '3.3'
 
@@ -195,12 +196,12 @@ services:
 ```
 All of the fields should be obvious, as it is a 1-2-1 translation of the command we used so far.
 
-The StoneWork docker container is then turned on/off by the following commands from the same directory as our docker-compose file is located:
+The StoneWork Docker container is then turned on/off by the following commands from the same directory where our Docker Compose file is located:
 ```
-$ docker-compose up -d
+$ docker compose up -d
 ```
 ```
-$ docker-compose down
+$ docker compose down
 ```
 
 AF_PACKET Interface
@@ -208,9 +209,9 @@ AF_PACKET Interface
 
 Using this interface type, we can easily start using interfaces of the host system in StoneWork.
 
-The downside of the af_packet interface is its performance, so it should be used mainly for testing purposes.
+The downside of the AF_PACKET interface is its performance, so it should be used mainly for testing purposes.
 
-To use the host interfaces using AF_PACKET, the same docker-compose.yaml can be used as the one for TAPs.
+To use the host interfaces using AF_PACKET, the same `docker-compose.yaml` can be used as the one for TAPs.
 
 Now, suppose we have an interface called ens33 and its MAC address is 00:0c:29:0a:93:4d.
 
@@ -248,10 +249,10 @@ Prerequisities
 To enable DPDK interfaces in data plane, few specifics steps must be done, those are well described in the
 [StoneWork README][readme] file, in the [Installation section.](/README.md#Installation)
 
-docker-compose
+Docker Compose
 --------------
 
-To enable DPDK interfaces, we will need to extend our docker-compose a bit more.
+To enable DPDK interfaces, we will need to extend our Docker Compose file a bit more.
 ```
 version: '3.3'
 
@@ -333,7 +334,7 @@ To do so, just uncomment the dpdk part of the config above.
 
 An arbitrary amount of interfaces can be used.
 
-If we now start the docker container, VPP will contain our new DPDK interface:
+If we now start the Docker container, VPP will contain our new DPDK interface:
 ```
 $ docker exec -it stonework vppctl show int
               Name               Idx    State  MTU (L3/IP4/IP6/MPLS)     Counter          Count
@@ -365,7 +366,7 @@ As probably obvious, this configuration is telling StoneWork to set the DPDK int
 
 Now, it's time to wake up StoneWork:
 ```
-$ docker-compose up -d
+$ docker compose up -d
 ```
 And to verify that everything was set properly in the data plane:
 ```
@@ -419,13 +420,13 @@ StoneWork Enterprise
 With StoneWork Enterprise you'll get access to additional control plane features. Enterprise features are packaged
 as container images. To use them you need a valid license. 
 
-First the CNF image must be loaded into docker as:
+First the CNF image must be loaded into Docker as:
 ```
 docker load -i <path/to/image/file>
 ```
 Then, the `docker-compose.yaml` is updated.
 
-Lets demonstrate it on cnf-bgp, this is how the new docker-compose will look like:
+Lets demonstrate it on cnf-bgp, this is how the new Docker Compose file will look like:
 ```
 version: '3.3'
 
@@ -494,7 +495,7 @@ The rest of environment variables have the same meaning as for StoneWork.
 
 Now start the StoneWork with:
 ```
-docker-compose up -d
+docker compose up -d
 ```
 And finally verify that the CNF was successfully discovered by examining the StoneWork logs as:
 ```
@@ -532,6 +533,8 @@ So the `cnf-bgp` introduces new root level entry called bgpConfig, to describe i
 - **10.10.0.10/24** is some other BGP server to connect to and to exchange the routes with
 - **memif-vrf1** is interface towards 10.10.0.10/24. Note, that not neccessarily directly to that network, there might be next hops in between
 
+[install-docker]: https://docs.docker.com/engine/install/ubuntu/
+[install-compose]: https://docs.docker.com/compose/install/linux/
 [vpp-hugepages]: https://fd.io/docs/vpp/master/gettingstarted/users/configuring/hugepages.html
 [vpp-startup]: https://my-vpp-docs.readthedocs.io/en/latest/gettingstarted/users/configuring/startup.html
 [agentctl-link]: https://docs.ligato.io/en/latest/user-guide/agentctl/

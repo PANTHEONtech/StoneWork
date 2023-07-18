@@ -24,14 +24,14 @@ dump-logs-ignore-errors:
 exec-test: stop-example-ignore-errors start-example test-stonework stop-example
 
 start-example:
-	@docker-compose up -d
+	@docker compose up -d
 	@../utils.sh waitForAgentConfig stonework 31 20
 
 stop-example:
-	@docker-compose down --remove-orphans -v
+	@docker compose down --remove-orphans -v
 
 stop-example-ignore-errors:
-	@docker-compose down --remove-orphans -v || true
+	@docker compose down --remove-orphans -v || true
 
 test-stonework:
 	@./test-stonework.sh
@@ -43,9 +43,9 @@ dump-logs:
 		echo ===============================================================================;\
 		echo StoneWork logs;\
 		echo ===============================================================================;\
-		docker-compose logs stonework || true;\
+		docker compose logs stonework || true;\
 		echo ===============================================================================;\
 		echo StoneWork running configuration;\
 		echo ===============================================================================;\
-		docker-compose exec -T stonework agentctl config retrieve || true;\
+		docker compose exec -T stonework agentctl config retrieve || true;\
 	) >${LOGFILE} 2>&1"

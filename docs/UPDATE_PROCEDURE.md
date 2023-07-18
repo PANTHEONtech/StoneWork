@@ -10,7 +10,7 @@ StoneWork is based on *vpp-agent* and thus supports stable VPP versions, support
 
 Check whether `ligato/vpp-base`, with your desired version, already exists.
 
-To do so, just look at `ligato/vpp-base` tags on [DockerHub][dockerhub-tags]. Or directly by docker pull command, for example:
+To do so, just look at `ligato/vpp-base` tags on [DockerHub][dockerhub-tags]. Or directly by `docker pull` command, for example:
 `docker pull ligato/vpp-base:23.06`
 
 If there is no such tagged version, you need to create it.
@@ -75,7 +75,7 @@ found a compatible API.
 
 ## 2.5 Upload new tag for the StoneWork to image repository
 
-StoneWork docker images are present on [GitHub Container Registry][ghcr].
+StoneWork Docker images are present on [GitHub Container Registry][ghcr].
 
 To update images, create and push a git tag into image repository according to
 the following convention:

@@ -23,14 +23,14 @@ dump-logs-ignore-errors:
 exec-test: stop-example-ignore-errors start-example test-cnf stop-example
 
 start-example:
-	@docker-compose up -d
+	@docker compose up -d
 	@../utils.sh waitForAgentConfig mockcnf1 49 20
 
 stop-example:
-	@docker-compose down --remove-orphans -v
+	@docker compose down --remove-orphans -v
 
 stop-example-ignore-errors:
-	@docker-compose down --remove-orphans -v || true
+	@docker compose down --remove-orphans -v || true
 
 test-cnf:
 	@./test-cnf.sh
@@ -42,9 +42,9 @@ dump-logs:
 		echo ===============================================================================;\
 		echo Mock CNF logs;\
 		echo ===============================================================================;\
-		docker-compose logs mockcnf1 || true;\
+		docker compose logs mockcnf1 || true;\
 		echo ===============================================================================;\
 		echo Mock CNF running configuration;\
 		echo ===============================================================================;\
-		docker-compose exec -T mockcnf1 agentctl config retrieve || true;\
+		docker compose exec -T mockcnf1 agentctl config retrieve || true;\
 	) >${LOGFILE} 2>&1"

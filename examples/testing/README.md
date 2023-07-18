@@ -57,11 +57,11 @@ Running The Examples: The Manual Way
 
 Navigate to the directory of the chosen example and start the deployment with
 ```
-$ docker-compose up -d
+$ docker compose up -d
 ```
 or using a custom StoneWork image:
 ```
-STONEWORK_IMAGE=stonework:<version> docker-compose up -d
+STONEWORK_IMAGE=stonework:<version> docker compose up -d
 ```
 This command starts the example topology (it is defined in `docker-compose.yaml`).
 
@@ -77,15 +77,15 @@ $ agentctl <command>
 ```
 Otherwise, you can run
 ```
-$ docker-compose exec stonework agentctl <command>
+$ docker compose exec stonework agentctl <command>
 ```
 For more information about `agentctl` commands, see [Getting started example][getting-started].
 
 You can explore any container in the topology using
 ```
-$ docker-compose exec -it <container-name> bash
+$ docker compose exec -it <container-name> bash
 $ # Example:
-$ docker-compose exec -it stonework bash
+$ docker compose exec -it stonework bash
 ```
 
 **Note**: Automated tests for StoneWork can be found in `test-stonework.sh`.
@@ -101,14 +101,14 @@ $ ./test-stonework.sh
 
 To study StoneWork logs, run
 ```
-$ docker-compose logs stonework
+$ docker compose logs stonework
 ```
 
 ### Stop The Example
 
 When you are done, bring the deployment down with
 ```
-$ docker-compose down
+$ docker compose down
 ```
 
 [getting-started]: ../getting-started/README.md
