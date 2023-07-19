@@ -26,6 +26,7 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/sirupsen/logrus"
 	vppagent "go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client/tlsconfig"
 
@@ -33,7 +34,7 @@ import (
 )
 
 const (
-	DefaultHost               = "127.0.0.1"
+	FallbackHost              = "127.0.0.1"
 	DefaultHTTPClientTimeout  = 60 * time.Second
 	DefaultPortHTTP           = 9191
 	DockerComposeServiceLabel = "com.docker.compose.service"
@@ -41,13 +42,6 @@ const (
 
 // Option is a function that customizes a Client.
 type Option func(*Client) error
-
-func WithHost(h string) Option {
-	return func(c *Client) error {
-		c.host = h
-		return nil
-	}
-}
 
 func WithHTTPPort(p uint16) Option {
 	return func(c *Client) error {
@@ -86,20 +80,50 @@ type Client struct {
 // customized by options.
 func NewClient(opts ...Option) (*Client, error) {
 	c := &Client{
-		host:     DefaultHost,
 		scheme:   "http",
 		protocol: "tcp",
 		httpPort: DefaultPortHTTP,
 	}
 	var err error
+
 	c.dockerClient, err = docker.NewClientFromEnv()
 	if err != nil {
 		return nil, err
 	}
+
+	containers, err := c.dockerClient.ListContainers(docker.ListContainersOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// find IP address of the StoneWork service
+	for _, container := range containers {
+		if container.Labels[DockerComposeServiceLabel] != "stonework" {
+			continue
+		}
+		cont, err := c.dockerClient.InspectContainerWithOptions(docker.InspectContainerOptions{ID: container.ID})
+		if err != nil {
+			return nil, err
+		}
+		for _, nw := range cont.NetworkSettings.Networks {
+			if nw.IPAddress != "" {
+				c.host = nw.IPAddress
+				break
+			}
+		}
+		break
+	}
+
 	for _, o := range opts {
 		if err = o(c); err != nil {
 			return nil, err
 		}
+	}
+	if c.host == "" {
+		logrus.Warnf("could not find StoneWork service management IP address falling back to: %s", FallbackHost)
+		c.host = FallbackHost
+	} else {
+		logrus.Debugf("found StoneWork service management IP address: %s", c.host)
 	}
 
 	return c, nil
@@ -178,36 +202,49 @@ func (c *Client) GetComponents() ([]Component, error) {
 	}
 
 	var components []Component
-	var foreignContainers []*docker.Container
 	for _, container := range containers {
+
+		metadata := make(map[string]string)
+		metadata["containerID"] = container.ID
+		metadata["containerName"] = container.Name
+		metadata["containerServiceName"] = container.Config.Labels[DockerComposeServiceLabel]
+		metadata["dockerImage"] = container.Config.Image
+		if container.NetworkSettings.IPAddress != "" {
+			metadata["containerIPAddress"] = container.NetworkSettings.IPAddress
+		} else {
+			for _, nw := range container.NetworkSettings.Networks {
+				if nw.IPAddress != "" {
+					metadata["containerIPAddress"] = nw.IPAddress
+					break
+				}
+			}
+		}
+
+		logrus.Tracef("found metadata for container: %s, data: %+v", container.Name, metadata)
+
+		compo := &component{Metadata: metadata}
 		after, found := containsPrefix(container.Config.Env, "MICROSERVICE_LABEL=")
 		if !found {
-			foreignContainers = append(foreignContainers, container)
+			compo.Name = container.Config.Labels[DockerComposeServiceLabel]
+			compo.Mode = ComponentAuxiliary
+			components = append(components, compo)
 			continue
 		}
 		info, ok := cnfInfos[after]
-		if !ok {
-			foreignContainers = append(foreignContainers, container)
-			continue
+		if ok {
+			compo.Name = info.MsLabel
+			compo.Info = &info
+			compo.Mode = cnfModeToCompoMode(info.CnfMode)
+		} else {
+			compo.Name = container.Config.Labels[DockerComposeServiceLabel]
+			compo.Mode = ComponentStandalone
 		}
+
 		client, err := vppagent.NewClientWithOpts(vppagent.WithHost(info.IPAddr), vppagent.WithHTTPPort(info.HTTPPort))
 		if err != nil {
 			return components, err
 		}
-		compo := &component{
-			agentclient: client,
-			Name:        info.MsLabel,
-			Mode:        cnfModeToCompoMode(info.CnfMode),
-			Info:        &info,
-		}
-		components = append(components, compo)
-	}
-
-	for _, fcontainer := range foreignContainers {
-		compo := &component{
-			Name: fcontainer.Config.Labels[DockerComposeServiceLabel],
-			Mode: ComponentForeign,
-		}
+		compo.agentclient = client
 		components = append(components, compo)
 	}
 	return components, nil

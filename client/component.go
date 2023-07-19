@@ -19,6 +19,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
@@ -31,10 +32,15 @@ import (
 type ComponentMode int32
 
 const (
-	// Foreign means the component is not managed by StoneWork
-	ComponentForeign ComponentMode = iota
+	ComponentUnknown ComponentMode = iota
 
-	// StoneworkModule means the component is a StoneWork module managed by StoneWork
+	// Auxiliary means the component is not a CNF and is not managed by StoneWork
+	ComponentAuxiliary
+
+	// Standalone means the component is a standalone CNF
+	ComponentStandalone
+
+	// ComponentStonework means the component is a StoneWork module managed by StoneWork
 	ComponentStoneworkModule
 
 	// Stonework means the component is a StoneWork instance
@@ -48,7 +54,7 @@ type Component interface {
 	GetMode() ComponentMode
 	GetInfo() *cnfreg.Info
 	GetMetadata() map[string]string
-	SchedulerValues() ([]*kvscheduler.BaseValueStatus, error)
+	ConfigStatus() (*ConfigCounts, error)
 }
 
 type component struct {
@@ -79,8 +85,8 @@ func (c *component) GetMetadata() map[string]string {
 	return c.Metadata
 }
 
-func (c *component) SchedulerValues() ([]*kvscheduler.BaseValueStatus, error) {
-	if c.Mode == ComponentForeign {
+func (c *component) ConfigStatus() (*ConfigCounts, error) {
+	if c.Mode == ComponentAuxiliary || c.Mode == ComponentUnknown {
 		return nil, fmt.Errorf("cannot get scheduler values of component %s, this component in not managed by StoneWork", c.Name)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -90,18 +96,94 @@ func (c *component) SchedulerValues() ([]*kvscheduler.BaseValueStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	return values, nil
+
+	var allVals []*kvscheduler.ValueStatus
+	for _, baseVal := range values {
+		allVals = append(allVals, baseVal.Value)
+		allVals = append(allVals, baseVal.DerivedValues...)
+	}
+
+	var res ConfigCounts
+	for _, val := range allVals {
+		switch val.State {
+		case kvscheduler.ValueState_INVALID, kvscheduler.ValueState_FAILED:
+			res.Err++
+		case kvscheduler.ValueState_MISSING:
+			res.Missing++
+		case kvscheduler.ValueState_PENDING:
+			res.Pending++
+		case kvscheduler.ValueState_RETRYING:
+			res.Retrying++
+		case kvscheduler.ValueState_UNIMPLEMENTED:
+			res.Unimplemented++
+		case kvscheduler.ValueState_CONFIGURED, kvscheduler.ValueState_DISCOVERED, kvscheduler.ValueState_OBTAINED, kvscheduler.ValueState_REMOVED, kvscheduler.ValueState_NONEXISTENT:
+			res.Ok++
+		}
+	}
+
+	return &res, nil
+}
+
+type ConfigCounts struct {
+	Ok            int
+	Err           int
+	Missing       int
+	Pending       int
+	Retrying      int
+	Unimplemented int
+}
+
+func (cc ConfigCounts) String() string {
+	var fields []string
+	if cc.Ok != 0 {
+		fields = append(fields, fmt.Sprintf("%d OK", cc.Ok))
+	}
+	if cc.Err != 0 {
+		errStr := fmt.Sprintf("%d errors", cc.Ok)
+		if cc.Err == 1 {
+			errStr = errStr[:len(errStr)-1]
+		}
+		fields = append(fields, errStr)
+	}
+	if cc.Missing != 0 {
+		fields = append(fields, fmt.Sprintf("%d missing", cc.Missing))
+	}
+	if cc.Pending != 0 {
+		fields = append(fields, fmt.Sprintf("%d pending", cc.Pending))
+	}
+	if cc.Retrying != 0 {
+		fields = append(fields, fmt.Sprintf("%d retrying", cc.Retrying))
+	}
+	if cc.Unimplemented != 0 {
+		fields = append(fields, fmt.Sprintf("%d unimplemented", cc.Unimplemented))
+	}
+	return strings.Join(fields, ", ")
+}
+
+func (c ComponentMode) String() string {
+	switch c {
+	case ComponentAuxiliary:
+		return "auxiliary"
+	case ComponentStandalone:
+		return "standalone CNF"
+	case ComponentStonework:
+		return "StoneWork"
+	case ComponentStoneworkModule:
+		return "StoneWork module"
+	default:
+		return "unknown"
+	}
 }
 
 func cnfModeToCompoMode(cm cnfregpb.CnfMode) ComponentMode {
 	switch cm {
 	case cnfregpb.CnfMode_STANDALONE:
-		return ComponentForeign
+		return ComponentStandalone
 	case cnfregpb.CnfMode_STONEWORK_MODULE:
 		return ComponentStoneworkModule
 	case cnfregpb.CnfMode_STONEWORK:
 		return ComponentStonework
 	default:
-		return ComponentForeign
+		return ComponentUnknown
 	}
 }

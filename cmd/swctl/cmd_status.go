@@ -26,11 +26,10 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/olekukonko/tablewriter"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/exp/slices"
-
-	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 
 	"go.pantheon.tech/stonework/client"
 )
@@ -73,26 +72,31 @@ func NewStatusCmd(cli Cli) *cobra.Command {
 
 type statusInfo struct {
 	client.Component
-	ConfigCounts configCounts
+	ConfigCounts *client.ConfigCounts
 }
 
 func runStatusCmd(cli Cli, opts StatusOptions) error {
-	if opts.ShowInterfaces {
-		cmd := fmt.Sprintf("vpp-probe --env=%s --query label=%s=stonework discover", defaultVppProbeEnv, client.DockerComposeServiceLabel)
-		formatArg := fmt.Sprintf("--format=%s", opts.Format)
-		out, err := cli.Exec(cmd, []string{formatArg})
-		if err != nil {
-			if ee, ok := err.(*exec.ExitError); ok {
-				return fmt.Errorf("%v: %s", ee.String(), ee.Stderr)
-			}
-		}
-		fmt.Fprintln(cli.Out(), out)
-		return nil
-	}
-
 	resp, err := cli.Client().GetComponents()
 	if err != nil {
 		return err
+	}
+
+	if opts.ShowInterfaces {
+		for _, compo := range resp {
+			if sn, ok := compo.GetMetadata()["containerServiceName"]; ok {
+				cmd := fmt.Sprintf("vpp-probe --env=%s --query label=%s=%s discover", defaultVppProbeEnv, client.DockerComposeServiceLabel, sn)
+				formatArg := fmt.Sprintf("--format=%s", opts.Format)
+				out, err := cli.Exec(cmd, []string{formatArg})
+				if err != nil {
+					if ee, ok := err.(*exec.ExitError); ok {
+						logrus.Tracef("vpp-probe discover failed for service %s with error: %v: %s", sn, ee.String(), ee.Stderr)
+						continue
+					}
+				}
+				fmt.Fprintln(cli.Out(), out)
+			}
+		}
+		return nil
 	}
 
 	type infoWithErr struct {
@@ -107,13 +111,12 @@ func runStatusCmd(cli Cli, opts StatusOptions) error {
 		wg.Add(1)
 		go func(compo client.Component) {
 			defer wg.Done()
-			var counts configCounts
-			if compo.GetMode() != client.ComponentForeign {
-				vals, err := compo.SchedulerValues()
+			var counts *client.ConfigCounts
+			if compo.GetMode() != client.ComponentAuxiliary {
+				counts, err = compo.ConfigStatus()
 				if err != nil {
 					infoCh <- infoWithErr{error: err}
 				}
-				counts = countConfig(vals)
 			}
 			infoCh <- infoWithErr{
 				statusInfo: statusInfo{
@@ -146,33 +149,6 @@ func runStatusCmd(cli Cli, opts StatusOptions) error {
 	return nil
 }
 
-func countConfig(baseVals []*kvscheduler.BaseValueStatus) configCounts {
-	var allVals []*kvscheduler.ValueStatus
-	for _, baseVal := range baseVals {
-		allVals = append(allVals, baseVal.Value)
-		allVals = append(allVals, baseVal.DerivedValues...)
-	}
-
-	var res configCounts
-	for _, val := range allVals {
-		switch val.State {
-		case kvscheduler.ValueState_INVALID, kvscheduler.ValueState_FAILED:
-			res.Err++
-		case kvscheduler.ValueState_MISSING:
-			res.Missing++
-		case kvscheduler.ValueState_PENDING:
-			res.Pending++
-		case kvscheduler.ValueState_RETRYING:
-			res.Retrying++
-		case kvscheduler.ValueState_UNIMPLEMENTED:
-			res.Unimplemented++
-		case kvscheduler.ValueState_CONFIGURED, kvscheduler.ValueState_DISCOVERED, kvscheduler.ValueState_OBTAINED, kvscheduler.ValueState_REMOVED, kvscheduler.ValueState_NONEXISTENT:
-			res.Ok++
-		}
-	}
-	return res
-}
-
 func cmpStatus(a, b statusInfo) bool {
 	greater := a.GetMode() > b.GetMode()
 	if !greater && a.GetMode() == b.GetMode() {
@@ -200,9 +176,9 @@ func printStatusTable(out io.Writer, infos []statusInfo) {
 	table.SetBorder(false)
 	table.SetTablePadding("\t")
 	for _, info := range infos {
-		row := []string{info.GetName(), compoModeString(info.GetMode())}
+		row := []string{info.GetName(), info.GetMode().String()}
 		var clrs []tablewriter.Colors
-		if info.GetMode() == client.ComponentForeign {
+		if info.GetMode() == client.ComponentAuxiliary {
 			clrs = []tablewriter.Colors{{}, {}}
 			for i := range header[2:] {
 				clrs = append(clrs, []int{tablewriter.FgHiBlackColor})
@@ -211,8 +187,8 @@ func printStatusTable(out io.Writer, infos []statusInfo) {
 			table.Rich(row, clrs)
 			continue
 		}
-		config := info.ConfigCounts.string()
-		configColor := info.ConfigCounts.color()
+		config := info.ConfigCounts.String()
+		configColor := configColor(info.ConfigCounts)
 		compoInfo := info.GetInfo()
 		grpcState := compoInfo.GRPCConnState.String()
 		var statusClr int
@@ -235,68 +211,20 @@ func printStatusTable(out io.Writer, infos []statusInfo) {
 	table.Render()
 }
 
-func compoModeString(c client.ComponentMode) string {
-	switch c {
-	case client.ComponentForeign:
-		return "foreign"
-	case client.ComponentStonework:
-		return "StoneWork"
-	case client.ComponentStoneworkModule:
-		return "StoneWork module"
-	}
-	return "unknown"
-}
-
-type configCounts struct {
-	Ok            int
-	Err           int
-	Missing       int
-	Pending       int
-	Retrying      int
-	Unimplemented int
-}
-
-func (c configCounts) string() string {
-	var fields []string
-	if c.Ok != 0 {
-		fields = append(fields, fmt.Sprintf("%d OK", c.Ok))
-	}
-	if c.Err != 0 {
-		errStr := fmt.Sprintf("%d errors", c.Ok)
-		if c.Err == 1 {
-			errStr = errStr[:len(errStr)-1]
-		}
-		fields = append(fields, errStr)
-	}
-	if c.Missing != 0 {
-		fields = append(fields, fmt.Sprintf("%d missing", c.Missing))
-	}
-	if c.Pending != 0 {
-		fields = append(fields, fmt.Sprintf("%d pending", c.Pending))
-	}
-	if c.Retrying != 0 {
-		fields = append(fields, fmt.Sprintf("%d retrying", c.Retrying))
-	}
-	if c.Unimplemented != 0 {
-		fields = append(fields, fmt.Sprintf("%d unimplemented", c.Unimplemented))
-	}
-	return strings.Join(fields, ", ")
-}
-
-func (c configCounts) color() int {
-	if c.Err > 0 {
+func configColor(cc *client.ConfigCounts) int {
+	if cc.Err > 0 {
 		return tablewriter.FgHiRedColor
 	}
-	if c.Retrying > 0 || c.Pending > 0 {
+	if cc.Retrying > 0 || cc.Pending > 0 {
 		return tablewriter.FgYellowColor
 	}
-	if c.Unimplemented > 0 {
+	if cc.Unimplemented > 0 {
 		return tablewriter.FgMagentaColor
 	}
-	if c.Missing > 0 {
+	if cc.Missing > 0 {
 		return tablewriter.FgHiYellowColor
 	}
-	if c.Ok > 0 {
+	if cc.Ok > 0 {
 		return tablewriter.FgGreenColor
 	}
 	return 0
