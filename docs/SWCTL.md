@@ -228,14 +228,14 @@ swctl config history
 
 #### Status
 
-To display the status of StoneWork components and their interfaces, run:
+To display the status of StoneWork components, run:
 
 ```bash
 swctl status
 ```
 
 > **Note**
-> The `status` command is a simple wrapper for `vpp-probe discover`.
+> When used with `--show-interfaces` flag the `status` command calls `vpp-probe discover`.
 
 #### Trace
 

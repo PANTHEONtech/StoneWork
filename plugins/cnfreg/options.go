@@ -22,6 +22,7 @@ import (
 	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/rpc/grpc"
+	"go.ligato.io/cn-infra/v2/rpc/rest"
 	"go.ligato.io/cn-infra/v2/servicelabel"
 
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
@@ -58,6 +59,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.MgmtSubnet = os.Getenv(CnfMgmtSubnetEnvVar)
 	p.ServiceLabel = &servicelabel.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
+	p.HTTPPlugin = &rest.DefaultPlugin
 	p.GRPCPlugin = &grpc.DefaultPlugin
 
 	// Note: Punt Manager not injected by default due to a cyclical dependency between these two plugins

@@ -55,7 +55,7 @@ require (
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/fluent/fluent-logger-golang v1.3.0 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
-	github.com/fsouza/go-dockerclient v1.7.1 // indirect
+	github.com/fsouza/go-dockerclient v1.7.1
 	github.com/ftrvxmtrx/fd v0.0.0-20150925145434-c6d800382fff // indirect
 	github.com/goccy/go-graphviz v0.0.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -82,7 +82,7 @@ require (
 	github.com/moby/sys/mount v0.2.0 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/olekukonko/tablewriter v0.0.4 // indirect
+	github.com/olekukonko/tablewriter v0.0.4
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.1.2 // indirect
@@ -99,7 +99,7 @@ require (
 	github.com/spf13/viper v1.7.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tinylib/msgp v1.0.2 // indirect
-	github.com/unrolled/render v0.0.0-20180914162206-b9786414de4d // indirect
+	github.com/unrolled/render v0.0.0-20180914162206-b9786414de4d
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0 // indirect

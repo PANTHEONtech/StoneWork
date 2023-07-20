@@ -168,11 +168,12 @@ type swAttrs struct {
 
 // CNF used as a StoneWork Module.
 type swModule struct {
+	pid        int
 	cnfMsLabel string
 	ipAddress  string
 	grpcPort   int
 	httpPort   int
-	grpcConn   grpc.ClientConnInterface
+	grpcConn   *grpc.ClientConn
 	cnfClient  pb.CnfDiscoveryClient
 	cfgClient  client.GenericClient
 	cnfModels  []cnfModel
@@ -259,6 +260,7 @@ func (p *Plugin) Init() (err error) {
 
 	case pb.CnfMode_STONEWORK:
 		p.sw.modules = conc.NewMap[string, swModule]()
+		p.registerHandlers(p.HTTPPlugin)
 		// CNF discovery
 		go p.cnfDiscovery(make(chan struct{}))
 	}
@@ -296,7 +298,7 @@ func (p *Plugin) GetGrpcPort() (port int) {
 }
 
 // Returns gRPC port that should be used by this CNF.
-// Not to be used by StoneWork or a standalone CFN (they should respect what is in http.conf).
+// Not to be used by StoneWork or a standalone CNF (they should respect what is in http.conf).
 func (p *Plugin) GetHttpPort() (port int) {
 	if p.cnfMode != pb.CnfMode_STONEWORK_MODULE {
 		panic(fmt.Errorf("method GetHttpPort is not available in the CNF mode %v", p.cnfMode))
