@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -15,7 +16,6 @@ import (
 
 // TODO: to be refactored:
 //   - refactor the usage of external apps: agentctl, vpp-probe
-//   - set the log level / debug mode on the external apps to match the swctl settings
 
 // Cli is a client API for CLI application.
 type Cli interface {
@@ -23,7 +23,7 @@ type Cli interface {
 	Apply(...CliOption) error
 	Client() client.API
 	Entities() []Entity
-	Exec(cmd string, args []string) (string, error)
+	Exec(cmd string, args []string) (stdout string, stderr string, err error)
 
 	Out() *streams.Out
 	Err() io.Writer
@@ -117,22 +117,20 @@ func (cli *CLI) Entities() []Entity {
 	return cli.entities
 }
 
-const programVppProbe = "vpp-probe"
-
-func (cli *CLI) Exec(cmd string, args []string) (string, error) {
-
-	if strings.HasPrefix(cmd, programVppProbe) {
-		if cli.Out().IsTerminal() {
-			cmd = programVppProbe + " --color=always" + strings.TrimPrefix(cmd, programVppProbe)
-		}
-
-		// Use downloaded VPP probe
-		if cli.vppProbePath != "" {
-			cmd = fmt.Sprintf("%s %s", cli.vppProbePath, strings.TrimPrefix(cmd, programVppProbe))
-		}
+func (cli *CLI) Exec(cmd string, args []string) (string, string, error) {
+	if cmd == "" {
+		return "", "", errors.New("cannot execute empty command")
 	}
-
-	return execCmd(cmd, args)
+	cmdParts := strings.Split(cmd, " ")
+	if len(cmdParts) > 1 {
+		args = append(cmdParts[1:], args...)
+	}
+	ecmd := newExternalCmd(externalExe(cmdParts[0]), args, cli, glob)
+	res, err := ecmd.exec()
+	if err != nil {
+		return "", "", err
+	}
+	return res.Stdout, res.Stderr, nil
 }
 
 func (cli *CLI) Apply(opt ...CliOption) error {

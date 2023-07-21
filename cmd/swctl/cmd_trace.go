@@ -31,13 +31,14 @@ func runTraceCmd(cli Cli, opts TraceCmdOptions) error {
 	// TODO: improve usage of trace command
 	// - automatically use ping as default command
 	// - consider selecting IP and source network namespace automatically
-	// - cibsuder allowing users to simply select component names for ping src/dst
+	// - consider allowing users to simply select component names for ping src/dst
 
-	out, err := cli.Exec(fmt.Sprintf("vpp-probe --env=%s trace", defaultVppProbeEnv), args)
+	stdout, stderr, err := cli.Exec(fmt.Sprintf("vpp-probe --env=%s trace", defaultVppProbeEnv), args)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(cli.Out(), out)
+	fmt.Fprintln(cli.Out(), stdout)
+	fmt.Fprintln(cli.Err(), stderr)
 
 	return nil
 }

@@ -27,12 +27,12 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 
 	// TODO: add stonework/CNF related support data to the export
 
-	out, err := cli.Exec("agentctl report", args)
+	stdout, stderr, err := cli.Exec("agentctl report", args)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(cli.Out(), out)
-
+	fmt.Fprintln(cli.Out(), stdout)
+	fmt.Fprintln(cli.Err(), stderr)
 	return nil
 }
