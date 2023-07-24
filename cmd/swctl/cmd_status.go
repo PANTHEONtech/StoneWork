@@ -100,6 +100,22 @@ func runStatusCmd(cli Cli, opts StatusOptions) error {
 		return nil
 	}
 
+	infos, err := getStatusInfo(resp)
+	if err != nil {
+		return err
+	}
+
+	if opts.Format == "" {
+		printStatusTable(cli.Out(), infos, true)
+	} else {
+		if err := formatAsTemplate(cli.Out(), opts.Format, infos); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getStatusInfo(components []client.Component) ([]statusInfo, error) {
 	type infoWithErr struct {
 		statusInfo
 		error
@@ -108,11 +124,12 @@ func runStatusCmd(cli Cli, opts StatusOptions) error {
 	var wg sync.WaitGroup
 	infoCh := make(chan infoWithErr)
 
-	for _, compo := range resp {
+	for _, compo := range components {
 		wg.Add(1)
 		go func(compo client.Component) {
 			defer wg.Done()
 			var counts *client.ConfigCounts
+			var err error
 			if compo.GetMode() != client.ComponentAuxiliary {
 				counts, err = compo.ConfigStatus()
 				if err != nil {
@@ -135,19 +152,12 @@ func runStatusCmd(cli Cli, opts StatusOptions) error {
 
 	for i := range infoCh {
 		if i.error != nil {
-			return i.error
+			return nil, i.error
 		}
 		infos = append(infos, i.statusInfo)
 	}
 	slices.SortFunc(infos, cmpStatus)
-	if opts.Format == "" {
-		printStatusTable(cli.Out(), infos)
-	} else {
-		if err := formatAsTemplate(cli.Out(), opts.Format, infos); err != nil {
-			return err
-		}
-	}
-	return nil
+	return infos, nil
 }
 
 func cmpStatus(a, b statusInfo) bool {
@@ -158,7 +168,7 @@ func cmpStatus(a, b statusInfo) bool {
 	return greater
 }
 
-func printStatusTable(out io.Writer, infos []statusInfo) {
+func printStatusTable(out io.Writer, infos []statusInfo, use_colors bool) {
 	table := tablewriter.NewWriter(out)
 	header := []string{
 		"Name", "Mode", "IP Address", "GPRC Port", "HTTP Port", "Status", "Configuration",
@@ -182,7 +192,9 @@ func printStatusTable(out io.Writer, infos []statusInfo) {
 		if info.GetMode() == client.ComponentAuxiliary {
 			clrs = []tablewriter.Colors{{}, {}}
 			for i := range header[2:] {
-				clrs = append(clrs, []int{tablewriter.FgHiBlackColor})
+				if use_colors {
+					clrs = append(clrs, []int{tablewriter.FgHiBlackColor})
+				}
 				row = append(row, strings.Repeat("-", len(header[i+2])))
 			}
 			table.Rich(row, clrs)
@@ -204,8 +216,11 @@ func printStatusTable(out io.Writer, infos []statusInfo) {
 			strconv.Itoa(compoInfo.HTTPPort),
 			grpcState,
 			config)
-		clrs = []tablewriter.Colors{
-			{}, {}, {}, {}, {}, {statusClr}, {configColor},
+
+		if use_colors {
+			clrs = []tablewriter.Colors{{}, {}, {}, {}, {}, {statusClr}, {configColor}}
+		} else {
+			clrs = []tablewriter.Colors{}
 		}
 		table.Rich(row, clrs)
 	}
