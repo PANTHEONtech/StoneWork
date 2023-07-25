@@ -223,8 +223,11 @@ swctl config update config.yaml
 swctl config history
 ```
 
+By default, `swctl config get` outputs only user defined configuration, the configuration that is created internally by StoneWork (data paths for punted packets from VPP to CNFs) is hidden.
+Complete configuration can be shown by using the `--show-internal` flag: `swctl config get --show-internal`.
+
 > **Note**
-> The `config` command is a simple wrapper for `agentctl config`.
+> The `config` command is a wrapper for `agentctl config`.
 
 #### Status
 
@@ -233,6 +236,21 @@ To display the status of StoneWork components, run:
 ```bash
 swctl status
 ```
+
+Sample output:
+
+```
+NAME       MODE              IP ADDRESS  GPRC PORT  HTTP PORT  STATUS  CONFIGURATION  
+stonework  StoneWork         172.20.0.2    9111       9191     ------  52 OK          
+mockcnf2   StoneWork module  172.20.0.3    19002      19102    READY   17 OK          
+mockcnf1   StoneWork module  172.20.0.3    19001      19101    READY   17 OK          
+router-ns  auxiliary         ----------  ---------  ---------  ------  -------------  
+```
+
+The _MODE_ column can have values of _StoneWork_, _StoneWork module_, _standalone CNF_ or _auxiliary_.
+Mode _auxiliary_ means the component is not a CNF and that it is not managed by a StoneWork service.  
+The _STATUS_ column shows the state of GRPC connection between StoneWork service and the given StoneWork module.  
+The _CONFIGURATION_ column shows short overview of counts and state of configuration items corresponding to the given component.
 
 > **Note**
 > When used with `--show-interfaces` flag the `status` command calls `vpp-probe discover`.
