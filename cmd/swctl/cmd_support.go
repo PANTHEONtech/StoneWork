@@ -58,8 +58,22 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 		}
 	}()
 
-	writeReportData(cli, "Interfaces.txt", dirName, writeInterfaces)
-	writeReportData(cli, "Status.txt", dirName, writeStatus)
+	components, err := cli.Client().GetComponents()
+	if err != nil {
+		return err
+	}
+
+	errors := []error{
+		writeReportData(cli, "Interfaces.txt", dirName, components, writeInterfaces),
+		writeReportData(cli, "Status.txt", dirName, components, writeStatus),
+		writeReportData(cli, "agentctl-report.zip", dirName, components, writeVPPInfo),
+	}
+
+	for _, err := range errors {
+		if err != nil {
+			return err
+		}
+	}
 
 	if err != nil {
 		err = fmt.Errorf("can't open file %v due to: %v", fullName, err)
@@ -90,7 +104,7 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 	return nil
 }
 
-func writeReportData(cli Cli, fileName string, dirName string, writeFunc func(Cli, io.Writer, ...interface{}) error,
+func writeReportData(cli Cli, fileName string, dirName string, components []client.Component, writeFunc func(Cli, io.Writer, []client.Component, ...interface{}) error,
 	args ...interface{}) (err error) {
 	fullName := filepath.Join(dirName, fileName)
 	f, err := os.OpenFile(fullName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
@@ -105,15 +119,11 @@ func writeReportData(cli Cli, fileName string, dirName string, writeFunc func(Cl
 	}()
 
 	// append some report to file
-	err = writeFunc(cli, f, args...)
+	err = writeFunc(cli, f, components, args...)
 	return
 }
 
-func writeInterfaces(cli Cli, w io.Writer, otherArgs ...interface{}) error {
-	components, err := cli.Client().GetComponents()
-	if err != nil {
-		return err
-	}
+func writeInterfaces(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
 	for _, compo := range components {
 		if sn, ok := compo.GetMetadata()["containerServiceName"]; ok {
 			cmd := fmt.Sprintf("vpp-probe --env=%s --query label=%s=%s discover", defaultVppProbeEnv, client.DockerComposeServiceLabel, sn)
@@ -130,7 +140,46 @@ func writeInterfaces(cli Cli, w io.Writer, otherArgs ...interface{}) error {
 	return nil
 }
 
-func writeStatus(cli Cli, w io.Writer, otherArgs ...interface{}) error {
+func writeStatus(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
+	infos, err := getStatusInfo(components)
+	if err != nil {
+		return err
+	}
+	printStatusTable(w, infos)
+
+	return nil
+}
+
+func writeVPPInfo(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
+	tempDirName, err := os.MkdirTemp("", "agentctl-reports-*")
+	defer os.RemoveAll(tempDirName)
+
+	cmd := fmt.Sprintf("agentctl report -o %s -i", tempDirName)
+	stdout, _, err := cli.Exec(cmd, []string{})
+	if err != nil {
+		return err
+	}
+	fmt.Println(stdout)
+
+	files, err := os.ReadDir(tempDirName)
+	if err != nil {
+		return err
+	}
+	zip_filename := filepath.Join(tempDirName, files[0].Name())
+	file, err := os.Open(zip_filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	stats, err := file.Stat()
+	data := make([]byte, stats.Size())
+	_, err = file.Read(data)
+	if err != nil {
+		return err
+	}
+
+	w.Write(data)
 	return nil
 }
 
