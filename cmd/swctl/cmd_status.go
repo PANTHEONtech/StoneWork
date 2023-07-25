@@ -106,7 +106,7 @@ func runStatusCmd(cli Cli, opts StatusOptions) error {
 	}
 
 	if opts.Format == "" {
-		printStatusTable(cli.Out(), infos)
+		printStatusTable(cli.Out(), infos, true)
 	} else {
 		if err := formatAsTemplate(cli.Out(), opts.Format, infos); err != nil {
 			return err
@@ -168,7 +168,7 @@ func cmpStatus(a, b statusInfo) bool {
 	return greater
 }
 
-func printStatusTable(out io.Writer, infos []statusInfo) {
+func printStatusTable(out io.Writer, infos []statusInfo, use_colors bool) {
 	table := tablewriter.NewWriter(out)
 	header := []string{
 		"Name", "Mode", "IP Address", "GPRC Port", "HTTP Port", "Status", "Configuration",
@@ -192,7 +192,9 @@ func printStatusTable(out io.Writer, infos []statusInfo) {
 		if info.GetMode() == client.ComponentAuxiliary {
 			clrs = []tablewriter.Colors{{}, {}}
 			for i := range header[2:] {
-				clrs = append(clrs, []int{tablewriter.FgHiBlackColor})
+				if use_colors {
+					clrs = append(clrs, []int{tablewriter.FgHiBlackColor})
+				}
 				row = append(row, strings.Repeat("-", len(header[i+2])))
 			}
 			table.Rich(row, clrs)
@@ -214,8 +216,11 @@ func printStatusTable(out io.Writer, infos []statusInfo) {
 			strconv.Itoa(compoInfo.HTTPPort),
 			grpcState,
 			config)
-		clrs = []tablewriter.Colors{
-			{}, {}, {}, {}, {}, {statusClr}, {configColor},
+
+		if use_colors {
+			clrs = []tablewriter.Colors{{}, {}, {}, {}, {}, {statusClr}, {configColor}}
+		} else {
+			clrs = []tablewriter.Colors{}
 		}
 		table.Rich(row, clrs)
 	}

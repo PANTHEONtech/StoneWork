@@ -66,12 +66,25 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 	errors := []error{
 		writeReportData(cli, "Interfaces.txt", dirName, components, writeInterfaces),
 		writeReportData(cli, "Status.txt", dirName, components, writeStatus),
-		writeReportData(cli, "agentctl-report.zip", dirName, components, writeVPPInfo),
+		writeReportData(cli, "Status.json", dirName, components, writeStatusAsJson),
 	}
 
 	for _, err := range errors {
 		if err != nil {
 			return err
+		}
+	}
+
+	for _, comp := range components {
+		if comp.GetMode() != client.ComponentAuxiliary && comp.GetMode() != client.ComponentUnknown {
+			info := comp.GetInfo()
+			if serviceName, ok := comp.GetMetadata()["containerServiceName"]; ok {
+				writeReportData(cli, "docker-logs-"+serviceName, dirName, components, writeDockerLogs, serviceName)
+			}
+			alias := fmt.Sprintf("%s-%s", strings.Replace(comp.GetMode().String(), " ", "-", -1), comp.GetName())
+			if err = writeReportData(cli, alias+".zip", dirName, components, writeAgentCtlInfo, info.IPAddr, info.HTTPPort); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -126,7 +139,7 @@ func writeReportData(cli Cli, fileName string, dirName string, components []clie
 func writeInterfaces(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
 	for _, compo := range components {
 		if sn, ok := compo.GetMetadata()["containerServiceName"]; ok {
-			cmd := fmt.Sprintf("vpp-probe --env=%s --query label=%s=%s discover", defaultVppProbeEnv, client.DockerComposeServiceLabel, sn)
+			cmd := fmt.Sprintf("vpp-probe --color never --env=%s --query label=%s=%s discover", defaultVppProbeEnv, client.DockerComposeServiceLabel, sn)
 			stdout, _, err := cli.Exec(cmd, []string{})
 			if err != nil {
 				if ee, ok := err.(*exec.ExitError); ok {
@@ -145,28 +158,44 @@ func writeStatus(cli Cli, w io.Writer, components []client.Component, otherArgs 
 	if err != nil {
 		return err
 	}
-	printStatusTable(w, infos)
+	printStatusTable(w, infos, false)
 
 	return nil
 }
 
-func writeVPPInfo(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
-	tempDirName, err := os.MkdirTemp("", "agentctl-reports-*")
-	defer os.RemoveAll(tempDirName)
-
-	cmd := fmt.Sprintf("agentctl report -o %s -i", tempDirName)
-	stdout, _, err := cli.Exec(cmd, []string{})
+func writeStatusAsJson(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
+	infos, err := getStatusInfo(components)
 	if err != nil {
 		return err
 	}
-	fmt.Println(stdout)
+
+	if err := formatAsTemplate(w, "json", infos); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args ...interface{}) error {
+	tempDirName, err := os.MkdirTemp("", "agentctl-reports-*")
+	defer os.RemoveAll(tempDirName)
+
+	host := args[0]
+	port := args[1]
+
+	cmd := fmt.Sprintf("agentctl report --host %s --http-port %d -o %s -i", host, port, tempDirName)
+	_, _, err = cli.Exec(cmd, []string{})
+	if err != nil {
+		return err
+	}
+	// fmt.Println(stdout)
 
 	files, err := os.ReadDir(tempDirName)
 	if err != nil {
 		return err
 	}
-	zip_filename := filepath.Join(tempDirName, files[0].Name())
-	file, err := os.Open(zip_filename)
+	zipFilename := filepath.Join(tempDirName, files[0].Name())
+	file, err := os.Open(zipFilename)
 	if err != nil {
 		return err
 	}
@@ -174,12 +203,21 @@ func writeVPPInfo(cli Cli, w io.Writer, components []client.Component, otherArgs
 
 	stats, err := file.Stat()
 	data := make([]byte, stats.Size())
-	_, err = file.Read(data)
-	if err != nil {
+	if _, err = file.Read(data); err != nil {
 		return err
 	}
 
 	w.Write(data)
+	return nil
+}
+
+func writeDockerLogs(cli Cli, w io.Writer, components []client.Component, args ...interface{}) error {
+	// container := fmt.Sprintf("%s", args[0])
+	// logs, err := cli.Client().GetLogs(container)
+	// if err != nil {
+	//	return err
+	// }
+	// fmt.Println(logs)
 	return nil
 }
 
