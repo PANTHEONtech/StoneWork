@@ -240,7 +240,7 @@ swctl status
 Sample output:
 
 ```
-NAME       MODE              IP ADDRESS  GPRC PORT  HTTP PORT  STATUS  CONFIGURATION  
+NAME       MODE              IP ADDRESS  GRPC PORT  HTTP PORT  STATUS  CONFIGURATION  
 stonework  StoneWork         172.20.0.2    9111       9191     ------  52 OK          
 mockcnf2   StoneWork module  172.20.0.3    19002      19102    READY   17 OK          
 mockcnf1   StoneWork module  172.20.0.3    19001      19101    READY   17 OK          
