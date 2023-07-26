@@ -67,6 +67,7 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 		writeReportData(cli, "Interfaces.txt", dirName, components, writeInterfaces),
 		writeReportData(cli, "Status.txt", dirName, components, writeStatus),
 		writeReportData(cli, "Status.json", dirName, components, writeStatusAsJson),
+		writeReportData(cli, "docker-compose.yaml", dirName, components, writeDockerComposeConfig),
 	}
 
 	for _, err := range errors {
@@ -78,13 +79,14 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 	for _, comp := range components {
 		if comp.GetMode() != client.ComponentAuxiliary && comp.GetMode() != client.ComponentUnknown {
 			info := comp.GetInfo()
-			if serviceName, ok := comp.GetMetadata()["containerServiceName"]; ok {
-				writeReportData(cli, "docker-logs-"+serviceName, dirName, components, writeDockerLogs, serviceName)
-			}
 			alias := fmt.Sprintf("%s-%s", strings.Replace(comp.GetMode().String(), " ", "-", -1), comp.GetName())
-			if err = writeReportData(cli, alias+".zip", dirName, components, writeAgentCtlInfo, info.IPAddr, info.HTTPPort); err != nil {
-				return err
+			if serviceName, ok := comp.GetMetadata()["containerServiceName"]; ok {
+				writeReportData(cli, "docker-logs-"+alias+".log", dirName, components, writeDockerLogs, serviceName)
+				if err != nil {
+					fmt.Println(alias, err)
+				}
 			}
+			writeReportData(cli, "agentctl-"+alias+".zip", dirName, components, writeAgentCtlInfo, info.IPAddr, info.HTTPPort)
 		}
 	}
 
@@ -120,20 +122,15 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 func writeReportData(cli Cli, fileName string, dirName string, components []client.Component, writeFunc func(Cli, io.Writer, []client.Component, ...interface{}) error,
 	args ...interface{}) (err error) {
 	fullName := filepath.Join(dirName, fileName)
-	f, err := os.OpenFile(fullName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
+	file, err := os.OpenFile(fullName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 	if err != nil {
 		err = fmt.Errorf("can't open file %v due to: %v", fullName, err)
 		return
 	}
-	defer func() {
-		if closeErr := f.Close(); closeErr != nil {
-			err = fmt.Errorf("can't close file %v due to: %v", fullName, closeErr)
-		}
-	}()
+	defer file.Close()
 
-	// append some report to file
-	err = writeFunc(cli, f, components, args...)
-	return
+	err = writeFunc(cli, file, components, args...)
+	return err
 }
 
 func writeInterfaces(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
@@ -176,8 +173,20 @@ func writeStatusAsJson(cli Cli, w io.Writer, components []client.Component, othe
 	return nil
 }
 
+func writeDockerComposeConfig(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
+	stdout, _, err := cli.Exec("docker compose config", []string{})
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(w, stdout)
+	return nil
+}
+
 func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args ...interface{}) error {
 	tempDirName, err := os.MkdirTemp("", "agentctl-reports-*")
+	if err != nil {
+		return fmt.Errorf("can't create tmp directory with namedue to %v", err)
+	}
 	defer os.RemoveAll(tempDirName)
 
 	host := args[0]
@@ -188,7 +197,6 @@ func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args
 	if err != nil {
 		return err
 	}
-	// fmt.Println(stdout)
 
 	files, err := os.ReadDir(tempDirName)
 	if err != nil {
@@ -212,12 +220,13 @@ func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args
 }
 
 func writeDockerLogs(cli Cli, w io.Writer, components []client.Component, args ...interface{}) error {
-	// container := fmt.Sprintf("%s", args[0])
-	// logs, err := cli.Client().GetLogs(container)
-	// if err != nil {
-	//	return err
-	// }
-	// fmt.Println(logs)
+	serviceName := args[0]
+	cmd := fmt.Sprintf("docker compose logs --no-color -n 10000 %s", serviceName)
+	stdout, _, err := cli.Exec(cmd, []string{})
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(w, stdout)
 	return nil
 }
 
