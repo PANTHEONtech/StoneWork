@@ -68,6 +68,7 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 		writeReportData(cli, "Status.txt", dirName, components, writeStatus),
 		writeReportData(cli, "Status.json", dirName, components, writeStatusAsJson),
 		writeReportData(cli, "docker-compose.yaml", dirName, components, writeDockerComposeConfig),
+		writeReportData(cli, "docker-ps.txt", dirName, components, writeDockerContainers),
 	}
 
 	for _, err := range errors {
@@ -175,6 +176,15 @@ func writeStatusAsJson(cli Cli, w io.Writer, components []client.Component, othe
 
 func writeDockerComposeConfig(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
 	stdout, _, err := cli.Exec("docker compose config", []string{})
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(w, stdout)
+	return nil
+}
+
+func writeDockerContainers(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
+	stdout, _, err := cli.Exec("docker compose ps --all", []string{})
 	if err != nil {
 		return err
 	}
