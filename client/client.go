@@ -121,7 +121,7 @@ func NewClient(opts ...Option) (*Client, error) {
 		}
 	}
 	if c.host == "" {
-		logrus.Warnf("could not find StoneWork service management IP address falling back to: %s", FallbackHost)
+		logrus.Debugf("could not find StoneWork service management IP address falling back to: %s", FallbackHost)
 		c.host = FallbackHost
 	} else {
 		logrus.Debugf("found StoneWork service management IP address: %s", c.host)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 )
 
 type externalExe string
@@ -30,36 +31,26 @@ type externalCmd struct {
 	color bool
 }
 
-func newExternalCmd(cmd externalExe, args []string, cli *CLI, swctlOpts GlobalOptions) *externalCmd {
+func newExternalCmd(cmd externalExe, args []string, cli *CLI) *externalCmd {
 	ecmd := &externalCmd{
 		exe:   cmd,
 		name:  string(cmd),
 		cli:   cli,
-		color: swctlOpts.Color != "never" && cli.Out().IsTerminal(),
+		color: cli.GlobalOptions().Color != "never" && cli.Out().IsTerminal(),
 	}
-	ecmd.setDebugArg(swctlOpts.Debug)
+	ecmd.args = append(ecmd.args, args...)
+	ecmd.setDebugArg(cli.GlobalOptions().Debug)
 	ecmd.setLogLevelArg(logrus.GetLevel())
 	ecmd.setColorEnv()
 	ecmd.setMiscFlags()
-	ecmd.args = append(ecmd.args, args...)
 	return ecmd
-}
-
-func (ec *externalCmd) prependArg(arg string, val string, aliases ...string) {
-	if !hasAnyPrefix(ec.args, arg) && !hasAnyPrefix(ec.args, aliases...) {
-		if val == "" {
-			ec.args = append([]string{arg}, ec.args...)
-		} else {
-			ec.args = append([]string{fmt.Sprintf("%s=%s", arg, val)}, ec.args...)
-		}
-	}
 }
 
 func (ec *externalCmd) setDebugArg(debug bool) {
 	switch ec.exe {
 	case cmdAgentCtl, cmdDocker, cmdVppProbe:
 		if debug {
-			ec.prependArg("--debug", "", "-D")
+			ec.prependUniqueArg("--debug", "", "-D")
 		}
 	}
 }
@@ -73,9 +64,9 @@ func (ec *externalCmd) setLogLevelArg(loglvl logrus.Level) {
 	}
 	switch ec.exe {
 	case cmdAgentCtl, cmdDocker:
-		ec.prependArg("--log-level", loglvl.String(), "-l")
+		ec.prependUniqueArg("--log-level", loglvl.String(), "-l")
 	case cmdVppProbe:
-		ec.prependArg("--loglevel", loglvl.String(), "-L")
+		ec.prependUniqueArg("--loglevel", loglvl.String(), "-L")
 	}
 }
 
@@ -90,13 +81,21 @@ func (ec *externalCmd) setMiscFlags() {
 	switch ec.exe {
 	case cmdVppProbe:
 		if ec.color {
-			ec.prependArg("--color", "always")
+			ec.prependUniqueArg("--color", "always")
 		}
 		if ec.cli.vppProbePath != "" {
 			ec.name = ec.cli.vppProbePath
 		}
 	case cmdAgentCtl:
-		ec.prependArg("--host", ec.cli.client.GetHost(), "-H")
+		ec.prependUniqueArg("--host", ec.cli.client.GetHost(), "-H")
+	case cmdDocker:
+		if i := slices.Index(ec.args, "compose"); i >= 0 {
+			var argVals []string
+			for _, cf := range ec.cli.GlobalOptions().ComposeFiles {
+				argVals = append(argVals, fmt.Sprintf("--file=%s", cf))
+			}
+			ec.args = tryInsertArgVals(ec.args, i+1, argVals...)
+		}
 	}
 }
 
@@ -135,6 +134,34 @@ func (ec *externalCmd) exec() (*ExecResult, error) {
 	execRes.Stderr = strings.TrimRight(stderr.String(), "\n")
 	l.Tracef("[%s] %q\n%s\n", color.Green.Sprint("OK"), cmd.Args, color.FgGray.Sprint(execRes.Stdout))
 	return &execRes, nil
+}
+
+func (ec *externalCmd) prependUniqueArg(arg string, val string, aliases ...string) {
+	ec.args = tryInsertUniqueArg(ec.args, 0, arg, val, aliases...)
+}
+
+func tryInsertUniqueArg(args []string, pos int, arg string, val string, aliases ...string) []string {
+	if hasAnyPrefix(args, arg) || hasAnyPrefix(args, aliases...) {
+		return args
+	}
+	return tryInsertArg(args, pos, arg, val)
+}
+
+func tryInsertArg(args []string, pos int, arg string, val string) []string {
+	var argVal string
+	if val == "" {
+		argVal = arg
+	} else {
+		argVal = fmt.Sprintf("%s=%s", arg, val)
+	}
+	return tryInsertArgVals(args, pos, argVal)
+}
+
+func tryInsertArgVals(args []string, pos int, argVals ...string) []string {
+	if pos < 0 || pos > len(args) {
+		return args
+	}
+	return slices.Insert(args, pos, argVals...)
 }
 
 func anyPrefixIndex(elems []string, prefixes ...string) int {
