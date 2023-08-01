@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -44,9 +45,14 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 	if err != nil {
 		return fmt.Errorf("can't create tmp directory with name pattern %s due to %v", dirNamePattern, err)
 	}
-	defer os.RemoveAll(dirName)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
 
-	fullName := filepath.Join(dirName, "Interfaces.txt")
+		}
+	}(dirName)
+
+	fullName := filepath.Join(dirName, "interfaces.txt")
 	f, err := os.OpenFile(fullName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 	if err != nil {
 		err = fmt.Errorf("can't open file %v due to: %v", fullName, err)
@@ -64,9 +70,9 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 	}
 
 	errors := []error{
-		writeReportData(cli, "Interfaces.txt", dirName, components, writeInterfaces),
-		writeReportData(cli, "Status.txt", dirName, components, writeStatus),
-		writeReportData(cli, "Status.json", dirName, components, writeStatusAsJson),
+		writeReportData(cli, "interfaces.txt", dirName, components, writeInterfaces),
+		writeReportData(cli, "status.txt", dirName, components, writeStatus),
+		writeReportData(cli, "status.json", dirName, components, writeStatusAsJson),
 		writeReportData(cli, "docker-compose.yaml", dirName, components, writeDockerComposeConfig),
 		writeReportData(cli, "docker-ps.txt", dirName, components, writeDockerContainers),
 	}
@@ -76,18 +82,40 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 			return err
 		}
 	}
-
 	for _, comp := range components {
 		if comp.GetMode() != client.ComponentAuxiliary && comp.GetMode() != client.ComponentUnknown {
 			info := comp.GetInfo()
-			alias := fmt.Sprintf("%s-%s", strings.Replace(comp.GetMode().String(), " ", "-", -1), comp.GetName())
+			alias := fmt.Sprintf("%s-", comp.GetName())
+
 			if serviceName, ok := comp.GetMetadata()["containerServiceName"]; ok {
-				writeReportData(cli, "docker-logs-"+alias+".log", dirName, components, writeDockerLogs, serviceName)
+				err = writeReportData(cli, strings.ToLower(alias)+"docker-logs"+".log", dirName, components, writeDockerLogs, serviceName)
 				if err != nil {
 					fmt.Println(alias, err)
 				}
 			}
-			writeReportData(cli, "agentctl-"+alias+".zip", dirName, components, writeAgentCtlInfo, info.IPAddr, info.HTTPPort)
+			buffer := strings.ToLower(alias) + "vppagent-report"
+			writeReportData(cli, buffer+".zip", dirName, components, writeAgentCtlInfo, info.IPAddr, info.HTTPPort)
+
+			err := os.Mkdir(path.Join(dirName, buffer), 0777)
+			_ = err
+
+			err = extractZip(dirName+"/"+buffer+".zip", path.Join(dirName, buffer))
+			if err != nil {
+				return err
+			}
+
+			err = os.Remove(dirName + "/" + buffer + ".zip")
+			if err != nil {
+				return err
+			}
+
+			for _, comp := range components {
+				if sn, ok := comp.GetMetadata()["containerID"]; ok {
+					writeReportData(cli, alias+"docker-inspect.txt", dirName, nil, writeDockerInspect, sn)
+				}
+
+			}
+
 		}
 	}
 
@@ -123,7 +151,7 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 func writeReportData(cli Cli, fileName string, dirName string, components []client.Component, writeFunc func(Cli, io.Writer, []client.Component, ...interface{}) error,
 	args ...interface{}) (err error) {
 	fullName := filepath.Join(dirName, fileName)
-	file, err := os.OpenFile(fullName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
+	file, err := os.OpenFile(fullName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		err = fmt.Errorf("can't open file %v due to: %v", fullName, err)
 		return
@@ -132,6 +160,30 @@ func writeReportData(cli Cli, fileName string, dirName string, components []clie
 
 	err = writeFunc(cli, file, components, args...)
 	return err
+}
+
+func extractZip(sourceZip string, destinationFolder string) error {
+	zipReader, err := zip.OpenReader(sourceZip)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range zipReader.File {
+		zippedFile, _ := file.Open()
+
+		destinationFile, err := os.OpenFile(destinationFolder+"/"+file.Name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(destinationFile, zippedFile)
+		if err != nil {
+			return err
+		}
+		destinationFile.Close()
+		zippedFile.Close()
+	}
+	return nil
 }
 
 func writeInterfaces(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
@@ -192,6 +244,16 @@ func writeDockerContainers(cli Cli, w io.Writer, components []client.Component, 
 	return nil
 }
 
+func writeDockerInspect(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
+	cmd := fmt.Sprintf("docker inspect %s", fmt.Sprintf("%s", otherArgs[0]))
+	stdout, _, err := cli.Exec(cmd, []string{})
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(w, stdout)
+	return nil
+}
+
 func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args ...interface{}) error {
 	tempDirName, err := os.MkdirTemp("", "agentctl-reports-*")
 	if err != nil {
@@ -207,7 +269,7 @@ func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args
 	if err != nil {
 		return err
 	}
-
+	// extract ,delete zip, read files
 	files, err := os.ReadDir(tempDirName)
 	if err != nil {
 		return err
@@ -259,17 +321,23 @@ func createZipFile(zipFileName string, dirName string) (err error) {
 	}()
 
 	// Add files to zip
-	dirItems, err := os.ReadDir(dirName)
+	//dirItems, err := os.ReadDir(dirName)
 	if err != nil {
 		return fmt.Errorf("can't read report directory(%v) due to: %v", dirName, err)
 	}
-	for _, dirItem := range dirItems {
-		if !dirItem.IsDir() {
-			if err = addFileToZip(zipWriter, filepath.Join(dirName, dirItem.Name())); err != nil {
-				return fmt.Errorf("can't add file dirItem.Name() to report zip file due to: %v", err)
+	/*
+		for _, dirItem := range dirItems {
+			if !dirItem.IsDir() {
+				if err = addFileToZip(zipWriter, filepath.Join(dirName, dirItem.Name())); err != nil {
+					return fmt.Errorf("can't add file dirItem.Name() to report zip file due to: %v", err)
+				}
+			} else {
+				addWholefolderToZip(zipWriter, filepath.Join(dirName, dirItem.Name()))
+
 			}
-		}
-	}
+		}*/
+	addWholeFolderToZip(zipWriter, dirName)
+
 	return nil
 }
 
@@ -307,5 +375,36 @@ func addFileToZip(zipWriter *zip.Writer, filename string) error {
 	if err != nil {
 		return fmt.Errorf("can't copy content of file %v to zip file due to: %v", filename, err)
 	}
+	return nil
+}
+
+func addWholeFolderToZip(zipWriter *zip.Writer, dirName string) error {
+
+	err := filepath.Walk(dirName, func(filePath string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		relPath := strings.TrimPrefix(filePath, dirName)
+		zipFile, err := zipWriter.Create(relPath)
+		if err != nil {
+			return err
+		}
+		fsFile, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(zipFile, fsFile)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
