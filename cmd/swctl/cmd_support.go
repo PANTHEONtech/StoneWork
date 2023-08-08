@@ -3,9 +3,6 @@ package main
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"go.pantheon.tech/stonework/client"
 	"io"
 	"os"
 	"os/exec"
@@ -13,6 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+
+	"go.pantheon.tech/stonework/client"
 )
 
 type SupportCmdOptions struct {
@@ -45,10 +47,11 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 	if err != nil {
 		return fmt.Errorf("can't create tmp directory with name pattern %s due to %v", dirNamePattern, err)
 	}
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
 
+	defer func(path string) {
+		err = os.RemoveAll(path)
+		if err != nil {
+			err = fmt.Errorf("can't remove all files in temporary directory %s due to %v", path, err)
 		}
 	}(dirName)
 
@@ -77,11 +80,6 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 		writeReportData(cli, "docker-ps.txt", dirName, components, writeDockerContainers),
 	}
 
-	for _, err := range errors {
-		if err != nil {
-			return err
-		}
-	}
 	for _, comp := range components {
 		if comp.GetMode() != client.ComponentAuxiliary && comp.GetMode() != client.ComponentUnknown {
 			info := comp.GetInfo()
@@ -94,8 +92,8 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 				}
 			}
 			buffer := strings.ToLower(alias) + "vppagent-report"
-			writeReportData(cli, buffer+".zip", dirName, components, writeAgentCtlInfo, info.IPAddr, info.HTTPPort)
-
+			err = writeReportData(cli, buffer+".zip", dirName, components, writeAgentCtlInfo, info.IPAddr, info.HTTPPort)
+			errors = append(errors, err)
 			err := os.Mkdir(path.Join(dirName, buffer), 0777)
 			_ = err
 
@@ -111,7 +109,10 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 
 			for _, comp := range components {
 				if sn, ok := comp.GetMetadata()["containerID"]; ok {
-					writeReportData(cli, alias+"docker-inspect.txt", dirName, nil, writeDockerInspect, sn)
+					err = writeReportData(cli, alias+"docker-inspect.txt", dirName, nil, writeDockerInspect, sn)
+					if err != nil {
+						errors = append(errors, err)
+					}
 				}
 
 			}
@@ -119,9 +120,10 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 		}
 	}
 
-	if err != nil {
-		err = fmt.Errorf("can't open file %v due to: %v", fullName, err)
-		return err
+	for _, err2 := range errors {
+		if err2 != nil {
+			logrus.Warnln(err2)
+		}
 	}
 
 	// resolve zip file name
@@ -287,7 +289,10 @@ func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args
 		return err
 	}
 
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -320,61 +325,11 @@ func createZipFile(zipFileName string, dirName string) (err error) {
 		}
 	}()
 
-	// Add files to zip
-	//dirItems, err := os.ReadDir(dirName)
+	err = addWholeFolderToZip(zipWriter, dirName)
 	if err != nil {
-		return fmt.Errorf("can't read report directory(%v) due to: %v", dirName, err)
-	}
-	/*
-		for _, dirItem := range dirItems {
-			if !dirItem.IsDir() {
-				if err = addFileToZip(zipWriter, filepath.Join(dirName, dirItem.Name())); err != nil {
-					return fmt.Errorf("can't add file dirItem.Name() to report zip file due to: %v", err)
-				}
-			} else {
-				addWholefolderToZip(zipWriter, filepath.Join(dirName, dirItem.Name()))
-
-			}
-		}*/
-	addWholeFolderToZip(zipWriter, dirName)
-
-	return nil
-}
-
-func addFileToZip(zipWriter *zip.Writer, filename string) error {
-	// open file for addition
-	fileToZip, err := os.Open(filename)
-	if err != nil {
-		return fmt.Errorf("can't open file %v due to: %v", filename, err)
-	}
-	defer func() {
-		if closeErr := fileToZip.Close(); closeErr != nil {
-			err = fmt.Errorf("can't close zip file %v opened "+
-				"for file appending due to: %v", filename, closeErr)
-		}
-	}()
-
-	// get information from file for addition
-	info, err := fileToZip.Stat()
-	if err != nil {
-		return fmt.Errorf("can't get information about file (%v) "+
-			"that should be added to zip file due to: %v", filename, err)
+		return err
 	}
 
-	// add file to zip file
-	header, err := zip.FileInfoHeader(info)
-	if err != nil {
-		return fmt.Errorf("can't create zip file info header for file %v due to: %v", filename, err)
-	}
-	header.Method = zip.Deflate // enables compression
-	writer, err := zipWriter.CreateHeader(header)
-	if err != nil {
-		return fmt.Errorf("can't create zip header for file %v due to: %v", filename, err)
-	}
-	_, err = io.Copy(writer, fileToZip)
-	if err != nil {
-		return fmt.Errorf("can't copy content of file %v to zip file due to: %v", filename, err)
-	}
 	return nil
 }
 

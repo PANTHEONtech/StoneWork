@@ -168,7 +168,7 @@ func cmpStatus(a, b statusInfo) bool {
 	return greater
 }
 
-func printStatusTable(out io.Writer, infos []statusInfo, use_colors bool) {
+func printStatusTable(out io.Writer, infos []statusInfo, useColors bool) {
 	table := tablewriter.NewWriter(out)
 	header := []string{
 		"Name", "Mode", "IP Address", "GPRC Port", "HTTP Port", "Status", "Configuration",
@@ -192,7 +192,7 @@ func printStatusTable(out io.Writer, infos []statusInfo, use_colors bool) {
 		if info.GetMode() == client.ComponentAuxiliary {
 			clrs = []tablewriter.Colors{{}, {}}
 			for i := range header[2:] {
-				if use_colors {
+				if useColors {
 					clrs = append(clrs, []int{tablewriter.FgHiBlackColor})
 				}
 				row = append(row, strings.Repeat("-", len(header[i+2])))
@@ -217,7 +217,7 @@ func printStatusTable(out io.Writer, infos []statusInfo, use_colors bool) {
 			grpcState,
 			config)
 
-		if use_colors {
+		if useColors {
 			clrs = []tablewriter.Colors{{}, {}, {}, {}, {}, {statusClr}, {configColor}}
 		} else {
 			clrs = []tablewriter.Colors{}
