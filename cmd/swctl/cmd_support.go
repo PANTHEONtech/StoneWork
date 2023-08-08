@@ -54,19 +54,6 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 			err = fmt.Errorf("can't remove all files in temporary directory %s due to %v", path, err)
 		}
 	}(dirName)
-
-	fullName := filepath.Join(dirName, "interfaces.txt")
-	f, err := os.OpenFile(fullName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
-	if err != nil {
-		err = fmt.Errorf("can't open file %v due to: %v", fullName, err)
-		return err
-	}
-	defer func() {
-		if closeErr := f.Close(); closeErr != nil {
-			err = fmt.Errorf("can't close file %v due to: %v", fullName, closeErr)
-		}
-	}()
-
 	components, err := cli.Client().GetComponents()
 	if err != nil {
 		return err
@@ -88,7 +75,7 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 			if serviceName, ok := comp.GetMetadata()["containerServiceName"]; ok {
 				err = writeReportData(cli, strings.ToLower(alias)+"docker-logs"+".log", dirName, components, writeDockerLogs, serviceName)
 				if err != nil {
-					fmt.Println(alias, err)
+					errors = append(errors, err)
 				}
 			}
 			buffer := strings.ToLower(alias) + "vppagent-report"
@@ -114,15 +101,16 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 						errors = append(errors, err)
 					}
 				}
-
 			}
-
 		}
 	}
-
 	for _, err2 := range errors {
 		if err2 != nil {
-			logrus.Warnln(err2)
+			err := writeReportData(cli, "_failed-reports.txt", dirName, components, writeErrors, errors[:])
+			if err != nil {
+				logrus.Warnln(err)
+			}
+			break
 		}
 	}
 
@@ -161,6 +149,10 @@ func writeReportData(cli Cli, fileName string, dirName string, components []clie
 	defer file.Close()
 
 	err = writeFunc(cli, file, components, args...)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", fileName, err)
+		defer os.Remove(fullName)
+	}
 	return err
 }
 
@@ -229,18 +221,26 @@ func writeStatusAsJson(cli Cli, w io.Writer, components []client.Component, othe
 }
 
 func writeDockerComposeConfig(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
-	stdout, _, err := cli.Exec("docker compose config", []string{})
+	cmd := "docker compose config"
+	stdout, stderr, err := cli.Exec(cmd, []string{})
 	if err != nil {
 		return err
+	}
+	if stderr != "" {
+		return fmt.Errorf("%s: %s", cmd, stderr)
 	}
 	fmt.Fprintln(w, stdout)
 	return nil
 }
 
 func writeDockerContainers(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
-	stdout, _, err := cli.Exec("docker compose ps --all", []string{})
+	cmd := "docker compose ps --all"
+	stdout, stderr, err := cli.Exec(cmd, []string{})
 	if err != nil {
 		return err
+	}
+	if stderr != "" {
+		return fmt.Errorf("%s: %s", cmd, stderr)
 	}
 	fmt.Fprintln(w, stdout)
 	return nil
@@ -299,9 +299,12 @@ func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args
 func writeDockerLogs(cli Cli, w io.Writer, components []client.Component, args ...interface{}) error {
 	serviceName := args[0]
 	cmd := fmt.Sprintf("docker compose logs --no-color -n 10000 %s", serviceName)
-	stdout, _, err := cli.Exec(cmd, []string{})
+	stdout, stderr, err := cli.Exec(cmd, []string{})
 	if err != nil {
 		return err
+	}
+	if stderr != "" {
+		return fmt.Errorf("%s: %s", cmd, stderr)
 	}
 	fmt.Fprintln(w, stdout)
 	return nil
@@ -343,14 +346,19 @@ func addWholeFolderToZip(zipWriter *zip.Writer, dirName string) error {
 			return err
 		}
 		relPath := strings.TrimPrefix(filePath, dirName)
-		zipFile, err := zipWriter.Create(relPath)
-		if err != nil {
-			return err
-		}
+
 		fsFile, err := os.Open(filePath)
 		if err != nil {
 			return err
 		}
+		defer fsFile.Close()
+
+		stat, _ := fsFile.Stat()
+		fih, _ := zip.FileInfoHeader(stat)
+		fih.Modified = time.Now().Local()
+		fih.Name = relPath
+		zipFile, _ := zipWriter.CreateHeader(fih)
+
 		_, err = io.Copy(zipFile, fsFile)
 		if err != nil {
 			return err
@@ -361,5 +369,17 @@ func addWholeFolderToZip(zipWriter *zip.Writer, dirName string) error {
 		return err
 	}
 
+	return nil
+}
+
+func writeErrors(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
+	errors := otherArgs[0].([]error)
+
+	for _, error := range errors {
+		if error != nil {
+			fmt.Fprintln(w, "###########################")
+			fmt.Fprintln(w, error)
+		}
+	}
 	return nil
 }
