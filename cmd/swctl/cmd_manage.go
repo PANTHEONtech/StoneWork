@@ -106,6 +106,7 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 	// list all entities
 	if len(args) == 0 {
 		color.Fprintf(cli.Out(), "Listing <bold>%d</> loaded entities:\n\n", len(cli.Entities()))
+
 		for _, e := range cli.Entities() {
 			name := e.Name
 			desc := ""
@@ -171,6 +172,12 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 			configLines := strings.Count(entity.Config, "\n")
 			color.Fprintf(cli.Out(), "<lightWhite>CONFIG</>: %s %s\n", color.White.Sprintf("%d lines", configLines), color.Gray.Sprintf("(%d bytes)", configLen))
 		}
+		color.Fprintf(cli.Out(), "<lightWhite>FILES</>:\n")
+		for _, f := range entity.Files {
+			contentLen := len(f.Content)
+			contentLines := strings.Count(f.Content, "\n")
+			color.Fprintf(cli.Out(), "  %s: %s %s\n", color.Bold.Sprint(f.Name), color.White.Sprintf("%d lines", contentLines), color.Gray.Sprintf("(%d bytes)", contentLen))
+		}
 		return nil
 	}
 
@@ -214,6 +221,9 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 	if opts.Count > 1 && entity.Single {
 		return fmt.Errorf("count must be 1 for entity with single instance")
 	}
+	if len(entity.Files) > 0 && !entity.Single {
+		return fmt.Errorf("no files can be defined for multi instance entity")
+	}
 
 	// prepare config
 	mainConf, err := client.NewDynamicConfig(allModels())
@@ -254,7 +264,7 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		}
 
 		// render config template
-		rawConf, err := renderEntityConfig(entity, vars)
+		rawConf, err := renderEntityTemplate(entity.Config, vars)
 		if err != nil {
 			return fmt.Errorf("failed to render config (idx: %v): %w", i, err)
 		}
@@ -278,6 +288,19 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 
 		if err := mergeConfigs(mainConf, conf); err != nil {
 			return fmt.Errorf("merging configs failed: %w", err)
+		}
+
+		for _, f := range entity.Files {
+			rawData, err := renderEntityTemplate(f.Content, vars)
+			if err != nil {
+				return fmt.Errorf("failed to render file (%v): %w", f.Name, err)
+			}
+
+			logrus.Tracef(" - final vars:\n%s\nraw file %s:\n%v", yamlTmpl(vars), f.Name, rawData)
+
+			if err := os.WriteFile(f.Name, []byte(rawData), 0666); err != nil {
+				return fmt.Errorf("failed to write file (%v): %w", f.Name, err)
+			}
 		}
 	}
 
@@ -507,8 +530,8 @@ func renderTmpl(t string, data any) (string, error) {
 	return b.String(), nil
 }
 
-func renderEntityConfig(e Entity, evars map[string]string) (string, error) {
-	tmpl, err := interpolateStr(e.Config, evars)
+func renderEntityTemplate(cfg string, evars map[string]string) (string, error) {
+	tmpl, err := interpolateStr(cfg, evars)
 	if err != nil {
 		return "", err
 	}
