@@ -10,7 +10,7 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -22,7 +22,7 @@ jobs:
           git diff --name-only --exit-code go.mod || ( git diff && echo "Run go tidy to update go.mod" && false )
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -34,7 +34,7 @@ jobs:
           go build -v ./...
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - name: "Enable VRF kernel module"
