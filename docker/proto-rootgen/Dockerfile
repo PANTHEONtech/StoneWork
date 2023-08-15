@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.18.3
+ENV GOLANG_VERSION 1.20.7
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
