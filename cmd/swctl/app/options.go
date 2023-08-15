@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"os"
@@ -21,8 +21,9 @@ type GlobalOptions struct {
 	LogLevel string
 	Color    string
 
-	ComposeFiles []string
-	EntityFiles  []string
+	ComposeFiles       []string
+	EntityFiles        []string
+	EmbeddedEntityByte []byte
 
 	// TODO: support config file
 	// Config string

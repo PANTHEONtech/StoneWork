@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	_ "go.ligato.io/vpp-agent/v3/proto/ligato/linux"
