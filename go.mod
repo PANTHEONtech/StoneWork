@@ -1,6 +1,6 @@
 module go.pantheon.tech/stonework
 
-go 1.18
+go 1.20
 
 require (
 	github.com/apparentlymart/go-cidr v1.1.0
