@@ -284,6 +284,10 @@ func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args
 	defer file.Close()
 
 	stats, err := file.Stat()
+	if err != nil {
+		return err
+
+	}
 	data := make([]byte, stats.Size())
 	if _, err = file.Read(data); err != nil {
 		return err
