@@ -106,12 +106,6 @@ COPY ./docker/init_hook.sh /usr/bin/
 ENV CONFIG_DIR /etc/stonework/
 ENV CNF_MODE STONEWORK
 
-# handle differences in vpp.conf which are between supported VPP versions
-ARG VPP_VERSION
-COPY ./docker/legacy-nat.conf /tmp/legacy-nat.conf
-RUN bash -c "if [[ \"$VPP_VERSION\" < "21.01" ]]; then cat /tmp/legacy-nat.conf >> /etc/vpp/vpp.conf; fi"
-RUN rm /tmp/legacy-nat.conf
-
 # Install script for packet tracing on VPP
 COPY ./docker/vpptrace.sh /usr/bin/vpptrace.sh
 RUN chmod u+x /usr/bin/vpptrace.sh
