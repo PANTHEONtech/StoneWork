@@ -73,18 +73,14 @@ RUN set -ex; \
 	cp /opt/dev/isisx/build/isisx/isisx.api.json \
        /usr/share/vpp/api/core/
 
-# there is a bug in VPP 21.06 that api files are not built on standard location
-# for external plugins, to reproduce it is enough to try to build sample-plugin
+# copy built VPP api files
 RUN set -ex; \
-    if [ "$VPP_VERSION" = "23.06" ] || [ "$VPP_VERSION" = "22.10" ] || [ "$VPP_VERSION" = "22.02" ]; \
-    then \
-      cp abx/build/CMakeFiles/vpp-api/vapi/* /usr/include/vapi/; \
-    elif [ "$VPP_VERSION" = "21.06" ]; \
+	if [ "$VPP_VERSION" = "23.06" ] || [ "$VPP_VERSION" = "22.10" ] || [ "$VPP_VERSION" = "22.02" ]; \
 	then \
-	  cp /vpp-api/vapi/* /usr/include/vapi/; \
+		cp abx/build/CMakeFiles/vpp-api/vapi/* /usr/include/vapi/; \
 	else \
-      cp /opt/dev/abx/build/vpp-api/vapi/* /usr/include/vapi/; \
-    fi
+		cp /opt/dev/abx/build/vpp-api/vapi/* /usr/include/vapi/; \
+	fi
 
 COPY docker/vpp-startup.conf /etc/vpp/startup.conf
 

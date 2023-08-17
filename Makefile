@@ -250,7 +250,6 @@ generate-binapi: get-binapi-generator
     # generated from vpp json api files copied into StoneWork repository (plugins/binapi/vppXXXX/api)
     # from VPP (/usr/share/vpp/api/(core|plugins))
 	@echo "=> generating binary API"
-	@cd plugins/binapi/vpp2106 && VPP_VERSION=21.06 go generate .
 	@cd plugins/binapi/vpp2202 && VPP_VERSION=22.02 go generate .
 	@cd plugins/binapi/vpp2210 && VPP_VERSION=22.10 go generate .
 	@cd plugins/binapi/vpp2306 && VPP_VERSION=23.06 go generate .

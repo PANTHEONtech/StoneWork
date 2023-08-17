@@ -30,7 +30,6 @@ import (
 	"go.pantheon.tech/stonework/plugins/isisx/descriptor"
 	"go.pantheon.tech/stonework/plugins/isisx/vppcalls"
 
-	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2106"
 	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2202"
 	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2210"
 	_ "go.pantheon.tech/stonework/plugins/isisx/vppcalls/vpp2306"
