@@ -19,10 +19,11 @@ import (
 
 // Cli is a client API for CLI application.
 type Cli interface {
-	Initialize(opts Options) error
+	Initialize(opts *GlobalOptions) error
 	Apply(...CliOption) error
 	Client() client.API
 	Entities() []Entity
+	GlobalOptions() *GlobalOptions
 	Exec(cmd string, args []string) (stdout string, stderr string, err error)
 
 	Out() *streams.Out
@@ -34,8 +35,9 @@ type Cli interface {
 type CLI struct {
 	client client.API
 
-	entities     []Entity
-	vppProbePath string
+	entities      []Entity
+	vppProbePath  string
+	globalOptions *GlobalOptions
 
 	out *streams.Out
 	err io.Writer
@@ -63,10 +65,13 @@ func NewCli(opt ...CliOption) (*CLI, error) {
 	return cli, nil
 }
 
-func (cli *CLI) Initialize(opts Options) (err error) {
-	cli.client, err = initClient(opts)
+func (cli *CLI) Initialize(opts *GlobalOptions) (err error) {
+	InitGlobalOptions(cli, opts)
+	cli.globalOptions = opts
+
+	cli.client, err = initClient()
 	if err != nil {
-		return fmt.Errorf("init error: %w", err)
+		return fmt.Errorf("init client error: %w", err)
 	}
 
 	// load entity files
@@ -82,11 +87,12 @@ func (cli *CLI) Initialize(opts Options) (err error) {
 	} else {
 		cli.vppProbePath = vppProbePath
 	}
+	cli.globalOptions = opts
 
 	return nil
 }
 
-func initClient(opts Options) (*client.Client, error) {
+func initClient() (*client.Client, error) {
 	c, err := client.NewClient()
 	if err != nil {
 		return nil, err
@@ -117,6 +123,10 @@ func (cli *CLI) Entities() []Entity {
 	return cli.entities
 }
 
+func (cli *CLI) GlobalOptions() *GlobalOptions {
+	return cli.globalOptions
+}
+
 func (cli *CLI) Exec(cmd string, args []string) (string, string, error) {
 	if cmd == "" {
 		return "", "", errors.New("cannot execute empty command")
@@ -125,7 +135,7 @@ func (cli *CLI) Exec(cmd string, args []string) (string, string, error) {
 	if len(cmdParts) > 1 {
 		args = append(cmdParts[1:], args...)
 	}
-	ecmd := newExternalCmd(externalExe(cmdParts[0]), args, cli, glob)
+	ecmd := newExternalCmd(externalExe(cmdParts[0]), args, cli)
 	res, err := ecmd.exec()
 	if err != nil {
 		return "", "", err

@@ -98,6 +98,12 @@ type Entity struct {
 	Vars        []EntityVar `json:"vars"`
 	Config      string      `json:"config"`
 	Single      bool        `json:"single"`
+	Files       []ExtraFile `json:"files"`
+}
+
+type ExtraFile struct {
+	Name    string `json:"name"`
+	Content string `json:"content"`
 }
 
 func (e Entity) GetName() string {

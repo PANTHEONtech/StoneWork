@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Install Go
-ENV GOLANG_VERSION 1.18.3
+ENV GOLANG_VERSION 1.20.7
 RUN set -eux; \
 	dpkgArch="$(dpkg --print-architecture)"; \
 		case "${dpkgArch##*-}" in \
@@ -105,12 +105,6 @@ COPY ./docker/init_hook.sh /usr/bin/
 
 ENV CONFIG_DIR /etc/stonework/
 ENV CNF_MODE STONEWORK
-
-# handle differences in vpp.conf which are between supported VPP versions
-ARG VPP_VERSION
-COPY ./docker/legacy-nat.conf /tmp/legacy-nat.conf
-RUN bash -c "if [[ \"$VPP_VERSION\" < "21.01" ]]; then cat /tmp/legacy-nat.conf >> /etc/vpp/vpp.conf; fi"
-RUN rm /tmp/legacy-nat.conf
 
 # Install script for packet tracing on VPP
 COPY ./docker/vpptrace.sh /usr/bin/vpptrace.sh

@@ -171,7 +171,7 @@ func cmpStatus(a, b statusInfo) bool {
 func printStatusTable(out io.Writer, infos []statusInfo, useColors bool) {
 	table := tablewriter.NewWriter(out)
 	header := []string{
-		"Name", "Mode", "IP Address", "GPRC Port", "HTTP Port", "Status", "Configuration",
+		"Name", "Mode", "IP Address", "GRPC Port", "HTTP Port", "Status", "Configuration",
 	}
 	aleft := tablewriter.ALIGN_LEFT
 	acenter := tablewriter.ALIGN_CENTER

@@ -23,27 +23,21 @@ const logo = `
 // NewRootCmd returns new root command
 func NewRootCmd(cli Cli) *cobra.Command {
 	var (
-		opts Options
+		glob GlobalOptions
 	)
 	cmd := &cobra.Command{
 		Use:           "swctl [options] [command]",
-		Short:         "swctl is CLI app to manage StoneWork and its components",
+		Short:         "swctl is CLI tool to manage StoneWork and its components",
 		Long:          color.Sprintf(logo, version.Short(), version.BuildTime(), version.BuiltBy()),
 		Version:       version.String(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			InitGlobalOptions(cli, &glob)
-
-			logrus.Tracef("global options: %+v", glob)
-
-			err := cli.Initialize(opts)
+			err := cli.Initialize(&glob)
 			if err != nil {
 				return err
 			}
-
-			logrus.Tracef("initialized CLI options: %+v", opts)
-
+			logrus.Tracef("initialized global options: %+v", glob)
 			return nil
 		},
 		TraverseChildren:  true,
@@ -57,7 +51,6 @@ func NewRootCmd(cli Cli) *cobra.Command {
 	cmd.Flags().SortFlags = false
 	cmd.PersistentFlags().SortFlags = false
 
-	opts.InstallFlags(cmd.PersistentFlags())
 	glob.InstallFlags(cmd.PersistentFlags())
 
 	cmd.InitDefaultVersionFlag()

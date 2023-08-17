@@ -16,14 +16,14 @@ const (
 	EnvVarVppProbeNoDownload = "SWCTL_VPP_PROBE_NO_DOWNLOAD"
 )
 
-var (
-	glob GlobalOptions
-)
-
 type GlobalOptions struct {
 	Debug    bool
 	LogLevel string
 	Color    string
+
+	ComposeFiles []string
+	EntityFiles  []string
+
 	// TODO: support config file
 	// Config string
 }
@@ -79,17 +79,10 @@ func (glob *GlobalOptions) InstallFlags(flags *pflag.FlagSet) {
 	flags.BoolVarP(&glob.Debug, "debug", "D", false, "Enable debug mode")
 	flags.StringVarP(&glob.LogLevel, "log-level", "L", "", "Set logging level")
 	flags.StringVar(&glob.Color, "color", "", "Color mode; auto/always/never")
-}
 
-type Options struct {
-	ComposeFiles []string
-	EntityFiles  []string
-}
-
-func (opts *Options) InstallFlags(flags *pflag.FlagSet) {
-	flags.StringSliceVar(&opts.ComposeFiles, "composefile", nil, "Docker Compose configuration files")
+	flags.StringSliceVar(&glob.ComposeFiles, "composefile", nil, "Docker Compose configuration files")
 	must(cobra.MarkFlagFilename(flags, "composefile", "yaml", "yml"))
-	flags.StringSliceVar(&opts.EntityFiles, "entityfile", nil, "Entity configuration files")
+	flags.StringSliceVar(&glob.EntityFiles, "entityfile", nil, "Entity configuration files")
 	must(cobra.MarkFlagFilename(flags, "entityfile", "yaml", "yml"))
 }
 
