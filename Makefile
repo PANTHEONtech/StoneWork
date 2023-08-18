@@ -256,7 +256,7 @@ generate-proto: protocgengo ## Generate Protobuf files
 #
 # NOTE: Before running this make sure that the VPP .api.json files in /usr/share/vpp/api on your
 # system belong to VPP version 23.06.x and not other version of VPP! Also do not forget that
-# StoneWork VPP plugins (abx and isisx) .api.json have to be copied into the
+# StoneWork VPP plugins (abx and isisx) .api.json files have to be copied into the
 # /usr/share/vpp/api/plugins directory as well.
 generate-binapi-from-system-vpp: get-binapi-generator
 	@echo "=> generating binary API"
