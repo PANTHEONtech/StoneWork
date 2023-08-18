@@ -246,7 +246,7 @@ get-descriptor-adapter-generator:
 
 generate-proto: protocgengo ## Generate Protobuf files
 
-# TODO: Currently generate-binapi-from-system-vpp generates binapi only from VPP .api.json files
+# FIXME: Currently generate-binapi-from-system-vpp generates binapi only from VPP .api.json files
 # located at /usr/share/vpp/api/. Therefore the binapi will be generated only for a single VPP
 # version that user has installed on their system. Modify this to be able to generate binapis for
 # different VPP versions. For example by calling a script (with a VPP_VERSION value) that will
