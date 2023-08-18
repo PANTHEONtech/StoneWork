@@ -1,5 +1,5 @@
 package binapi
 
-//go:generate binapi-generator --input-dir=/usr/share/vpp/api --output-dir=.
+//go:generate binapi-generator --input=/usr/share/vpp/api --output-dir=.
 
 const Version = "22.10"
