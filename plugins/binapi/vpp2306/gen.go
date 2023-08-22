@@ -1,10 +1,5 @@
 package binapi
 
-//go:generate binapi-generator --output-dir=. abx
-//go:generate binapi-generator --output-dir=. bfd
-//go:generate binapi-generator --output-dir=. memclnt
-//go:generate binapi-generator --output-dir=. nat64
-//go:generate binapi-generator --output-dir=. vpe
-//go:generate binapi-generator --output-dir=. isisx
+//go:generate binapi-generator --input=/usr/share/vpp/api --output-dir=.
 
 const Version = "23.06"

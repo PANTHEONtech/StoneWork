@@ -26,7 +26,6 @@ type RPCService interface {
 	BfdUDPSessionDump(ctx context.Context, in *BfdUDPSessionDump) (RPCService_BfdUDPSessionDumpClient, error)
 	BfdUDPSessionSetFlags(ctx context.Context, in *BfdUDPSessionSetFlags) (*BfdUDPSessionSetFlagsReply, error)
 	BfdUDPSetEchoSource(ctx context.Context, in *BfdUDPSetEchoSource) (*BfdUDPSetEchoSourceReply, error)
-	BfdUDPUpd(ctx context.Context, in *BfdUDPUpd) (*BfdUDPUpdReply, error)
 	WantBfdEvents(ctx context.Context, in *WantBfdEvents) (*WantBfdEventsReply, error)
 }
 
@@ -216,15 +215,6 @@ func (c *serviceClient) BfdUDPSessionSetFlags(ctx context.Context, in *BfdUDPSes
 
 func (c *serviceClient) BfdUDPSetEchoSource(ctx context.Context, in *BfdUDPSetEchoSource) (*BfdUDPSetEchoSourceReply, error) {
 	out := new(BfdUDPSetEchoSourceReply)
-	err := c.conn.Invoke(ctx, in, out)
-	if err != nil {
-		return nil, err
-	}
-	return out, api.RetvalToVPPApiError(out.Retval)
-}
-
-func (c *serviceClient) BfdUDPUpd(ctx context.Context, in *BfdUDPUpd) (*BfdUDPUpdReply, error) {
-	out := new(BfdUDPUpdReply)
 	err := c.conn.Invoke(ctx, in, out)
 	if err != nil {
 		return nil, err

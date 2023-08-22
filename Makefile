@@ -246,12 +246,20 @@ get-descriptor-adapter-generator:
 
 generate-proto: protocgengo ## Generate Protobuf files
 
-generate-binapi: get-binapi-generator
-    # generated from vpp json api files copied into StoneWork repository (plugins/binapi/vppXXXX/api)
-    # from VPP (/usr/share/vpp/api/(core|plugins))
+# FIXME: Currently generate-binapi-from-system-vpp generates binapi only from VPP .api.json files
+# located at /usr/share/vpp/api/. Therefore the binapi will be generated only for a single VPP
+# version that user has installed on their system. Modify this to be able to generate binapis for
+# different VPP versions. For example by calling a script (with a VPP_VERSION value) that will
+# generate the binapi from a docker container that has given version of VPP .api.json files with
+# volume mounted to this repository.
+# Consider using stonework-dev:<VPP_VERSION> image for this purpose.
+#
+# NOTE: Before running this make sure that the VPP .api.json files in /usr/share/vpp/api on your
+# system belong to VPP version 23.06.x and not other version of VPP! Also do not forget that
+# StoneWork VPP plugins (abx and isisx) .api.json have to be copied into the
+# /usr/share/vpp/api/plugins directory as well.
+generate-binapi-from-system-vpp: get-binapi-generator
 	@echo "=> generating binary API"
-	@cd plugins/binapi/vpp2202 && VPP_VERSION=22.02 go generate .
-	@cd plugins/binapi/vpp2210 && VPP_VERSION=22.10 go generate .
 	@cd plugins/binapi/vpp2306 && VPP_VERSION=23.06 go generate .
 
 generate-descriptor-adapters: get-descriptor-adapter-generator
