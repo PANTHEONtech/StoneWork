@@ -72,7 +72,7 @@ func NewRootCmd(cli Cli) *cobra.Command {
 		NewTraceCmd(cli),
 		NewSupportCmd(cli),
 		NewManageCmd(cli),
-		NewInstallCmd(cli),
+		NewDependencyCmd(cli),
 	)
 
 	cmd.InitDefaultHelpCmd()

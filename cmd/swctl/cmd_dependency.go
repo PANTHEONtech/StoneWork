@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/spf13/pflag"
+	"golang.org/x/exp/slices"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,7 +18,7 @@ const exampleDependencyCmd = `
   $ <yellow>swctl dependency status</>
 
   <white># Install all dependencies</>
-  $ <yellow>swctl dependency install</>
+  $ <yellow>swctl dependency install -i</>
 
   <white># Set HugePages manually</>
   $ <yellow>swctl dependency hugepages <value></>
@@ -24,12 +26,13 @@ const exampleDependencyCmd = `
   <white># Create multiple entity instances</>
   $ <yellow>swctl dependency linkdown <interfaces ...></>
 
-  <white># Merge with existing config file</>
+  <white># Print out startup config file</>
   $ <yellow>swctl dependency startup </>
 
 `
 const (
-	DefaultHugepageSize = 1024
+	DefaultHugepageSize  = 1024
+	DefaultDockerVersion = "5:24.0.5-1~ubuntu.22.04~jammy"
 )
 
 type networkInterface struct {
@@ -45,12 +48,27 @@ type dependencies struct {
 	interfaces []networkInterface
 }
 
-func NewInstallCmd(cli Cli) *cobra.Command {
+type DependencyOption struct {
+	Interactive bool
+}
+
+func (opts *DependencyOption) InstallFlags(flagset *pflag.FlagSet) {
+	flagset.BoolVarP(&opts.Interactive, "interactive", "i", false, "Enable interactive mode")
+}
+
+func NewDependencyCmd(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "dependency  COMMAND",
-		Short:   "install",
-		Example: color.Sprint(exampleDependencyCmd),
-		Args:    nil,
+		Use:           "dependency COMMAND",
+		Short:         "Manage external dependencies",
+		Example:       color.Sprint(exampleDependencyCmd),
+		Args:          nil,
+		SilenceErrors: true,
+		SilenceUsage:  true,
+		// overriding Root's PersistentPreRunE because in any depencendy
+		// commands is not needed docker client connection
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
 	}
 	cmd.AddCommand(installAll(cli), dependecyStatus(cli), installHugePages(cli), linkSetDown(cli), startupConf(cli))
 
@@ -59,9 +77,11 @@ func NewInstallCmd(cli Cli) *cobra.Command {
 
 func dependecyStatus(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "status",
-		Short: "status",
-		Args:  cobra.ArbitraryArgs,
+		Use:           "status",
+		Short:         "status",
+		Args:          cobra.ArbitraryArgs,
+		SilenceErrors: true,
+		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			dpdcs := &dependencies{}
 			dpdcs.docker = dpdcs.isDockerAvailable(cli)
@@ -95,7 +115,7 @@ func dependecyStatus(cli Cli) *cobra.Command {
 					}
 				}
 			}
-			fmt.Fprintf(cli.Out(), "Interfaces:\n %s\n", status)
+			fmt.Fprintf(cli.Out(), "Interfaces:\n%s\n", status)
 
 			return nil
 		},
@@ -104,49 +124,43 @@ func dependecyStatus(cli Cli) *cobra.Command {
 }
 
 func installAll(cli Cli) *cobra.Command {
+	var opts DependencyOption
 	cmd := &cobra.Command{
 		Use:   "install",
-		Short: "install",
+		Short: "install docker",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			dpdcs := &dependencies{}
-			dpdcs.docker = dpdcs.isDockerAvailable(cli)
-			_, dpdcs.hugePages = dpdcs.isHugePagesEnabled(cli)
-			dpdcs.interfaces = dpdcs.dumpNetworkInterfaces(cli)
 
-			if !dpdcs.docker {
-				err := dpdcs.installDocker(cli)
+			if opts.Interactive {
+				fmt.Println("You are running interactive mode")
+
+				installAllInteractive(cli)
+			} else {
+				dpdcs.docker = dpdcs.isDockerAvailable(cli)
+				_, dpdcs.hugePages = dpdcs.isHugePagesEnabled(cli)
+				dpdcs.interfaces = dpdcs.dumpNetworkInterfaces(cli)
+
+				// dat prec z else
+				if !dpdcs.docker {
+					err := dpdcs.installDocker(cli, DefaultDockerVersion)
+					if err != nil {
+						panic(err)
+					}
+				}
+				err := dpdcs.resizeHugePages(cli, uint(DefaultHugepageSize))
 				if err != nil {
 					panic(err)
 				}
 			}
-			err := dpdcs.resizeHugePages(cli, uint(DefaultHugepageSize))
-			if err != nil {
-				panic(err)
-			}
 
 			return nil
 		},
 	}
+	opts.InstallFlags(cmd.PersistentFlags())
 	return cmd
 }
 
-func installDocker(cli Cli) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "install-docker",
-		Short: "Install dependencies",
-		Args:  cobra.ArbitraryArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			out, _, err := cli.Exec("whereis docker", args)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintln(cli.Out(), out)
-			return nil
-		},
-	}
-	return cmd
-}
 func installHugePages(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "hugepages ",
@@ -225,7 +239,7 @@ func (*dependencies) resizeHugePages(cli Cli, size uint) error {
 	return nil
 }
 
-func (*dependencies) installDocker(cli Cli) error {
+func (*dependencies) installDocker(cli Cli, dockerVersion string) error {
 
 	commands := []string{"sudo apt-get update -y",
 		"sudo apt-get install ca-certificates curl gnupg -y",
@@ -237,9 +251,8 @@ func (*dependencies) installDocker(cli Cli) error {
 		"$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
 		sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`,
 		"sudo apt-get update -y",
-		"sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+		`sudo apt-get install -y docker-ce=` + dockerVersion + ` docker-ce-cli=` + dockerVersion + ` containerd.io docker-buildx-plugin docker-compose-plugin`,
 	}
-	_ = commands
 
 	for _, command := range commands {
 		out, _, err := cli.Exec("bash -c", []string{command})
@@ -289,8 +302,8 @@ func (*dependencies) dumpNetworkInterfaces(cli Cli) []networkInterface {
 			match = driverRe.FindStringSubmatch(info)
 			newNic.description = match[1]
 
-			_, _, err = cli.Exec("cat", []string{path + "/" + nic.name + "/carrier"})
-			if err != nil {
+			_, stderr, _ := cli.Exec("cat", []string{path + "/" + nic.name + "/carrier"})
+			if stderr != "" {
 				newNic.linkUp = false
 			} else {
 				newNic.linkUp = true
@@ -305,10 +318,44 @@ func (*dependencies) dumpNetworkInterfaces(cli Cli) []networkInterface {
 }
 
 func startupConf(cli Cli) *cobra.Command {
-	const startupconfig = "unix {\n    cli-no-pager\n    cli-listen /run/vpp/cli.sock\n    log /tmp/vpp.log\n    coredump-size unlimited\n    full-coredump\n    poll-sleep-usec 50\n}\n\ndpdk {\n\tdev {{range .}} {{.}}\n {{end}} \n}\n\napi-trace {\n    on\n}\n\nsocksvr {\n\tdefault\n}\n\nstatseg {\n\tdefault\n\tper-node-counters on\n}\n\npunt {\n    socket /run/stonework/vpp/punt-to-vpp.sock\n}"
+	const startupconfig = `unix {
+cli-no-pager
+cli-listen /run/vpp/cli.sock
+log /tmp/vpp.log
+coredump-size unlimited
+full-coredump
+poll-sleep-usec 50
+}
+{{if .}}
+dpdk {
+{{range .}}	dev {{.}}
+{{end}} 
+}
+{{else}}
+plugins {
+     plugin dpdk_plugin.so { disable }
+}
+{{end}}
+api-trace {
+    on
+}
+
+socksvr {
+	default
+}
+
+statseg {
+	default
+	per-node-counters on
+}
+
+punt {
+    socket /run/stonework/vpp/punt-to-vpp.sock
+}
+`
 	cmd := &cobra.Command{
 		Use:   "startup",
-		Short: "startup",
+		Short: "Print out startup config",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			dpdcs := &dependencies{}
@@ -327,4 +374,115 @@ func startupConf(cli Cli) *cobra.Command {
 		},
 	}
 	return cmd
+}
+func startupConfManualInterfaces(cli Cli, interfaces []string) {
+	const startupconfig = `unix {
+cli-no-pager
+cli-listen /run/vpp/cli.sock
+log /tmp/vpp.log
+coredump-size unlimited
+full-coredump
+poll-sleep-usec 50
+}
+{{if .}}
+dpdk {
+{{range .}}	dev {{.}}
+{{end}} 
+}
+{{else}}
+plugins {
+     plugin dpdk_plugin.so { disable }
+}
+{{end}}
+api-trace {
+    on
+}
+
+socksvr {
+	default
+}
+
+statseg {
+	default
+	per-node-counters on
+}
+
+punt {
+    socket /run/stonework/vpp/punt-to-vpp.sock
+}
+`
+
+	dpdcs := &dependencies{}
+	dpdcs.interfaces = dpdcs.dumpNetworkInterfaces(cli)
+
+	pcis := []string{}
+	for _, intfc := range dpdcs.interfaces {
+		if ok := slices.Contains[string](interfaces, intfc.name); ok {
+			pcis = append(pcis, intfc.pci)
+
+		}
+	}
+
+	t := template.Must(template.New("startupConf").Parse(startupconfig))
+	err := t.Execute(cli.Out(), pcis)
+	if err != nil {
+		fmt.Println("Could not execute template")
+	}
+
+}
+
+func installAllInteractive(cli Cli) {
+	var items []string
+	dpdcs := &dependencies{}
+	dpdcs.docker = dpdcs.isDockerAvailable(cli)
+	_, dpdcs.hugePages = dpdcs.isHugePagesEnabled(cli)
+	dpdcs.interfaces = dpdcs.dumpNetworkInterfaces(cli)
+
+	if dpdcs.docker {
+		fmt.Println("Docker is installed. Skipping step")
+	} else {
+		versions, _, _ := cli.Exec("bash -c", []string{"apt-cache madison docker-ce | awk '{ print $3 }'"})
+
+		items = strings.Split(versions, "\n")
+		dockerVersionContent := PromptContent{"Please select version of Docker which should be installed:",
+			"Only one version can be selected", items,
+		}
+		dockerVersion := dockerVersionContent.promptGetSelect()
+		dpdcs.installDocker(cli, dockerVersion[0])
+
+	}
+	for {
+		hugepagesSizePromptContent := PromptContent{"Enter Hugepage size: ", "Enter the desired Hugepage size", nil}
+		hugePagesSize := hugepagesSizePromptContent.promptGetInput()
+
+		buf, err := strconv.ParseUint(hugePagesSize[0], 10, 32)
+
+		if err != nil {
+			fmt.Println("Wrong input!")
+			continue
+		}
+		if buf > 2048 {
+			fmt.Println("Wrong input!")
+			continue
+		}
+		dpdcs.resizeHugePages(cli, uint(buf))
+		break
+	}
+
+	var selectedItems []string
+	items = []string{}
+	dumpedInterfaces := dpdcs.dumpNetworkInterfaces(cli)
+	for _, n := range dumpedInterfaces {
+		items = append(items, fmt.Sprintf("%s %s %s", n.name, n.pci, n.description))
+	}
+	interfacesPromptContent := PromptContent{"Please select DPDK interfaces:",
+		fmt.Sprintf("Which interfaces belong to VPP?, word"), items}
+
+	category := interfacesPromptContent.promptGetMultiSelect()
+	for _, n := range category {
+		a := strings.Split(n, " ")
+		selectedItems = append(selectedItems, a[0])
+	}
+
+	startupConfManualInterfaces(cli, selectedItems)
 }
