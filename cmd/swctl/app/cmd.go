@@ -1,8 +1,7 @@
-package main
+package app
 
 import (
 	"fmt"
-
 	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -57,7 +56,7 @@ func NewRootCmd(cli Cli) *cobra.Command {
 	cmd.InitDefaultHelpFlag()
 	cmd.Flags().Lookup("help").Hidden = true
 
-	cmd.AddCommand(newVersionCmd())
+	cmd.AddCommand(NewVersionCmd())
 	cmd.AddCommand(
 		NewConfigCmd(cli),
 		NewDeploymentCmd(cli),
@@ -77,7 +76,7 @@ func NewRootCmd(cli Cli) *cobra.Command {
 	return cmd
 }
 
-func newVersionCmd() *cobra.Command {
+func NewVersionCmd() *cobra.Command {
 	var (
 		short bool
 	)

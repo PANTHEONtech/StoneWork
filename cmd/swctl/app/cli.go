@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"errors"
@@ -76,6 +76,10 @@ func (cli *CLI) Initialize(opts *GlobalOptions) (err error) {
 
 	// load entity files
 	cli.entities, err = loadEntityFiles(opts.EntityFiles)
+	if cli.entities == nil {
+		cli.entities, err = loadEmbeddedEntities(opts.EmbeddedEntityByte)
+
+	}
 	if err != nil {
 		return fmt.Errorf("loading entity files failed: %v", err)
 	}

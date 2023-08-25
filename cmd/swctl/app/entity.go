@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"fmt"
@@ -74,6 +74,23 @@ func loadEntityFiles(files []string) ([]Entity, error) {
 
 	logrus.Debugf("loaded %d entities from %d file(s)", len(entities), len(files))
 
+	return entities, nil
+}
+
+func loadEmbeddedEntities(embeddedEntities []byte) ([]Entity, error) {
+	var entities []Entity
+	var entityFile EntityFile
+	if err := yaml.Unmarshal(embeddedEntities, &entityFile); err != nil {
+		return nil, err
+	}
+	for _, entity := range entityFile.Entities {
+		if err := validateEntity(&entity); err != nil {
+			return nil, fmt.Errorf("invalid entity %v: %w", entity.Name, err)
+		}
+
+		logrus.Tracef("loaded entity: %v", entity.Name)
+		entities = append(entities, entity)
+	}
 	return entities, nil
 }
 
