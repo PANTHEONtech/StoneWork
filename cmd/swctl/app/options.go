@@ -1,9 +1,12 @@
 package app
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
+	composecli "github.com/compose-spec/compose-go/cli"
 	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -74,6 +77,28 @@ func InitGlobalOptions(cli Cli, opts *GlobalOptions) {
 		logrus.SetLevel(logrus.ErrorLevel)
 		//infralogrus.DefaultLogger().SetLevel(logging.ErrorLevel)
 	}
+
+	var err error
+	if len(opts.ComposeFiles) == 0 {
+		for _, f := range composecli.DefaultFileNames {
+			absPath, err := filepath.Abs(f)
+			if err != nil {
+				continue
+			}
+			if _, err := os.Stat(absPath); err == nil {
+				opts.ComposeFiles = append(opts.ComposeFiles, absPath)
+				break
+			}
+		}
+	}
+	if opts.ComposeFiles, err = initFiles(opts.ComposeFiles); err != nil {
+		logrus.Fatal(err)
+	}
+	if opts.EntityFiles, err = initFiles(opts.EntityFiles); err != nil {
+		logrus.Fatal(err)
+	}
+	logrus.Debugf("Initialized compose files: %v", opts.ComposeFiles)
+	logrus.Debugf("Initialized entity files: %v", opts.EntityFiles)
 }
 
 func (glob *GlobalOptions) InstallFlags(flags *pflag.FlagSet) {
@@ -91,4 +116,19 @@ func must(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func initFiles(files []string) ([]string, error) {
+	var res []string
+	for _, path := range files {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return nil, fmt.Errorf("can't obtain absolute path of path %s due to: %w", path, err)
+		}
+		if _, err := os.Stat(absPath); err != nil {
+			return nil, fmt.Errorf("can't retrieve info about file %s due to: %w", absPath, err)
+		}
+		res = append(res, absPath)
+	}
+	return res, nil
 }

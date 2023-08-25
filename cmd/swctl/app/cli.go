@@ -69,7 +69,7 @@ func (cli *CLI) Initialize(opts *GlobalOptions) (err error) {
 	InitGlobalOptions(cli, opts)
 	cli.globalOptions = opts
 
-	cli.client, err = initClient()
+	cli.client, err = initClient(client.WithComposeFiles(cli.globalOptions.ComposeFiles))
 	if err != nil {
 		return fmt.Errorf("init client error: %w", err)
 	}
@@ -91,13 +91,12 @@ func (cli *CLI) Initialize(opts *GlobalOptions) (err error) {
 	} else {
 		cli.vppProbePath = vppProbePath
 	}
-	cli.globalOptions = opts
 
 	return nil
 }
 
-func initClient() (*client.Client, error) {
-	c, err := client.NewClient()
+func initClient(opts ...client.Option) (*client.Client, error) {
+	c, err := client.NewClient(opts...)
 	if err != nil {
 		return nil, err
 	}
