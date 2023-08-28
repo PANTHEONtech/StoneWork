@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+
 	"github.com/manifoldco/promptui"
 )
 
@@ -59,7 +60,7 @@ func (pc *PromptContent) PromptGetSelect() []string {
 
 	}
 	if err != nil {
-		fmt.Println("Prompt failed %v\n", err)
+		fmt.Printf("Prompt failed %v\n", err)
 	}
 	fmt.Printf("Input: %s\n", result)
 	return []string{result}
