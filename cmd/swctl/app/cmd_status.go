@@ -24,6 +24,7 @@ import (
 	"strings"
 	"sync"
 
+	compose "github.com/docker/compose/v2/pkg/api"
 	"github.com/gookit/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sirupsen/logrus"
@@ -84,7 +85,7 @@ func runStatusCmd(cli Cli, opts StatusOptions) error {
 	if opts.ShowInterfaces {
 		for _, compo := range resp {
 			if sn, ok := compo.GetMetadata()["containerServiceName"]; ok {
-				cmd := fmt.Sprintf("vpp-probe --env=%s --query label=%s=%s discover", defaultVppProbeEnv, client.DockerComposeServiceLabel, sn)
+				cmd := fmt.Sprintf("vpp-probe --env=%s --query label=%s=%s discover", defaultVppProbeEnv, compose.ServiceLabel, sn)
 				formatArg := fmt.Sprintf("--format=%s", opts.Format)
 				stdout, stderr, err := cli.Exec(cmd, []string{formatArg})
 				if err != nil {

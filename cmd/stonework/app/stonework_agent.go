@@ -54,7 +54,7 @@ import (
 	bfd "go.pantheon.tech/stonework/plugins/bfd"
 	"go.pantheon.tech/stonework/plugins/cnfreg"
 	isisxplugin "go.pantheon.tech/stonework/plugins/isisx"
-	"go.pantheon.tech/stonework/plugins/nat64"
+	nat64plugin "go.pantheon.tech/stonework/plugins/nat64"
 	"go.pantheon.tech/stonework/plugins/puntmgr"
 )
 

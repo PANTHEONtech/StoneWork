@@ -22,10 +22,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
-	docker "github.com/fsouza/go-dockerclient"
+	"github.com/compose-spec/compose-go/consts"
+	compose "github.com/docker/compose/v2/pkg/api"
+	moby "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	docker "github.com/docker/docker/client"
+	"github.com/goccy/go-yaml"
 	"github.com/sirupsen/logrus"
 	vppagent "go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client/tlsconfig"
@@ -34,10 +41,9 @@ import (
 )
 
 const (
-	FallbackHost              = "127.0.0.1"
-	DefaultHTTPClientTimeout  = 60 * time.Second
-	DefaultPortHTTP           = 9191
-	DockerComposeServiceLabel = "com.docker.compose.service"
+	DefaultHTTPClientTimeout = 60 * time.Second
+	DefaultPortHTTP          = 9191
+	StoneWorkServiceName     = "stonework"
 )
 
 // Option is a function that customizes a Client.
@@ -54,6 +60,15 @@ func WithHTTPTLS(cert, key, ca string, skipVerify bool) Option {
 	return func(c *Client) (err error) {
 		c.httpTLS, err = withTLS(cert, key, ca, skipVerify)
 		return err
+	}
+}
+
+func WithComposeFiles(files []string) Option {
+	return func(c *Client) error {
+		if len(files) > 0 {
+			c.composeFiles = files
+		}
+		return nil
 	}
 }
 
@@ -75,6 +90,8 @@ type Client struct {
 	httpPort          uint16
 	httpTLS           *tls.Config
 	customHTTPHeaders map[string]string
+	deploymentName    string
+	composeFiles      []string
 }
 
 // NewClient creates a new client that implements API. The client can be
@@ -86,47 +103,32 @@ func NewClient(opts ...Option) (*Client, error) {
 		httpPort: DefaultPortHTTP,
 	}
 	var err error
-
-	c.dockerClient, err = docker.NewClientFromEnv()
-	if err != nil {
-		return nil, err
-	}
-
-	containers, err := c.dockerClient.ListContainers(docker.ListContainersOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	// find IP address of the StoneWork service
-	for _, container := range containers {
-		if container.Labels[DockerComposeServiceLabel] != "stonework" {
-			continue
-		}
-		cont, err := c.dockerClient.InspectContainerWithOptions(docker.InspectContainerOptions{ID: container.ID})
-		if err != nil {
-			return nil, err
-		}
-		for _, nw := range cont.NetworkSettings.Networks {
-			if nw.IPAddress != "" {
-				c.host = nw.IPAddress
-				break
-			}
-		}
-		break
-	}
-
 	for _, o := range opts {
 		if err = o(c); err != nil {
 			return nil, err
 		}
 	}
-	if c.host == "" {
-		logrus.Debugf("could not find StoneWork service management IP address falling back to: %s", FallbackHost)
-		c.host = FallbackHost
-	} else {
-		logrus.Debugf("found StoneWork service management IP address: %s", c.host)
+
+	c.dockerClient, err = docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, err
 	}
 
+	if c.deploymentName == "" {
+		c.deploymentName, err = resolveDeploymentName(c.composeFiles)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve deployment name: %w", err)
+		}
+		logrus.Debugf("Deployment name resolved to: %s", c.deploymentName)
+	}
+	if c.host == "" {
+		c.host, err = resolveHostAddr(c.dockerClient, c.deploymentName)
+		if err != nil {
+			logrus.Warnf("Failed to resolve host address: %v", err)
+		} else {
+			logrus.Debugf("StoneWork service management IP address resolved to: %s", c.host)
+		}
+	}
 	return c, nil
 }
 
@@ -186,15 +188,18 @@ func (c *Client) GetComponents() ([]Component, error) {
 		return nil, err
 	}
 
-	dc := c.DockerClient()
-	containerInfo, err := dc.ListContainers(docker.ListContainersOptions{})
+	deploymentLabel := filters.Arg("label", fmt.Sprintf("%s=%s", compose.ProjectLabel, c.deploymentName))
+	configHashLabel := filters.Arg("label", compose.ConfigHashLabel)
+	containerInfo, err := c.dockerClient.ContainerList(ctx, moby.ContainerListOptions{
+		Filters: filters.NewArgs(deploymentLabel, configHashLabel),
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	var containers []*docker.Container
+	var containers []moby.ContainerJSON
 	for _, container := range containerInfo {
-		c, err := dc.InspectContainerWithOptions(docker.InspectContainerOptions{ID: container.ID})
+		c, err := c.dockerClient.ContainerInspect(ctx, container.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -208,11 +213,10 @@ func (c *Client) GetComponents() ([]Component, error) {
 
 	var components []Component
 	for _, container := range containers {
-
 		metadata := make(map[string]string)
 		metadata["containerID"] = container.ID
 		metadata["containerName"] = container.Name
-		metadata["containerServiceName"] = container.Config.Labels[DockerComposeServiceLabel]
+		metadata["containerServiceName"] = container.Config.Labels[compose.ServiceLabel]
 		metadata["dockerImage"] = container.Config.Image
 		if container.NetworkSettings.IPAddress != "" {
 			metadata["containerIPAddress"] = container.NetworkSettings.IPAddress
@@ -228,22 +232,32 @@ func (c *Client) GetComponents() ([]Component, error) {
 		logrus.Tracef("found metadata for container: %s, data: %+v", container.Name, metadata)
 
 		compo := &component{Metadata: metadata}
-		after, found := containsPrefix(container.Config.Env, "MICROSERVICE_LABEL=")
+		msLabel, found := containsPrefix(container.Config.Env, "MICROSERVICE_LABEL=")
 		if !found {
-			compo.Name = container.Config.Labels[DockerComposeServiceLabel]
+			compo.Name = container.Config.Labels[compose.ServiceLabel]
 			compo.Mode = ComponentAuxiliary
 			components = append(components, compo)
 			continue
 		}
-		info, ok := cnfInfos[after]
-		if ok {
-			compo.Name = info.MsLabel
-			compo.Info = &info
-			compo.Mode = cnfModeToCompoMode(info.CnfMode)
-		} else {
-			compo.Name = container.Config.Labels[DockerComposeServiceLabel]
+		info, ok := cnfInfos[msLabel]
+		if !ok {
+			client, err := vppagent.NewClientWithOpts(vppagent.WithHost(compo.Metadata["containerIPAddress"]), vppagent.WithHTTPPort(9191))
+			if err != nil {
+				return components, err
+			}
+			_, err = client.Status(context.Background())
+			if err != nil {
+				compo.Name = container.Config.Labels[compose.ServiceLabel]
+				compo.Mode = ComponentAuxiliary
+				components = append(components, compo)
+				continue
+			}
+			compo.Name = container.Config.Labels[compose.ServiceLabel]
 			compo.Mode = ComponentStandalone
 		}
+		compo.Name = info.MsLabel
+		compo.Info = &info
+		compo.Mode = cnfModeToCompoMode(info.CnfMode)
 
 		client, err := vppagent.NewClientWithOpts(vppagent.WithHost(info.IPAddr), vppagent.WithHTTPPort(info.HTTPPort))
 		if err != nil {
@@ -253,6 +267,69 @@ func (c *Client) GetComponents() ([]Component, error) {
 		components = append(components, compo)
 	}
 	return components, nil
+}
+
+// TODO: Docker Compose specific, when context for swctl is added refactor this
+// Maybe add a cli flag for user to specify Docker Compose network? Currently this
+// function uses default Docker Compose network in form `<DEPLOYMENT_NAME>_default`.
+func resolveHostAddr(dc *docker.Client, deploymentName string) (string, error) {
+	deployment := filters.Arg("label", fmt.Sprintf("%s=%s", compose.ProjectLabel, deploymentName))
+	service := filters.Arg("label", fmt.Sprintf("%s=%s", compose.ServiceLabel, StoneWorkServiceName))
+	configHash := filters.Arg("label", compose.ConfigHashLabel)
+	containers, err := dc.ContainerList(context.Background(), moby.ContainerListOptions{
+		Filters: filters.NewArgs(deployment, service, configHash),
+		All:     true,
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(containers) > 1 {
+		return "", fmt.Errorf("multiple StoneWork services found in deployment %s", deploymentName)
+	}
+	if len(containers) == 0 {
+		return "", fmt.Errorf("no StoneWork service found in deployment %s", deploymentName)
+	}
+	networkName := fmt.Sprintf("%s_default", deploymentName)
+	network, ok := containers[0].NetworkSettings.Networks[networkName]
+	if !ok {
+		return "", fmt.Errorf("Docker Compose network %s not found", networkName)
+	}
+	return network.IPAddress, nil
+}
+
+// TODO: Docker Compose specific, when context for swctl is added refactor this.
+// Maybe add a cli flag for user to specify the deployment name?
+//
+// https://docs.docker.com/compose/reference/#use--p-to-specify-a-project-name
+func resolveDeploymentName(composeFiles []string) (string, error) {
+	// from env var
+	if name := os.Getenv(consts.ComposeProjectName); name != "" {
+		return name, nil
+	}
+	if l := len(composeFiles); l > 0 {
+		// from top level `name:` field in last specified compose file
+		b, err := os.ReadFile(composeFiles[l-1])
+		if err != nil {
+			return "", err
+		}
+		n := struct {
+			Name string `yaml:"name"`
+		}{}
+		if err := yaml.Unmarshal(b, &n); err != nil {
+			return "", err
+		}
+		if n.Name != "" {
+			return n.Name, nil
+		}
+		// from directory of first specified compose file
+		return filepath.Base(filepath.Dir(composeFiles[0])), nil
+	}
+	// from current directory
+	currDir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Base(currDir), nil
 }
 
 func containsPrefix(strs []string, prefix string) (string, bool) {

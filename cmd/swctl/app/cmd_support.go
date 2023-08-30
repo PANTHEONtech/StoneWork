@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	compose "github.com/docker/compose/v2/pkg/api"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -183,7 +184,7 @@ func extractZip(sourceZip string, destinationFolder string) error {
 func writeInterfaces(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
 	for _, compo := range components {
 		if sn, ok := compo.GetMetadata()["containerServiceName"]; ok {
-			cmd := fmt.Sprintf("vpp-probe --color never --env=%s --query label=%s=%s discover", defaultVppProbeEnv, client.DockerComposeServiceLabel, sn)
+			cmd := fmt.Sprintf("vpp-probe --color never --env=%s --query label=%s=%s discover", defaultVppProbeEnv, compose.ServiceLabel, sn)
 			stdout, _, err := cli.Exec(cmd, []string{})
 			if err != nil {
 				if ee, ok := err.(*exec.ExitError); ok {
