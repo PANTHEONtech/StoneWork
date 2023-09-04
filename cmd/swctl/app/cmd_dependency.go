@@ -8,8 +8,6 @@ import (
 	"strings"
 	"text/template"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/gookit/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -21,19 +19,19 @@ func exampleDependencyCmd(appName string) string {
   $ <yellow>` + appName + ` dependency status</>
 
   <white># Install external tools (docker, docker compose)</>
-  $ <yellow>` + appName + ` dependency install-ext </>
+  $ <yellow>` + appName + ` dependency install-tools</>
 
-  <white># Set HugePages in kB manually to size 2048kB</>
-  $ <yellow>` + appName + ` dependency hugepages <value></>
+  <white># Set quantity of runtime HugePages manually</>
+  $ <yellow>` + appName + ` dependency set-hugepages <value></>
 
   <white># Assign(up) or Unassign(down) interfaces to/from kernel</>
   $ <yellow>` + appName + ` dependency link <interfaces ...> up | down</>
 
   <white># Print out startup config with dpdk interfaces</>
-  $ <yellow>` + appName + ` dependency startup [<interfaceName:StoneworkInterfaceName ...>]</>
+  $ <yellow>` + appName + ` dependency get-startup [<interfaceName:StoneworkInterfaceName ...>]</>
 
   <white># Print out startup config with dpdk plugin disable</>
-  $ <yellow>` + appName + ` dependency startup</>
+  $ <yellow>` + appName + ` dependency get-startup</>
 `
 }
 
@@ -43,12 +41,6 @@ type NetworkInterface struct {
 	Description string
 	LinkUp      bool
 	SwName      string
-}
-
-type Dependencies struct {
-	Docker     bool
-	HugePages  int
-	Interfaces []NetworkInterface
 }
 
 func NewDependencyCmd(cli Cli) *cobra.Command {
@@ -76,12 +68,12 @@ func NewDependencyCmd(cli Cli) *cobra.Command {
 	}
 	cli.Initialize(&glob)
 
-	cmd.AddCommand(installExternalTools(cli), dependecyStatus(cli), installHugePages(cli), linkSetUpDown(cli), startupConf(cli))
+	cmd.AddCommand(installExternalTools(cli), dependencyStatus(cli), installHugePages(cli), linkSetUpDown(cli), startupConf(cli))
 
 	return cmd
 }
 
-func dependecyStatus(cli Cli) *cobra.Command {
+func dependencyStatus(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "status",
 		Short:         "status",
@@ -89,35 +81,43 @@ func dependecyStatus(cli Cli) *cobra.Command {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			dpdcs := &Dependencies{}
-			dpdcs.Docker = dpdcs.IsDockerAvailable(cli)
-			_, dpdcs.HugePages = dpdcs.IsHugePagesEnabled(cli)
-			dpdcs.Interfaces = dpdcs.DumpNetworkInterfaces(cli)
-			type statusInfo struct {
+			var err error
+			docker, err := IsDockerAvailable(cli)
+			if err != nil {
+				return err
+			}
+			hugePages, err := AllocatedHugePages(cli)
+			if err != nil {
+				return err
+
+			}
+			physicalInterfaces, err := DumpNetworkInterfaces(cli)
+			if err != nil {
+				return err
 			}
 			var status string
-			if dpdcs.Docker {
+			if docker {
 				status = "OK"
 			} else {
 				status = "Not installed"
 			}
 			fmt.Fprintf(cli.Out(), "Docker: %s\n", status)
 
-			if dpdcs.HugePages == 0 {
+			if hugePages == 0 {
 				status = "Disabled"
 			} else {
-				status = strconv.Itoa(dpdcs.HugePages)
+				status = strconv.Itoa(hugePages)
 			}
 			fmt.Fprintf(cli.Out(), "Hugepages: %s\n", status)
 
-			if dpdcs.Interfaces == nil {
+			if physicalInterfaces == nil {
 				status = "No available interfaces\n"
 				fmt.Fprintf(cli.Out(), status)
 			} else {
 				table := tablewriter.NewWriter(cli.Out())
 				table.SetHeader([]string{"Name", "Pci", "Mode", "State"})
 
-				for _, n := range dpdcs.Interfaces {
+				for _, n := range physicalInterfaces {
 					row := []string{n.Name, n.Pci, n.Description}
 					if n.LinkUp == true {
 						row = append(row, "LinkUp\n")
@@ -140,14 +140,16 @@ func installExternalTools(cli Cli) *cobra.Command {
 		Short: "Install external tools",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			dpdcs := &Dependencies{}
 
-			dpdcs.Docker = dpdcs.IsDockerAvailable(cli)
+			docker, err := IsDockerAvailable(cli)
+			if err != nil {
+				return err
+			}
 
-			if !dpdcs.Docker {
-				err := dpdcs.InstallDocker(cli, "default")
+			if !docker {
+				err = InstallDocker(cli, "default")
 				if err != nil {
-					panic(err)
+					return err
 				}
 			}
 			fmt.Println("Docker is already installed")
@@ -160,18 +162,16 @@ func installExternalTools(cli Cli) *cobra.Command {
 
 func installHugePages(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "hugepages ",
-		Short: "hugepages <value>",
+		Use:   "set-hugepages",
+		Short: "set-hugepages <value>",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var dep Dependencies
 			size, err := strconv.Atoi(args[0])
 			if err != nil {
-				panic(err)
+				return err
 			}
-			err = dep.ResizeHugePages(cli, uint(size))
-			if err != nil {
-				panic(err)
+			if err = ResizeHugePages(cli, uint(size)); err != nil {
+				return err
 			}
 			return nil
 
@@ -188,21 +188,58 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) >= 2 {
+				physicalInterfaces, err := DumpNetworkInterfaces(cli)
+				if err != nil {
+					return err
+				}
 				if strings.Compare(args[(len(args)-1)], "up") == 0 {
 					for _, arg := range args[:(len(args) - 1)] {
-						out, _, err := cli.Exec("sudo ip link set "+arg+" up", nil)
+						matchId := -1
+						for i, physicalInterface := range physicalInterfaces {
+							if physicalInterface.Name == arg {
+								matchId = i
+								break
+							}
+						}
+						if matchId == -1 {
+							return errors.New("Interface: " + arg + "does not exist.")
+						}
+						// TODO get PCI from name func
+						out, _, err := cli.Exec("sudo dpdk-devbind.py -u "+physicalInterfaces[matchId].Pci, nil)
 						if err != nil {
 							return err
 						}
 						fmt.Fprintln(cli.Out(), out)
+						// TODO get PCI from name func
+						out, _, err = cli.Exec("sudo ip link set "+physicalInterfaces[matchId].Name+" up", nil)
+						if err != nil {
+							return err
+						}
+
 					}
 				} else if strings.Compare(args[(len(args)-1)], "down") == 0 {
 					for _, arg := range args[:(len(args) - 1)] {
-						out, _, err := cli.Exec("sudo ip link set "+arg+" down", nil)
+						matchId := -1
+						for i, physicalInterface := range physicalInterfaces {
+							if physicalInterface.Name == arg {
+								matchId = i
+								break
+							}
+						}
+						if matchId == -1 {
+							return errors.New("Interface: " + arg + "does not exist.")
+						}
+						out, _, err := cli.Exec("sudo ip link set "+physicalInterfaces[matchId].Name+" down", nil)
 						if err != nil {
 							return err
 						}
 						fmt.Fprintln(cli.Out(), out)
+						// TODO get PCI from name func
+						out, _, err = cli.Exec("dpdk-devbind.py -b uio_pci_generic "+physicalInterfaces[matchId].Pci, nil)
+						if err != nil {
+							return err
+						}
+
 					}
 
 				} else {
@@ -218,34 +255,35 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 	return cmd
 }
 
-func (*Dependencies) IsDockerAvailable(cli Cli) bool {
+func IsDockerAvailable(cli Cli) (bool, error) {
 	out, _, err := cli.Exec("whereis docker", nil)
 	if err != nil {
-		panic(err)
+		return false, err
 	}
 	if strings.Contains(out, "/docker") {
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 }
 
-func (*Dependencies) IsHugePagesEnabled(cli Cli) (bool, int) {
+func AllocatedHugePages(cli Cli) (int, error) {
 	out, _, err := cli.Exec("sysctl vm.nr_hugepages -n", nil)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 	hugePgSize, err := strconv.Atoi(strings.TrimSpace(out))
 	if err != nil {
-		fmt.Println(err)
+		return 0, err
 	}
 	if hugePgSize == 0 {
-		return false, hugePgSize
+		return 0, err
 	}
 
-	return true, hugePgSize
+	return hugePgSize, err
 }
 
-func (*Dependencies) ResizeHugePages(cli Cli, size uint) error {
+func ResizeHugePages(cli Cli, size uint) error {
+	//TODO: Make persistent hugepages
 	//TODO: Handle numa case, Big hugepages(are immutable and can be setted only during booting)
 	if size == 0 {
 		fmt.Fprintln(cli.Out(), "Skipping hugepages")
@@ -255,10 +293,15 @@ func (*Dependencies) ResizeHugePages(cli Cli, size uint) error {
 	if err != nil {
 		return err
 	}
+	allocatedHP, _ := AllocatedHugePages(cli)
+	if size != uint(allocatedHP) {
+		return errors.New("Failed to allocate enough continuous memory")
+	}
+
 	return nil
 }
 
-func (*Dependencies) InstallDocker(cli Cli, dockerVersion string) error {
+func InstallDocker(cli Cli, dockerVersion string) error {
 
 	commands := []string{"sudo apt-get update -y",
 		"sudo apt-get install ca-certificates curl gnupg -y",
@@ -270,6 +313,9 @@ func (*Dependencies) InstallDocker(cli Cli, dockerVersion string) error {
 		"$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
 		sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`,
 		"sudo apt-get update -y",
+		"sudo apt install dpdk -y",
+		"echo \"uio_pci_generic\" | sudo tee -a /etc/modules",
+		//"sudo modprobe uio_pci_generic",
 	}
 	if dockerVersion == "default" {
 		cmd := `sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`
@@ -281,9 +327,12 @@ func (*Dependencies) InstallDocker(cli Cli, dockerVersion string) error {
 	}
 
 	for _, command := range commands {
-		out, _, err := cli.Exec("bash -c", []string{command})
+		out, stderr, err := cli.Exec("bash -c", []string{command})
+		if stderr != "" {
+			return errors.New(command + ": " + stderr)
+		}
 		if err != nil {
-			return err
+			return errors.New(err.Error() + "(" + command + ")")
 		}
 		fmt.Println(out)
 
@@ -293,24 +342,24 @@ func (*Dependencies) InstallDocker(cli Cli, dockerVersion string) error {
 }
 
 // Dump only physical interfaces
-func (*Dependencies) DumpNetworkInterfaces(cli Cli) []NetworkInterface {
+func DumpNetworkInterfaces(cli Cli) ([]NetworkInterface, error) {
+	//path leads to networking devices in the OS
 	const path = "/sys/class/net"
-	var list []NetworkInterface
-	var realDevices []NetworkInterface
+	var allDevices []NetworkInterface
+	var physicalDevices []NetworkInterface
 
-	out, _, err := cli.Exec("ls -b", []string{path})
+	cmd := "ls -b"
+	out, _, err := cli.Exec(cmd, []string{path})
 	if err != nil {
 		fmt.Println(err)
-		return nil
+		return nil, errors.New("Command: " + cmd + " finished with error " + err.Error())
 	}
 
-	buff := strings.Fields(out)
-
-	for _, name := range buff {
-		list = append(list, NetworkInterface{Name: name})
+	for _, name := range strings.Fields(out) {
+		allDevices = append(allDevices, NetworkInterface{Name: name})
 	}
 
-	for _, nic := range list {
+	for _, nic := range allDevices {
 		_, _, err := cli.Exec("ls ", []string{path + "/" + nic.Name})
 		if err == nil {
 			newNic := NetworkInterface{Name: nic.Name}
@@ -335,12 +384,12 @@ func (*Dependencies) DumpNetworkInterfaces(cli Cli) []NetworkInterface {
 				newNic.LinkUp = true
 			}
 
-			realDevices = append(realDevices, newNic)
+			physicalDevices = append(physicalDevices, newNic)
 		}
 
 	}
 
-	return realDevices
+	return physicalDevices, nil
 }
 
 func startupConf(cli Cli) *cobra.Command {
@@ -388,7 +437,6 @@ punt {
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			var desiredInterfaces []NetworkInterface
-			dpdcs := &Dependencies{}
 			for _, arg := range args {
 
 				var netInterface NetworkInterface
@@ -403,10 +451,13 @@ punt {
 				desiredInterfaces = append(desiredInterfaces, netInterface)
 
 			}
-			dpdcs.Interfaces = dpdcs.DumpNetworkInterfaces(cli)
+			physicalInterfaces, err := DumpNetworkInterfaces(cli)
+			if err != nil {
+				return err
+			}
 
 			for i, desiredInterface := range desiredInterfaces {
-				for _, dumpedInterface := range dpdcs.Interfaces {
+				for _, dumpedInterface := range physicalInterfaces {
 					if desiredInterface.Name == dumpedInterface.Name {
 						desiredInterfaces[i].Pci = dumpedInterface.Pci
 						break
@@ -416,67 +467,12 @@ punt {
 			}
 
 			t := template.Must(template.New("startupConf").Parse(startupconfig))
-			err := t.Execute(cli.Out(), desiredInterfaces)
+			err = t.Execute(cli.Out(), desiredInterfaces)
 			if err != nil {
-				fmt.Println("Could not execute template")
+				return err
 			}
 			return nil
 		},
 	}
 	return cmd
-}
-func StartupConfManualInterfaces(cli Cli, interfaces []string) {
-	const startupconfig = `unix {
-cli-no-pager
-cli-listen /run/vpp/cli.sock
-log /tmp/vpp.log
-coredump-size unlimited
-full-coredump
-poll-sleep-usec 50
-}
-{{if .}}
-dpdk {
-{{range .}}	dev {{.}}
-{{end}} 
-}
-{{else}}
-plugins {
-     plugin dpdk_plugin.so { disable }
-}
-{{end}}
-api-trace {
-    on
-}
-
-socksvr {
-	default
-}
-
-statseg {
-	default
-	per-node-counters on
-}
-
-punt {
-    socket /run/stonework/vpp/punt-to-vpp.sock
-}
-`
-
-	dpdcs := &Dependencies{}
-	dpdcs.Interfaces = dpdcs.DumpNetworkInterfaces(cli)
-
-	pcis := []string{}
-	for _, intfc := range dpdcs.Interfaces {
-		if ok := slices.Contains[string](interfaces, intfc.Name); ok {
-			pcis = append(pcis, intfc.Pci)
-
-		}
-	}
-
-	t := template.Must(template.New("startupConf").Parse(startupconfig))
-	err := t.Execute(cli.Out(), pcis)
-	if err != nil {
-		fmt.Println("Could not execute template")
-	}
-
 }
