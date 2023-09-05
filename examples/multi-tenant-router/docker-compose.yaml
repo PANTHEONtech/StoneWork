@@ -1,0 +1,123 @@
+version: '3.3'
+
+volumes:
+  stonework: {}
+  memif-sock: {}
+
+networks:
+  mgmt:
+
+services:
+  #--------------------------------------------------------------
+  # StoneWork & CNFs
+  #--------------------------------------------------------------
+  stonework:
+    image: ghcr.io/pantheontech/stonework:23.06
+    privileged: true
+    environment:
+      MICROSERVICE_LABEL: "stonework"
+      ETCD_CONFIG: "disabled"
+      INITIAL_LOGLVL: "debug"
+      DEBUG_GOVPP:
+    pid: "host"
+    networks:
+      - mgmt
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+      - stonework:/run/stonework
+      - memif-sock:/var/run/memif
+      - ./config/stonework-day0-config.yaml:/etc/stonework/config/day0-config.yaml:ro
+
+  #--------------------------------------------------------------
+  # Simulated network components
+  #
+  # - vswitch - VPP Agent with VPP simulating switch
+  # - server - HTTP server for testing customer access
+  #--------------------------------------------------------------
+
+  # vSwitch simulates provide-edge(PE) switch
+  vswitch:
+    image: ligato/vpp-agent:v3.4.0
+    privileged: true
+    pid: "host"
+    environment:
+      MICROSERVICE_LABEL: "vswitch"
+      ETCD_CONFIG: "disabled"
+      INITIAL_LOGLVL: "debug"
+      DEBUG_GOVPP:
+    networks:
+      - mgmt
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+      - ./config/vswitch-day0-config.yaml:/root/initial-config.yaml:ro
+      - memif-sock:/var/run/memif
+
+  # server simulates server in inner netowrk that i.e. provide some data content to customers
+  server:
+    image: ghcr.io/pantheontech/stonework-tester:latest
+    cap_add:
+      - NET_ADMIN
+    environment:
+      MICROSERVICE_LABEL: "server"
+    network_mode: none
+    command: >
+      bash -exc '
+        while ! ip link show dev stonework; do
+          echo "Waiting for stonework interface";
+          sleep 1; 
+        done
+        
+        ip route add 0.0.0.0/0 dev stonework;
+      
+        echo -en "HELLO CUSTOMER\r\n" > /tmp/rand.data
+        base64 /dev/urandom | head -c 500000000 >> /tmp/rand.data
+        echo -ne "HTTP/1.0 200 OK\r\nContent-Length: $$(wc -c </tmp/rand.data)\r\n\r\n" > /tmp/index.html
+        cat /tmp/rand.data >> /tmp/index.html
+        echo "Starting HTTP server.."
+        while true; do
+          nc -n -v -l 80 < /tmp/index.html;
+          sleep 1;
+        done
+      '
+
+  #--------------------------------------------------------------
+  # Customers
+  #--------------------------------------------------------------
+
+  customer1:
+    image: ghcr.io/pantheontech/stonework-tester:latest
+    cap_add:
+      - NET_ADMIN
+    environment:
+      MICROSERVICE_LABEL: "customer1"
+    network_mode: none
+    command: >
+      bash -exc '
+        while ! ip link show dev vswitch; do
+          echo "Waiting for vswitch interface";
+          sleep 1; 
+        done
+        ip route add 0.0.0.0/0 dev vswitch;
+        sleep infinity;
+      '
+
+  customer2:
+    image: ghcr.io/pantheontech/stonework-tester:latest
+    cap_add:
+      - NET_ADMIN
+    environment:
+      MICROSERVICE_LABEL: "customer2"
+    network_mode: none
+    command: >
+      bash -exc '
+        while ! ip link show dev vswitch; do
+          echo "Waiting for vswitch interface";
+          sleep 1; 
+        done
+        ip route add 0.0.0.0/0 dev vswitch;
+        sleep infinity;
+      '

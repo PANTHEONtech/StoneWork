@@ -1,0 +1,98 @@
+---
+vppConfig:
+  interfaces:
+    #-------------
+    # CUSTOMERS
+    #-------------
+
+    - name: vswitch-to-customer1
+      type: TAP
+      enabled: true
+      tap:
+        version: 2
+        toMicroservice: customer1
+
+    - name: vswitch-to-customer2
+      type: TAP
+      enabled: true
+      tap:
+        version: 2
+        toMicroservice: customer2
+
+    - name: vswitch-to-stonework1
+      type: MEMIF
+      enabled: true
+      memif:
+        master: false
+        id: 1
+        socketFilename: /var/run/memif/memif1.sock
+        secret: stonework
+
+    - name: customer1-subinterface
+      type: SUB_INTERFACE
+      enabled: true
+      sub:
+        parentName: vswitch-to-stonework1
+        subId: 2
+        tagRwOption: POP1
+
+    - name: customer2-subinterface
+      type: SUB_INTERFACE
+      enabled: true
+      sub:
+        parentName: vswitch-to-stonework1
+        subId: 3
+        tagRwOption: POP1
+
+  bridgeDomains:
+    #-------------
+    # CUSTOMERS
+    #-------------
+
+    - name: customer1-vlan
+      flood: true
+      forward: true
+      learn: true
+      interfaces:
+        - name: vswitch-to-customer1
+        - name: customer1-subinterface
+
+    - name: customer2-vlan
+      flood: true
+      forward: true
+      learn: true
+      interfaces:
+        - name: vswitch-to-customer2
+        - name: customer2-subinterface
+
+linuxConfig:
+  interfaces:
+    #-------------
+    # CUSTOMERS
+    #-------------
+
+    - name: customer1-to-vswitch
+      type: TAP_TO_VPP
+      hostIfName: vswitch
+      enabled: true
+      ipAddresses:
+        - 172.16.10.10/24  # Could also use dhcp client in customer container to configure interface if Pantheon.tech DHCP CNF is used
+      namespace:
+        type: MICROSERVICE
+        reference: customer1
+      tap:
+        vppTapIfName: vswitch-to-customer1
+
+    - name: customer2-to-vswitch
+      type: TAP_TO_VPP
+      hostIfName: vswitch
+      enabled: true
+      ipAddresses:
+        - 172.16.11.10/24  # Could also use dhcp client in customer container to configure interface if Pantheon.tech DHCP CNF is used
+      namespace:
+        type: MICROSERVICE
+        reference: customer2
+      tap:
+        vppTapIfName: vswitch-to-customer2
+
+
