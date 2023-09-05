@@ -1,0 +1,136 @@
+---
+#-------------
+# VPP
+#-------------
+vppConfig:
+  vrfs:
+    # Management
+    - id: 1
+      protocol: IPV4
+    # Customer 1
+    - id: 2
+      protocol: IPV4
+    # Customer 2
+    - id: 3
+      protocol: IPV4
+
+  interfaces:
+
+    # SIMULATES dpdk connection to customers
+    - name: stonework-to-vswitch
+      type: MEMIF
+      enabled: true
+      vrf: 1
+      ipAddresses:
+        - 192.168.2.1/24
+      memif:
+        master: true
+        id: 1
+        socketFilename: /var/run/memif/memif1.sock
+        secret: stonework
+
+    # Customer 1 - VLAN 2
+    - name: customer1-subinterface
+      type: SUB_INTERFACE
+      enabled: true
+      vrf: 2
+      ipAddresses:
+        - 172.16.10.1/24
+      sub:
+        parentName: stonework-to-vswitch
+        subId: 2
+        tagRwOption: POP1
+
+    # Customer 2 - VLAN 3
+    - name: customer2-subinterface
+      type: SUB_INTERFACE
+      enabled: true
+      vrf: 3
+      ipAddresses:
+        - 172.16.11.1/24
+      sub:
+        parentName: stonework-to-vswitch
+        subId: 3
+        tagRwOption: POP1
+
+    # Server
+    - name: stonework-to-server
+      type: TAP
+      enabled: true
+      ipAddresses:
+        - 7.7.0.2/24
+      tap:
+        version: 2
+        toMicroservice: server
+
+  # setting that will let VPP reply to ARP reguests regarding other subnets (see
+  # https://www.rfc-editor.org/rfc/rfc1027.html for proxyArp technique explanation)
+  # I.e. for customer1 request to other subnet, the switch will send the ARP request to customer1-subinterface
+  # and as proxyARP enabled interface it will respond if questioned for IP address from given ranges (and vrf
+  # table is the vrf table of interface the arp request came from). It will respond with the MAC address
+  # of the interface that the ARP request came from (customer1-subinterface) so that further (non-ARP)
+  # traffic is send to this interface (=to VPP in role of ARP proxy) and VPP forwards them correctly
+  # (correct forwarding must be set with other configuration like routes,...)
+  # The same must be applied for all customers wanting to reach the server(other subnet). In general case,
+  # this should be also applied for the return path (from server to customer), but due to NAT, the server
+  # questions the NAT translation addresses and they get resolved in VPP the normal(non-proxy) ARP way. So no
+  # need to configure return path into proxy ARP.
+  proxyArp:
+    interfaces:
+      - name: stonework-to-server
+      - name: customer1-subinterface
+      - name: customer2-subinterface
+    ranges:
+      - firstIpAddr: 7.7.0.1
+        lastIpAddr: 7.7.0.1
+        vrf_id: 2
+      - firstIpAddr: 7.7.0.1
+        lastIpAddr: 7.7.0.1
+        vrf_id: 3
+
+  routes:
+
+  nat44Global:
+    forwarding: false
+    endpointIndependent: false
+
+  nat44Interfaces:
+    - name: stonework-to-server
+      natOutside: true
+    - name: customer1-subinterface
+      natInside: true
+    - name: customer2-subinterface
+      natInside: true
+    - name: stonework-to-vswitch
+      natInside: true
+
+  nat44Pools:
+    # Management
+    - firstIp: 100.100.1.1
+      vrfId: 1
+    # Customer 1
+    - firstIp: 100.100.1.2
+      vrfId: 2
+    # Customer 2
+    - firstIp: 100.100.1.3
+      vrfId: 3
+
+
+linuxConfig:
+  interfaces:
+    #-------------
+    # Server (inner network)
+    #-------------
+
+    - name: server-to-stonework
+      type: TAP_TO_VPP
+      hostIfName: stonework
+      ipAddresses:
+        - 7.7.0.1/24
+      enabled: true
+      namespace:
+        type: MICROSERVICE
+        reference: server
+      tap:
+        vppTapIfName: stonework-to-server
+
