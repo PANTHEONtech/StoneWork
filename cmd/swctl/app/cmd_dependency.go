@@ -239,13 +239,20 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 							return errors.New("Interface: " + arg + "does not exist.")
 						}
 						//link down interface, only assigned network devices have /net directory which is name of interface
-						_, stdout, err := cli.Exec("ls", []string{"/sys/bus/pci/devices/" + physicalInterfaces[matchId].Pci + "/net"})
-						if stdout != "" {
-							return errors.New(stdout)
+						stdout, stderr, err := cli.Exec("ls", []string{"/sys/bus/pci/devices/" + physicalInterfaces[matchId].Pci + "/net"})
+						if stderr != "" {
+							return errors.New(stderr)
 						}
 						if err != err {
 							return err
 						}
+						if stdout != "" {
+							_, _, err = cli.Exec("sudo ip link set "+stdout+" down", nil)
+							if err != err {
+								return err
+							}
+						}
+
 						err = unbindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Driver)
 						if err != nil {
 							return err
@@ -258,7 +265,7 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 					return errors.New("last argument must define operation up or down upon selected interfaces")
 				}
 			} else {
-				return errors.New("lommand must consist of two or more arguments")
+				return errors.New("command must consist of two or more arguments")
 			}
 
 			return nil
@@ -429,9 +436,9 @@ func unbindDevice(cli Cli, pci string, driver string) error {
 	//Mostly
 	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/unbind", driver)
 
-	_, stdout, _ := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
-	if stdout != "" {
-		return errors.New(stdout)
+	_, stderr, _ := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
+	if stderr != "" {
+		return errors.New(stderr)
 	}
 	return nil
 }
@@ -439,9 +446,9 @@ func bindDevice(cli Cli, pci string, driver string) error {
 
 	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/bind", driver)
 
-	_, stdout, _ := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
-	if stdout != "" {
-		return errors.New(stdout)
+	_, stderr, _ := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
+	if stderr != "" {
+		return errors.New(stderr)
 	}
 	return nil
 }
