@@ -3,7 +3,6 @@ package app
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -25,10 +24,10 @@ func exampleDependencyCmd(appName string) string {
   $ <yellow>` + appName + ` dependency set-hugepages <value></>
 
   <white># Assign(up) or Unassign(down) interfaces to/from kernel</>
-  $ <yellow>` + appName + ` dependency link <interfaces ...> up | down</>
+  $ <yellow>` + appName + ` dependency link <pci ...> up | down</>
 
   <white># Print out startup config with dpdk interfaces</>
-  $ <yellow>` + appName + ` dependency get-startup [<interfaceName:StoneworkInterfaceName ...>]</>
+  $ <yellow>` + appName + ` dependency get-startup [<interfacePci:StoneworkInterfaceName ...>]</>
 
   <white># Print out startup config with dpdk plugin disable</>
   $ <yellow>` + appName + ` dependency get-startup</>
@@ -39,8 +38,9 @@ type NetworkInterface struct {
 	Name        string
 	Pci         string
 	Description string
-	LinkUp      bool
 	SwName      string
+	Module      string
+	Driver      string
 }
 
 func NewDependencyCmd(cli Cli) *cobra.Command {
@@ -91,7 +91,7 @@ func dependencyStatus(cli Cli) *cobra.Command {
 				return err
 
 			}
-			physicalInterfaces, err := DumpNetworkInterfaces(cli)
+			physicalInterfaces, err := DumpDevices(cli)
 			if err != nil {
 				return err
 			}
@@ -115,15 +115,17 @@ func dependencyStatus(cli Cli) *cobra.Command {
 				fmt.Fprintf(cli.Out(), status)
 			} else {
 				table := tablewriter.NewWriter(cli.Out())
-				table.SetHeader([]string{"Name", "Pci", "Mode", "State"})
+				table.SetHeader([]string{"Name", "Pci", "Mode", "Driver"})
 
 				for _, n := range physicalInterfaces {
-					row := []string{n.Name, n.Pci, n.Description}
-					if n.LinkUp == true {
-						row = append(row, "LinkUp\n")
+					row := []string{n.Name, n.Pci}
+					if n.Driver == n.Module {
+						row = append(row, "Kernel")
 					} else {
-						row = append(row, "LinkDown\n")
+						row = append(row, "DPDK")
 					}
+					row = append(row, n.Driver)
+
 					table.Append(row)
 				}
 				table.Render()
@@ -184,11 +186,11 @@ func installHugePages(cli Cli) *cobra.Command {
 func linkSetUpDown(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "link ",
-		Short: "link <interfaces ...> up | down",
+		Short: "link < pci ...> up | down",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) >= 2 {
-				physicalInterfaces, err := DumpNetworkInterfaces(cli)
+				physicalInterfaces, err := DumpDevices(cli)
 				if err != nil {
 					return err
 				}
@@ -196,7 +198,7 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 					for _, arg := range args[:(len(args) - 1)] {
 						matchId := -1
 						for i, physicalInterface := range physicalInterfaces {
-							if physicalInterface.Name == arg {
+							if physicalInterface.Pci == arg {
 								matchId = i
 								break
 							}
@@ -204,14 +206,21 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 						if matchId == -1 {
 							return errors.New("Interface: " + arg + "does not exist.")
 						}
-						// TODO get PCI from name func
-						out, _, err := cli.Exec("sudo dpdk-devbind.py -u "+physicalInterfaces[matchId].Pci, nil)
-						if err != nil {
-							return err
+
+						//returning interface back to kernel driver
+						if physicalInterfaces[matchId].Driver == "" {
+							// unbinded interface can be binded too, thats the reason why this error is only printed
+							// and not returned
+							fmt.Println(errors.New("cannot unbind unbinded interface"))
+						} else {
+							err = unbindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Driver)
+							if err != nil {
+								return err
+							}
 						}
-						fmt.Fprintln(cli.Out(), out)
-						// TODO get PCI from name func
-						out, _, err = cli.Exec("sudo ip link set "+physicalInterfaces[matchId].Name+" up", nil)
+
+						err = bindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Module)
+
 						if err != nil {
 							return err
 						}
@@ -221,7 +230,7 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 					for _, arg := range args[:(len(args) - 1)] {
 						matchId := -1
 						for i, physicalInterface := range physicalInterfaces {
-							if physicalInterface.Name == arg {
+							if physicalInterface.Pci == arg {
 								matchId = i
 								break
 							}
@@ -229,24 +238,27 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 						if matchId == -1 {
 							return errors.New("Interface: " + arg + "does not exist.")
 						}
-						out, _, err := cli.Exec("sudo ip link set "+physicalInterfaces[matchId].Name+" down", nil)
+						//link down interface, only assigned network devices have /net directory which is name of interface
+						_, stdout, err := cli.Exec("ls", []string{"/sys/bus/pci/devices/" + physicalInterfaces[matchId].Pci + "/net"})
+						if stdout != "" {
+							return errors.New(stdout)
+						}
+						if err != err {
+							return err
+						}
+						err = unbindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Driver)
 						if err != nil {
 							return err
 						}
-						fmt.Fprintln(cli.Out(), out)
-						// TODO get PCI from name func
-						out, _, err = cli.Exec("dpdk-devbind.py -b uio_pci_generic "+physicalInterfaces[matchId].Pci, nil)
-						if err != nil {
-							return err
-						}
+						// binding is not needed as VPP will bind interface automatically
 
 					}
 
 				} else {
-					return errors.New("Last argument must define operation up or down upon selected interfaces")
+					return errors.New("last argument must define operation up or down upon selected interfaces")
 				}
 			} else {
-				return errors.New("Command must consist of two or more arguments")
+				return errors.New("lommand must consist of two or more arguments")
 			}
 
 			return nil
@@ -284,7 +296,7 @@ func AllocatedHugePages(cli Cli) (int, error) {
 
 func ResizeHugePages(cli Cli, size uint) error {
 	//TODO: Make persistent hugepages
-	//TODO: Handle numa case, Big hugepages(are immutable and can be setted only during booting)
+	//TODO: Handle numa case, Big (1GB)hugepages(are immutable and can be setted only during booting)
 	if size == 0 {
 		fmt.Fprintln(cli.Out(), "Skipping hugepages")
 		return nil
@@ -295,7 +307,7 @@ func ResizeHugePages(cli Cli, size uint) error {
 	}
 	allocatedHP, _ := AllocatedHugePages(cli)
 	if size != uint(allocatedHP) {
-		return errors.New("Failed to allocate enough continuous memory")
+		return errors.New("failed to allocate enough continuous memory")
 	}
 
 	return nil
@@ -313,9 +325,7 @@ func InstallDocker(cli Cli, dockerVersion string) error {
 		"$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
 		sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`,
 		"sudo apt-get update -y",
-		"sudo apt install dpdk -y",
 		"echo \"uio_pci_generic\" | sudo tee -a /etc/modules",
-		//"sudo modprobe uio_pci_generic",
 	}
 	if dockerVersion == "default" {
 		cmd := `sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`
@@ -341,57 +351,6 @@ func InstallDocker(cli Cli, dockerVersion string) error {
 	return nil
 }
 
-// Dump only physical interfaces
-func DumpNetworkInterfaces(cli Cli) ([]NetworkInterface, error) {
-	//path leads to networking devices in the OS
-	const path = "/sys/class/net"
-	var allDevices []NetworkInterface
-	var physicalDevices []NetworkInterface
-
-	cmd := "ls -b"
-	out, _, err := cli.Exec(cmd, []string{path})
-	if err != nil {
-		fmt.Println(err)
-		return nil, errors.New("Command: " + cmd + " finished with error " + err.Error())
-	}
-
-	for _, name := range strings.Fields(out) {
-		allDevices = append(allDevices, NetworkInterface{Name: name})
-	}
-
-	for _, nic := range allDevices {
-		_, _, err := cli.Exec("ls ", []string{path + "/" + nic.Name})
-		if err == nil {
-			newNic := NetworkInterface{Name: nic.Name}
-
-			info, _, _ := cli.Exec("cat", []string{path + "/" + nic.Name + "/device/uevent"})
-
-			pciRe := regexp.MustCompile(`PCI_SLOT_NAME=(\S+)`)
-			match := pciRe.FindStringSubmatch(info)
-			if len(match) == 0 {
-				continue
-			}
-			newNic.Pci = match[1]
-
-			driverRe := regexp.MustCompile(`DRIVER=(\S+)`)
-			match = driverRe.FindStringSubmatch(info)
-			newNic.Description = match[1]
-
-			_, stderr, _ := cli.Exec("cat", []string{path + "/" + nic.Name + "/carrier"})
-			if stderr != "" {
-				newNic.LinkUp = false
-			} else {
-				newNic.LinkUp = true
-			}
-
-			physicalDevices = append(physicalDevices, newNic)
-		}
-
-	}
-
-	return physicalDevices, nil
-}
-
 func startupConf(cli Cli) *cobra.Command {
 	const startupconfig = `unix {
 cli-no-pager
@@ -404,7 +363,7 @@ poll-sleep-usec 50
 {{if .}}
 dpdk {
 {{range .}}  dev {{.Pci}} {
-    name: {{.SwName}}
+    name {{.SwName}}
 }
 {{end}} 
 }
@@ -431,7 +390,7 @@ punt {
 }
 `
 	cmd := &cobra.Command{
-		Use:   "startup",
+		Use:   "get-startup",
 		Short: "Print out startup config",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -440,34 +399,21 @@ punt {
 			for _, arg := range args {
 
 				var netInterface NetworkInterface
-				names := strings.Split(arg, ":")
+				trimIndex := strings.LastIndex(arg, ":")
+				names := []string{arg[:trimIndex], arg[trimIndex+1:]}
 				if len(names) != 2 {
-					return errors.New("Bad format of argument. Every argument in this command" +
+					return errors.New("bad format of argument. Every argument in this command" +
 						" must have \"word:word\" pattern")
 				}
-				netInterface.Name = names[0]
+				netInterface.Pci = names[0]
 				netInterface.SwName = names[1]
 
 				desiredInterfaces = append(desiredInterfaces, netInterface)
 
 			}
-			physicalInterfaces, err := DumpNetworkInterfaces(cli)
-			if err != nil {
-				return err
-			}
-
-			for i, desiredInterface := range desiredInterfaces {
-				for _, dumpedInterface := range physicalInterfaces {
-					if desiredInterface.Name == dumpedInterface.Name {
-						desiredInterfaces[i].Pci = dumpedInterface.Pci
-						break
-					}
-					return errors.New("Requested interface " + desiredInterface.Name + " does not exist")
-				}
-			}
 
 			t := template.Must(template.New("startupConf").Parse(startupconfig))
-			err = t.Execute(cli.Out(), desiredInterfaces)
+			err := t.Execute(cli.Out(), desiredInterfaces)
 			if err != nil {
 				return err
 			}
@@ -475,4 +421,67 @@ punt {
 		},
 	}
 	return cmd
+}
+
+func unbindDevice(cli Cli, pci string, driver string) error {
+	// dpdk drivers like uio_pci_generic, vfio-pci etc..
+	// kernel drivers like e1000, ...
+	//Mostly
+	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/unbind", driver)
+
+	_, stdout, _ := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
+	if stdout != "" {
+		return errors.New(stdout)
+	}
+	return nil
+}
+func bindDevice(cli Cli, pci string, driver string) error {
+
+	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/bind", driver)
+
+	_, stdout, _ := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
+	if stdout != "" {
+		return errors.New(stdout)
+	}
+	return nil
+}
+
+func DumpDevices(cli Cli) ([]NetworkInterface, error) {
+	var nics []NetworkInterface
+
+	stdout, _, err := cli.Exec("lspci", []string{"-Dvmmnnk"})
+	if err != nil {
+		return nil, err
+	}
+	devicesStr := strings.Split(stdout, "\n\n")
+	var networkDevices []map[string]string
+	for _, deviceStr := range devicesStr {
+		device := make(map[string]string)
+		attributes := strings.Split(deviceStr, "\n")
+		for _, attribute := range attributes {
+			tokenized := strings.Split(attribute, "\t")
+			device[strings.Trim(tokenized[0], ":")] = tokenized[1]
+		}
+		// Network class is 0200
+		if strings.Contains(device["Class"], "0200") {
+			networkDevices = append(networkDevices, device)
+		}
+
+	}
+	for _, networkDevice := range networkDevices {
+		nic := NetworkInterface{
+			Name:   networkDevice["Device"],
+			Pci:    networkDevice["Slot"],
+			Module: networkDevice["Module"],
+			// Nil driver means that device is unbounded and can be used by vpp which choose driver
+			Driver: networkDevice["Driver"],
+		}
+		nics = append(nics, nic)
+	}
+	return nics, nil
+	// Class:\t [0200]
+	/*
+		parse Slot,Class(0200 is ethernet), Module(kernel driver),Device(Name)
+	*/
+
 }
