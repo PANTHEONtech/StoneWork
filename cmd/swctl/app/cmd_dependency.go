@@ -20,7 +20,7 @@ func exampleDependencyCmd(appName string) string {
   <white># Install external tools (docker, docker compose)</>
   $ <yellow>` + appName + ` dependency install-tools</>
 
-  <white># Set quantity of runtime HugePages manually</>
+  <white># Set quantity of runtime 2MB HugePages manually</>
   $ <yellow>` + appName + ` dependency set-hugepages <value></>
 
   <white># Assign(up) or Unassign(down) interfaces to/from kernel</>
@@ -40,7 +40,8 @@ type NetworkInterface struct {
 	Description string
 	SwName      string
 	Module      string
-	Driver      string
+	// Nil Driver means that device is unbounded and can be used by vpp which choose driver
+	Driver string
 }
 
 func NewDependencyCmd(cli Cli) *cobra.Command {
@@ -81,7 +82,6 @@ func dependencyStatus(cli Cli) *cobra.Command {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var err error
 			docker, err := IsDockerAvailable(cli)
 			if err != nil {
 				return err
@@ -145,16 +145,18 @@ func installExternalTools(cli Cli) *cobra.Command {
 
 			docker, err := IsDockerAvailable(cli)
 			if err != nil {
-				return err
+				return errors.New(fmt.Sprintf("Unable to check docker availability: %v", err))
 			}
 
-			if !docker {
-				err = InstallDocker(cli, "default")
-				if err != nil {
-					return err
-				}
+			if docker {
+				fmt.Fprintln(cli.Out(), "Docker is already installed")
+				return nil
 			}
-			fmt.Println("Docker is already installed")
+
+			err = InstallDocker(cli, "default")
+			if err != nil {
+				return err
+			}
 
 			return nil
 		},
@@ -182,90 +184,82 @@ func installHugePages(cli Cli) *cobra.Command {
 	return cmd
 }
 
-/* DPDK interface cannot be used by kernel otherwise it won't connect to VPP*/
+/*
+linkSetUpDown changes the link state and binds/unbinds the pci driver
+(up=kernel driver usable for kernel network stack, down=no kernel driver).
+The kernel driver unbinding is helpfull in case of DPDK interfaces that
+can't have kernel network stack usable driver when VPP should use them
+as DPDK interfaces.
+*/
 func linkSetUpDown(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "link ",
 		Short: "link < pci ...> up | down",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) >= 2 {
-				physicalInterfaces, err := DumpDevices(cli)
-				if err != nil {
-					return err
-				}
-				if strings.Compare(args[(len(args)-1)], "up") == 0 {
-					for _, arg := range args[:(len(args) - 1)] {
-						matchId := -1
-						for i, physicalInterface := range physicalInterfaces {
-							if physicalInterface.Pci == arg {
-								matchId = i
-								break
-							}
-						}
-						if matchId == -1 {
-							return errors.New("Interface: " + arg + "does not exist.")
-						}
+			if len(args) < 2 {
+				return errors.New("command must consist of two or more arguments")
+			}
 
-						//returning interface back to kernel driver
-						if physicalInterfaces[matchId].Driver == "" {
-							// unbinded interface can be binded too, thats the reason why this error is only printed
-							// and not returned
-							fmt.Println(errors.New("cannot unbind unbinded interface"))
-						} else {
-							err = unbindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Driver)
-							if err != nil {
-								return err
-							}
-						}
+			if !(args[len(args)-1] == "up" || args[len(args)-1] == "down") {
+				return errors.New("last argument must define operation up or down upon selected interfaces")
+			}
 
-						err = bindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Module)
+			physicalInterfaces, err := DumpDevices(cli)
+			if err != nil {
+				return err
+			}
 
-						if err != nil {
-							return err
-						}
-
+			for _, arg := range args[:(len(args) - 1)] {
+				matchId := -1
+				for i, physicalInterface := range physicalInterfaces {
+					if physicalInterface.Pci == arg {
+						matchId = i
+						break
 					}
-				} else if strings.Compare(args[(len(args)-1)], "down") == 0 {
-					for _, arg := range args[:(len(args) - 1)] {
-						matchId := -1
-						for i, physicalInterface := range physicalInterfaces {
-							if physicalInterface.Pci == arg {
-								matchId = i
-								break
-							}
-						}
-						if matchId == -1 {
-							return errors.New("Interface: " + arg + "does not exist.")
-						}
-						//link down interface, only assigned network devices have /net directory which is name of interface
-						stdout, stderr, err := cli.Exec("ls", []string{"/sys/bus/pci/devices/" + physicalInterfaces[matchId].Pci + "/net"})
-						if stderr != "" {
-							return errors.New(stderr)
-						}
-						if err != err {
-							return err
-						}
-						if stdout != "" {
-							_, _, err = cli.Exec("sudo ip link set "+stdout+" down", nil)
-							if err != err {
-								return err
-							}
-						}
-
+				}
+				if matchId == -1 {
+					return errors.New("Interface: " + arg + "does not exist.")
+				}
+				if args[len(args)-1] == "up" {
+					//returning interface back to kernel driver
+					if physicalInterfaces[matchId].Driver == "" {
+						fmt.Fprintln(cli.Out(), fmt.Sprintf("don't need to unbind the already unbinded pci %s", physicalInterfaces[matchId].Name))
+					} else {
 						err = unbindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Driver)
 						if err != nil {
 							return err
 						}
-						// binding is not needed as VPP will bind interface automatically
-
 					}
 
-				} else {
-					return errors.New("last argument must define operation up or down upon selected interfaces")
+					err = bindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Module)
+
+					if err != nil {
+						return err
+					}
+				} else if args[len(args)-1] == "down" {
+					//link down interface, only assigned network devices have /net directory which is name of interface
+					stdout, stderr, err := cli.Exec("ls", []string{"/sys/bus/pci/devices/" + physicalInterfaces[matchId].Pci + "/net"})
+					if stderr != "" {
+						return errors.New(stderr)
+					}
+					if err != err {
+						return err
+					}
+					if stdout != "" {
+						_, _, err = cli.Exec("sudo ip link set "+stdout+" down", nil)
+						if err != err {
+							return err
+						}
+					}
+
+					err = unbindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Driver)
+					if err != nil {
+						return err
+					}
+					// binding is not needed as VPP will bind interface automatically
 				}
-			} else {
-				return errors.New("command must consist of two or more arguments")
+
 			}
 
 			return nil
@@ -298,10 +292,11 @@ func AllocatedHugePages(cli Cli) (int, error) {
 		return 0, err
 	}
 
-	return hugePgSize, err
+	return hugePgSize, nil
 }
 
 func ResizeHugePages(cli Cli, size uint) error {
+	const hugePageSize = 2048
 	//TODO: Make persistent hugepages
 	//TODO: Handle numa case, Big (1GB)hugepages(are immutable and can be setted only during booting)
 	if size == 0 {
@@ -312,9 +307,14 @@ func ResizeHugePages(cli Cli, size uint) error {
 	if err != nil {
 		return err
 	}
-	allocatedHP, _ := AllocatedHugePages(cli)
+	allocatedHP, err := AllocatedHugePages(cli)
+
 	if size != uint(allocatedHP) {
-		return errors.New("failed to allocate enough continuous memory")
+		return errors.New(fmt.Sprintf("failed to allocate enough hugepages (%s),successfully allocated %s hugepages, totally continuous memory %d MB ",
+			size, allocatedHP, (allocatedHP*hugePageSize)/100))
+	}
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -351,7 +351,7 @@ func InstallDocker(cli Cli, dockerVersion string) error {
 		if err != nil {
 			return errors.New(err.Error() + "(" + command + ")")
 		}
-		fmt.Println(out)
+		fmt.Fprintln(cli.Out(), out)
 
 	}
 
@@ -436,9 +436,12 @@ func unbindDevice(cli Cli, pci string, driver string) error {
 	//Mostly
 	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/unbind", driver)
 
-	_, stderr, _ := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
+	_, stderr, err := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
 	if stderr != "" {
 		return errors.New(stderr)
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -446,9 +449,12 @@ func bindDevice(cli Cli, pci string, driver string) error {
 
 	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/bind", driver)
 
-	_, stderr, _ := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
+	_, stderr, err := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
 	if stderr != "" {
 		return errors.New(stderr)
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -465,11 +471,12 @@ func DumpDevices(cli Cli) ([]NetworkInterface, error) {
 	for _, deviceStr := range devicesStr {
 		device := make(map[string]string)
 		attributes := strings.Split(deviceStr, "\n")
+		// parse Slot,Class, Module,Driver,Device
 		for _, attribute := range attributes {
 			tokenized := strings.Split(attribute, "\t")
 			device[strings.Trim(tokenized[0], ":")] = tokenized[1]
 		}
-		// Network class is 0200
+		// Class 0200 is code determined for ethernet, we are not interested in other devices
 		if strings.Contains(device["Class"], "0200") {
 			networkDevices = append(networkDevices, device)
 		}
@@ -477,18 +484,16 @@ func DumpDevices(cli Cli) ([]NetworkInterface, error) {
 	}
 	for _, networkDevice := range networkDevices {
 		nic := NetworkInterface{
-			Name:   networkDevice["Device"],
-			Pci:    networkDevice["Slot"],
+			// Full name of interface
+			Name: networkDevice["Device"],
+			Pci:  networkDevice["Slot"],
+			// Default kernel driver
 			Module: networkDevice["Module"],
-			// Nil driver means that device is unbounded and can be used by vpp which choose driver
+			// Actually used driver
 			Driver: networkDevice["Driver"],
 		}
 		nics = append(nics, nic)
 	}
 	return nics, nil
-	// Class:\t [0200]
-	/*
-		parse Slot,Class(0200 is ethernet), Module(kernel driver),Device(Name)
-	*/
 
 }
