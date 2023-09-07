@@ -18,6 +18,7 @@ version: '3.3'
 
 volumes:
   runtime_data: {}
+  mockcnfapi: {}
 
 services:
   stonework:
@@ -36,6 +37,7 @@ services:
       - "6060:6060" # pprof
     volumes:
       - runtime_data:/run/stonework
+      - mockcnfapi:/cnfapi/mockcnf
       - /sys/bus/pci:/sys/bus/pci
       - /dev:/dev
       - /run/docker.sock:/run/docker.sock
@@ -57,6 +59,7 @@ services:
     privileged: true
     volumes:
       - runtime_data:/run/stonework
+      - mockcnfapi:/api
     environment:
       INITIAL_LOGLVL: "debug"
       MICROSERVICE_LABEL: "mockcnf1"
