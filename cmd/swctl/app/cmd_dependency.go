@@ -288,9 +288,6 @@ func AllocatedHugePages(cli Cli) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if hugePgSize == 0 {
-		return 0, err
-	}
 
 	return hugePgSize, nil
 }
@@ -308,13 +305,13 @@ func ResizeHugePages(cli Cli, size uint) error {
 		return err
 	}
 	allocatedHP, err := AllocatedHugePages(cli)
+	if err != nil {
+		return err
+	}
 
 	if size != uint(allocatedHP) {
 		return errors.New(fmt.Sprintf("failed to allocate enough hugepages (%s),successfully allocated %s hugepages, totally continuous memory %d MB ",
-			size, allocatedHP, (allocatedHP*hugePageSize)/100))
-	}
-	if err != nil {
-		return err
+			size, allocatedHP, (allocatedHP*hugePageSize)/1000))
 	}
 
 	return nil
