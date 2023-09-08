@@ -310,7 +310,7 @@ func ResizeHugePages(cli Cli, size uint) error {
 	}
 
 	if size != uint(allocatedHP) {
-		return errors.New(fmt.Sprintf("failed to allocate enough hugepages (%s),successfully allocated %s hugepages, totally continuous memory %d MB ",
+		return errors.New(fmt.Sprintf("failed to allocate enough hugepages (%d),successfully allocated %d hugepages, totally continuous memory %d MB ",
 			size, allocatedHP, (allocatedHP*hugePageSize)/1000))
 	}
 
