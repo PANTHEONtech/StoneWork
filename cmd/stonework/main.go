@@ -46,7 +46,7 @@ import (
 const (
 	protoFileExt     = ".proto"
 	ligatoApiFileDir = "/api"
-	protoFileDir     = "/run/stonework/proto"
+	cnfApiFileDir    = "/cnfapi"
 
 	modelSpecExtNum = 50222
 	modelTmplExtNum = 50223
@@ -121,7 +121,7 @@ func registerModels(files linker.Files, specExtDesc, tmplExtDesc protoreflect.Ex
 				// no model spec detected, continue with next message
 				continue
 			}
-			spec, err := util.ConvertProto(&generic.ModelSpec{}, dynSpec)
+			specMsg, err := util.ConvertProto(&generic.ModelSpec{}, dynSpec)
 			if err != nil {
 				return err
 			}
@@ -130,8 +130,15 @@ func registerModels(files linker.Files, specExtDesc, tmplExtDesc protoreflect.Ex
 				tmpl := proto.GetExtension(opts, tmplExtDesc.Type()).(string)
 				modelOpts = append(modelOpts, models.WithNameTemplate(tmpl))
 			}
+			spec := models.ToSpec(specMsg.(*generic.ModelSpec))
+			modelName := spec.ModelName()
 			modelMsg := dynamicpb.NewMessage(msgDesc)
-			_, err = models.DefaultRegistry.Register(modelMsg, models.ToSpec(spec.(*generic.ModelSpec)), modelOpts...)
+			if _, err := models.DefaultRegistry.GetModel(modelName); err == nil {
+				// model already registered, print warning and continue with next message
+				logging.DefaultLogger.Warnf("Cannot register cnf model: model with name %s is already registered", modelName)
+				continue
+			}
+			_, err = models.DefaultRegistry.Register(modelMsg, spec, modelOpts...)
 			if err != nil {
 				return err
 			}
@@ -145,12 +152,12 @@ func main() {
 		fmt.Println(http.ListenAndServe("0.0.0.0:6060", nil))
 	}()
 
-	if _, err := os.Stat(protoFileDir); !os.IsNotExist(err) {
+	if _, err := os.Stat(cnfApiFileDir); !os.IsNotExist(err) {
 		ligatoApiFiles, err := compileProtoFiles(findProtoFiles(ligatoApiFileDir), ligatoApiFileDir)
 		if err != nil {
 			logging.DefaultLogger.Fatal(err)
 		}
-		files, err := compileProtoFiles(findProtoFiles(protoFileDir), protoFileDir, ligatoApiFileDir)
+		files, err := compileProtoFiles(findProtoFiles(cnfApiFileDir), cnfApiFileDir, ligatoApiFileDir)
 		if err != nil {
 			logging.DefaultLogger.Fatal(err)
 		}
