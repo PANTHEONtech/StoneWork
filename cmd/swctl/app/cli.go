@@ -25,6 +25,7 @@ type Cli interface {
 	Entities() []Entity
 	GlobalOptions() *GlobalOptions
 	Exec(cmd string, args []string) (stdout string, stderr string, err error)
+	AppName() string
 
 	Out() *streams.Out
 	Err() io.Writer
@@ -42,14 +43,17 @@ type CLI struct {
 	out *streams.Out
 	err io.Writer
 	in  *streams.In
+
+	appName string
 }
 
 // NewCli returns a new CLI instance. It accepts CliOption for customization.
-func NewCli(opt ...CliOption) (*CLI, error) {
+func NewCli(appName string, opt ...CliOption) (*CLI, error) {
 	cli := new(CLI)
 	if err := cli.Apply(opt...); err != nil {
 		return nil, err
 	}
+	cli.appName = appName
 	if cli.out == nil || cli.in == nil || cli.err == nil {
 		stdin, stdout, stderr := term.StdStreams()
 		if cli.in == nil {
@@ -165,4 +169,8 @@ func (cli *CLI) Err() io.Writer {
 
 func (cli *CLI) In() *streams.In {
 	return cli.in
+}
+
+func (cli *CLI) AppName() string {
+	return cli.appName
 }

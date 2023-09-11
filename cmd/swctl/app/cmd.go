@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+
 	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -24,6 +25,7 @@ func NewRootCmd(cli Cli) *cobra.Command {
 	var (
 		glob GlobalOptions
 	)
+
 	cmd := &cobra.Command{
 		Use:           "swctl [options] [command]",
 		Short:         "swctl is CLI tool to manage StoneWork and its components",
@@ -64,6 +66,7 @@ func NewRootCmd(cli Cli) *cobra.Command {
 		NewTraceCmd(cli),
 		NewSupportCmd(cli),
 		NewManageCmd(cli),
+		NewDependencyCmd(cli),
 	)
 
 	cmd.InitDefaultHelpCmd()

@@ -7,25 +7,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const deploymentExample = `
+func deploymentExample(appName string) string {
+	return `
   <white># Create and start a deployment</>
-  $ <yellow>swctl deployment up</>
+  $ <yellow>` + appName + ` deployment up</>
 
   <white># Stop and remove a deployment</>
-  $ <yellow>swctl deployment down</>
+  $ <yellow>` + appName + ` deployment down</>
 
   <white># Show info about deployment</>
-  $ <yellow>swctl deployment info</>
+  $ <yellow>` + appName + ` deployment info</>
 
   <white># Print configuration of deployment</>
-  $ <yellow>swctl deployment config</>
+  $ <yellow>` + appName + ` deployment config</>
 
   <white># List images in deployment</>
-  $ <yellow>swctl deployment images</>
+  $ <yellow>` + appName + ` deployment images</>
 
   <white># List services in deployment</>
-  $ <yellow>swctl deployment services</>
+  $ <yellow>` + appName + ` deployment services</>
 `
+}
 
 func NewDeploymentCmd(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
@@ -34,7 +36,7 @@ func NewDeploymentCmd(cli Cli) *cobra.Command {
 		Long: `Command deploy manages deployment of StoneWork.
 It hides the specifics of a deployment and provides unified interface to user. 
 Currently only Docker Compose is supported, for which the deploy command offers a wrapper.`,
-		Example: color.Sprint(deploymentExample),
+		Example: color.Sprint(deploymentExample(cli.AppName())),
 		Aliases: []string{"deploy"},
 		Args:    cobra.ArbitraryArgs,
 		//DisableFlagParsing: true,

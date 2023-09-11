@@ -12,7 +12,7 @@ func main() {
 
 // Execute executes a root command using default behavior
 func Execute() {
-	cli, err := app.NewCli()
+	cli, err := app.NewCli("swctl")
 	if err != nil {
 		logrus.Fatalf("ERROR: %v", err)
 	}
