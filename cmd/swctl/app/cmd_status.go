@@ -203,20 +203,33 @@ func printStatusTable(out io.Writer, infos []statusInfo, useColors bool) {
 		}
 		config := info.ConfigCounts.String()
 		configColor := configColor(info.ConfigCounts)
-		compoInfo := info.GetInfo()
-		grpcState := compoInfo.GRPCConnState.String()
-		var statusClr int
-		// gRPC state does not make sense for StoneWork itself
-		if info.GetMode() == client.ComponentStonework {
-			grpcState = strings.Repeat("-", len("Status"))
-			statusClr = tablewriter.FgHiBlackColor
+		grpcState := strings.Repeat("-", len("Status"))
+		statusClr := tablewriter.FgHiBlackColor
+		var ipAddr, grpcPort, httpPort string
+		if info.GetInfo() != nil {
+			compoInfo := info.GetInfo()
+			ipAddr = compoInfo.IPAddr
+			grpcPort = strconv.Itoa(compoInfo.GRPCPort)
+			httpPort = strconv.Itoa(compoInfo.HTTPPort)
+			// gRPC state does not make sense for StoneWork itself
+			if info.GetMode() != client.ComponentStonework {
+				grpcState = compoInfo.GRPCConnState.String()
+				statusClr = tablewriter.Normal
+			}
+		} else {
+			// TODO: this is standalone cnf related, currently using default values but these should be correctly detected
+			ipAddr = info.GetMetadata()["containerIPAddress"]
+			grpcPort = strconv.Itoa(client.DefaultPortGRPC)
+			httpPort = strconv.Itoa(client.DefaultPortHTTP)
 		}
-		row = append(row,
-			compoInfo.IPAddr,
-			strconv.Itoa(compoInfo.GRPCPort),
-			strconv.Itoa(compoInfo.HTTPPort),
+		row = append(
+			row,
+			ipAddr,
+			grpcPort,
+			httpPort,
 			grpcState,
-			config)
+			config,
+		)
 
 		if useColors {
 			clrs = []tablewriter.Colors{{}, {}, {}, {}, {}, {statusClr}, {configColor}}

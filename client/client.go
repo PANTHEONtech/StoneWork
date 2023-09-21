@@ -42,6 +42,7 @@ import (
 
 const (
 	DefaultHTTPClientTimeout = 60 * time.Second
+	DefaultPortGRPC          = 9111
 	DefaultPortHTTP          = 9191
 	StoneWorkServiceName     = "stonework"
 )
@@ -231,6 +232,8 @@ func (c *Client) GetComponents() ([]Component, error) {
 
 		logrus.Tracef("found metadata for container: %s, data: %+v", container.Name, metadata)
 
+		// TODO: Refactor rest of this function (creation and determining of component type).
+		// Rethink standalone CNF detection.
 		compo := &component{Metadata: metadata}
 		msLabel, found := containsPrefix(container.Config.Env, "MICROSERVICE_LABEL=")
 		if !found {
@@ -241,7 +244,7 @@ func (c *Client) GetComponents() ([]Component, error) {
 		}
 		info, ok := cnfInfos[msLabel]
 		if !ok {
-			client, err := vppagent.NewClientWithOpts(vppagent.WithHost(compo.Metadata["containerIPAddress"]), vppagent.WithHTTPPort(9191))
+			client, err := vppagent.NewClientWithOpts(vppagent.WithHost(compo.Metadata["containerIPAddress"]), vppagent.WithHTTPPort(DefaultPortHTTP))
 			if err != nil {
 				return components, err
 			}
@@ -254,6 +257,9 @@ func (c *Client) GetComponents() ([]Component, error) {
 			}
 			compo.Name = container.Config.Labels[compose.ServiceLabel]
 			compo.Mode = ComponentStandalone
+			compo.agentclient = client
+			components = append(components, compo)
+			continue
 		}
 		compo.Name = info.MsLabel
 		compo.Info = &info
