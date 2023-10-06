@@ -7,6 +7,7 @@ import (
 	"net/netip"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -298,8 +299,11 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 
 			logrus.Tracef(" - final vars:\n%s\nraw file %s:\n%v", yamlTmpl(vars), f.Name, rawData)
 
+			if err := os.MkdirAll(filepath.Dir(f.Name), 0777); err != nil {
+				return fmt.Errorf("failed to create directory for file (%s): %w", f.Name, err)
+			}
 			if err := os.WriteFile(f.Name, []byte(rawData), 0666); err != nil {
-				return fmt.Errorf("failed to write file (%v): %w", f.Name, err)
+				return fmt.Errorf("failed to write file (%s): %w", f.Name, err)
 			}
 		}
 	}

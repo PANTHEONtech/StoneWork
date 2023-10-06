@@ -80,12 +80,14 @@ func (cli *CLI) Initialize(opts *GlobalOptions) (err error) {
 
 	// load entity files
 	cli.entities, err = loadEntityFiles(opts.EntityFiles)
+	if err != nil {
+		return fmt.Errorf("loading entity files failed: %w", err)
+	}
 	if cli.entities == nil {
 		cli.entities, err = loadEmbeddedEntities(opts.EmbeddedEntityByte)
-
 	}
 	if err != nil {
-		return fmt.Errorf("loading entity files failed: %v", err)
+		return fmt.Errorf("loading embedded entity files failed: %w", err)
 	}
 
 	// get vpp-probe
