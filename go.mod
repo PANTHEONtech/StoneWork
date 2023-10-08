@@ -9,7 +9,7 @@ require (
 	github.com/compose-spec/compose-go v1.17.0
 	github.com/docker/cli v24.0.5+incompatible
 	github.com/docker/compose/v2 v2.14.0
-	github.com/docker/docker v24.0.5+incompatible
+	github.com/docker/docker v24.0.6+incompatible
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.4.2
