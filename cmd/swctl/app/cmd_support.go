@@ -55,63 +55,98 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 			err = fmt.Errorf("can't remove all files in temporary directory %s due to %v", path, err)
 		}
 	}(dirName)
+
+	// create reports of global configuration/state
 	components, err := cli.Client().GetComponents()
 	if err != nil {
 		return err
 	}
 
-	errors := []error{
-		writeReportData(cli, "interfaces.txt", dirName, components, writeInterfaces),
-		writeReportData(cli, "status.txt", dirName, components, writeStatus),
-		writeReportData(cli, "status.json", dirName, components, writeStatusAsJson),
-		writeReportData(cli, "docker-compose.yaml", dirName, components, writeDockerComposeConfig),
-		writeReportData(cli, "docker-ps.txt", dirName, components, writeDockerContainers),
+	var errors []error
+
+	err = writeReportData(cli, "interfaces.txt", dirName, components, writeInterfaces)
+	if err != nil {
+		errors = append(errors, err)
+	}
+	err = writeReportData(cli, "status.txt", dirName, components, writeStatus)
+	if err != nil {
+		errors = append(errors, err)
+	}
+	err = writeReportData(cli, "status.json", dirName, components, writeStatusAsJson)
+	if err != nil {
+		errors = append(errors, err)
+	}
+	err = writeReportData(cli, "docker-compose.yaml", dirName, components, writeDockerComposeConfig)
+	if err != nil {
+		errors = append(errors, err)
+	}
+	err = writeReportData(cli, "docker-ps.txt", dirName, components, writeDockerContainers)
+	if err != nil {
+		errors = append(errors, err)
 	}
 
+	// crate reports for each component
 	for _, comp := range components {
-		if comp.GetMode() != client.ComponentAuxiliary && comp.GetMode() != client.ComponentUnknown {
-			info := comp.GetInfo()
-			alias := fmt.Sprintf("%s-", comp.GetName())
+		alias := fmt.Sprintf("%s-", comp.GetName())
 
-			if serviceName, ok := comp.GetMetadata()["containerServiceName"]; ok {
-				err = writeReportData(cli, strings.ToLower(alias)+"docker-logs"+".log", dirName, components, writeDockerLogs, serviceName)
-				if err != nil {
-					errors = append(errors, err)
-				}
+		// create generic docker reports
+		if serviceName, ok := comp.GetMetadata()["containerServiceName"]; ok {
+			err = writeReportData(cli, strings.ToLower(alias)+"docker-logs"+".log",
+				dirName, components, writeDockerLogs, serviceName)
+			if err != nil {
+				errors = append(errors, err)
 			}
+		}
+		if sn, ok := comp.GetMetadata()["containerID"]; ok {
+			err = writeReportData(cli, alias+"docker-inspect.txt", dirName, nil, writeDockerInspect, sn)
+			if err != nil {
+				errors = append(errors, err)
+			}
+		}
+
+		// utilize agentctl to get vpp-agent-specific reports (only for components using vpp-agent)
+		if comp.GetMode() != client.ComponentAuxiliary && comp.GetMode() != client.ComponentUnknown && comp.GetInfo() != nil {
+			// FIXME: there is a problem with components that run vpp-agent but are not registered with Stonework
+			//  (currently labeled wrongly as standaloneCNFs, i.e. VSwitch simulating surrounding use case environment).
+			//  They have comp.GetInfo() nil and therefore can't use the agentctl report (missing info: info.IPAddr,
+			//  info.HTTPPort, info.GRPCPort). Theoretically they should be able to run this report upon them as
+			//  they are running vpp-agent. The info grabbing must be fixed for these cases.
+
+			info := comp.GetInfo()
 			buffer := strings.ToLower(alias) + "vppagent-report"
-			err = writeReportData(cli, buffer+".zip", dirName, components, writeAgentCtlInfo, info.IPAddr, info.HTTPPort)
-			errors = append(errors, err)
-			err := os.Mkdir(path.Join(dirName, buffer), 0777)
-			_ = err
+			err = writeReportData(cli, buffer+".zip", dirName, components, writeAgentCtlInfo, info.IPAddr, info.HTTPPort, info.GRPCPort)
+			if err != nil {
+				errors = append(errors, err)
+			}
+
+			err = os.Mkdir(path.Join(dirName, buffer), 0777)
+			if err != nil {
+				errors = append(errors, fmt.Errorf("ignoring agentctl report for %s because "+
+					"can't create subdirectory for it due to: %w", comp.GetName(), err))
+				continue
+			}
 
 			err = extractZip(dirName+"/"+buffer+".zip", path.Join(dirName, buffer))
 			if err != nil {
-				return err
+				errors = append(errors, fmt.Errorf("ignoring agentctl report for %s because "+
+					"can't extract report zip file due to: %w", comp.GetName(), err))
+				continue
 			}
 
 			err = os.Remove(dirName + "/" + buffer + ".zip")
 			if err != nil {
-				return err
-			}
-
-			for _, comp := range components {
-				if sn, ok := comp.GetMetadata()["containerID"]; ok {
-					err = writeReportData(cli, alias+"docker-inspect.txt", dirName, nil, writeDockerInspect, sn)
-					if err != nil {
-						errors = append(errors, err)
-					}
-				}
+				errors = append(errors, fmt.Errorf("can't clear original zip of agentctl report "+
+					"for %s due to: %w", comp.GetName(), err))
+				continue
 			}
 		}
 	}
-	for _, err2 := range errors {
-		if err2 != nil {
-			err := writeReportData(cli, "_failed-reports.txt", dirName, components, writeErrors, errors[:])
-			if err != nil {
-				logrus.Warnln(err)
-			}
-			break
+
+	// report errors from previously failed reports
+	if len(errors) > 0 {
+		err = writeReportData(cli, "_failed-reports.txt", dirName, components, writeErrors, errors)
+		if err != nil {
+			logrus.Warnf("Failed to write down failures of subreports due to: %v \n", err)
 		}
 	}
 
@@ -265,9 +300,11 @@ func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args
 	defer os.RemoveAll(tempDirName)
 
 	host := args[0]
-	port := args[1]
+	httpPort := args[1]
+	grpcPort := args[2]
 
-	cmd := fmt.Sprintf("agentctl report --host %s --http-port %d -o %s -i", host, port, tempDirName)
+	cmd := fmt.Sprintf("agentctl --host %s --http-port %d --grpc-port=%d report -i -o %s",
+		host, httpPort, grpcPort, tempDirName)
 	_, _, err = cli.Exec(cmd, []string{})
 	if err != nil {
 		return err
