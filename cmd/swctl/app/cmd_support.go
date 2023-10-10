@@ -146,7 +146,7 @@ func runSupportCmd(cli Cli, opts SupportCmdOptions, args []string) error {
 	if len(errors) > 0 {
 		err = writeReportData(cli, "_failed-reports.txt", dirName, components, writeErrors, errors)
 		if err != nil {
-			logrus.Warnf("Failed to write down failures of subreports due to: %w \n", err)
+			logrus.Warnf("Failed to write down failures of subreports due to: %v \n", err)
 		}
 	}
 
