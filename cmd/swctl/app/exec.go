@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -106,12 +107,20 @@ type ExecResult struct {
 	Stderr string
 }
 
-func (ec *externalCmd) exec() (*ExecResult, error) {
+func (ec *externalCmd) exec(liveOutput bool) (*ExecResult, error) {
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(ec.name, ec.args...)
+	if liveOutput {
+		stdoutMultiWriter := io.MultiWriter(&stdout, ec.cli.out)
+		stderrMultiWriter := io.MultiWriter(&stderr, ec.cli.err)
+		cmd.Stdout = stdoutMultiWriter
+		cmd.Stderr = stderrMultiWriter
+	} else {
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+	}
+
 	cmd.Env = ec.env
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
 
 	now := time.Now()
 	logrus.Tracef("[%s] %q", color.Gray.Sprint("EXEC"), cmd.String())

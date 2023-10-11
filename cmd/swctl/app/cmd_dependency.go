@@ -239,7 +239,7 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 					}
 				} else if args[len(args)-1] == "down" {
 					//link down interface, only assigned network devices have /net directory which is name of interface
-					stdout, stderr, err := cli.Exec("ls", []string{"/sys/bus/pci/devices/" + physicalInterfaces[matchId].Pci + "/net"})
+					stdout, stderr, err := cli.Exec("ls", []string{"/sys/bus/pci/devices/" + physicalInterfaces[matchId].Pci + "/net"}, false)
 					if stderr != "" {
 						return errors.New(stderr)
 					}
@@ -247,7 +247,7 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 						return err
 					}
 					if stdout != "" {
-						_, _, err = cli.Exec("sudo ip link set "+stdout+" down", nil)
+						_, _, err = cli.Exec("sudo ip link set "+stdout+" down", nil, false)
 						if err != err {
 							return err
 						}
@@ -269,7 +269,7 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 }
 
 func IsDockerAvailable(cli Cli) (bool, error) {
-	out, _, err := cli.Exec("whereis docker", nil)
+	out, _, err := cli.Exec("whereis docker", nil, false)
 	if err != nil {
 		return false, err
 	}
@@ -280,7 +280,7 @@ func IsDockerAvailable(cli Cli) (bool, error) {
 }
 
 func AllocatedHugePages(cli Cli) (int, error) {
-	out, _, err := cli.Exec("sysctl vm.nr_hugepages -n", nil)
+	out, _, err := cli.Exec("sysctl vm.nr_hugepages -n", nil, false)
 	if err != nil {
 		return 0, err
 	}
@@ -300,7 +300,7 @@ func ResizeHugePages(cli Cli, size uint) error {
 		fmt.Fprintln(cli.Out(), "Skipping hugepages")
 		return nil
 	}
-	_, _, err := cli.Exec(fmt.Sprintf("sudo sysctl -w vm.nr_hugepages=%d", size), nil)
+	_, _, err := cli.Exec(fmt.Sprintf("sudo sysctl -w vm.nr_hugepages=%d", size), nil, false)
 	if err != nil {
 		return err
 	}
@@ -341,7 +341,7 @@ func InstallDocker(cli Cli, dockerVersion string) error {
 	}
 
 	for _, command := range commands {
-		out, stderr, err := cli.Exec("bash -c", []string{command})
+		out, stderr, err := cli.Exec("bash -c", []string{command}, false)
 		if stderr != "" {
 			return errors.New(command + ": " + stderr)
 		}
@@ -433,7 +433,7 @@ func unbindDevice(cli Cli, pci string, driver string) error {
 	//Mostly
 	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/unbind", driver)
 
-	_, stderr, err := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
+	_, stderr, err := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path}, false)
 	if stderr != "" {
 		return errors.New(stderr)
 	}
@@ -446,7 +446,7 @@ func bindDevice(cli Cli, pci string, driver string) error {
 
 	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/bind", driver)
 
-	_, stderr, err := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path})
+	_, stderr, err := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path}, false)
 	if stderr != "" {
 		return errors.New(stderr)
 	}
@@ -459,7 +459,7 @@ func bindDevice(cli Cli, pci string, driver string) error {
 func DumpDevices(cli Cli) ([]NetworkInterface, error) {
 	var nics []NetworkInterface
 
-	stdout, _, err := cli.Exec("lspci", []string{"-Dvmmnnk"})
+	stdout, _, err := cli.Exec("lspci", []string{"-Dvmmnnk"}, false)
 	if err != nil {
 		return nil, err
 	}

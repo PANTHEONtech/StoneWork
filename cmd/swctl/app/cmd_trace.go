@@ -33,7 +33,7 @@ func runTraceCmd(cli Cli, opts TraceCmdOptions) error {
 	// - consider selecting IP and source network namespace automatically
 	// - consider allowing users to simply select component names for ping src/dst
 
-	stdout, stderr, err := cli.Exec(fmt.Sprintf("vpp-probe --env=%s trace", defaultVppProbeEnv), args)
+	stdout, stderr, err := cli.Exec(fmt.Sprintf("vpp-probe --env=%s trace", defaultVppProbeEnv), args, false)
 	if err != nil {
 		return err
 	}

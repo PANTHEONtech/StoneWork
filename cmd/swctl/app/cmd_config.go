@@ -48,7 +48,7 @@ func runConfigCmd(cli Cli, opts ConfigCmdOptions) error {
 		args = append(args, hideInternalFlag)
 	}
 
-	stdout, stderr, err := cli.Exec("agentctl config", args)
+	stdout, stderr, err := cli.Exec("agentctl config", args, false)
 	if err != nil {
 		return err
 	}
