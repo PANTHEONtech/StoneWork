@@ -24,7 +24,7 @@ type Cli interface {
 	Client() client.API
 	Entities() []Entity
 	GlobalOptions() *GlobalOptions
-	Exec(cmd string, args []string) (stdout string, stderr string, err error)
+	Exec(cmd string, args []string, liveOutput bool) (stdout string, stderr string, err error)
 	AppName() string
 
 	Out() *streams.Out
@@ -136,7 +136,7 @@ func (cli *CLI) GlobalOptions() *GlobalOptions {
 	return cli.globalOptions
 }
 
-func (cli *CLI) Exec(cmd string, args []string) (string, string, error) {
+func (cli *CLI) Exec(cmd string, args []string, liveOutput bool) (string, string, error) {
 	if cmd == "" {
 		return "", "", errors.New("cannot execute empty command")
 	}
@@ -145,7 +145,8 @@ func (cli *CLI) Exec(cmd string, args []string) (string, string, error) {
 		args = append(cmdParts[1:], args...)
 	}
 	ecmd := newExternalCmd(externalExe(cmdParts[0]), args, cli)
-	res, err := ecmd.exec()
+
+	res, err := ecmd.exec(liveOutput)
 	if err != nil {
 		return "", "", err
 	}

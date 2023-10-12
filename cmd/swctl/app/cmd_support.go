@@ -220,7 +220,7 @@ func writeInterfaces(cli Cli, w io.Writer, components []client.Component, otherA
 	for _, compo := range components {
 		if sn, ok := compo.GetMetadata()["containerServiceName"]; ok {
 			cmd := fmt.Sprintf("vpp-probe --color never --env=%s --query label=%s=%s discover", defaultVppProbeEnv, compose.ServiceLabel, sn)
-			stdout, _, err := cli.Exec(cmd, []string{})
+			stdout, _, err := cli.Exec(cmd, []string{}, false)
 			if err != nil {
 				if ee, ok := err.(*exec.ExitError); ok {
 					logrus.Tracef("vpp-probe discover failed for service %s with error: %v: %s", sn, ee.String(), ee.Stderr)
@@ -258,7 +258,7 @@ func writeStatusAsJson(cli Cli, w io.Writer, components []client.Component, othe
 
 func writeDockerComposeConfig(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
 	cmd := "docker compose config"
-	stdout, stderr, err := cli.Exec(cmd, []string{})
+	stdout, stderr, err := cli.Exec(cmd, []string{}, false)
 	if err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func writeDockerComposeConfig(cli Cli, w io.Writer, components []client.Componen
 
 func writeDockerContainers(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
 	cmd := "docker compose ps --all"
-	stdout, stderr, err := cli.Exec(cmd, []string{})
+	stdout, stderr, err := cli.Exec(cmd, []string{}, false)
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func writeDockerContainers(cli Cli, w io.Writer, components []client.Component, 
 
 func writeDockerInspect(cli Cli, w io.Writer, components []client.Component, otherArgs ...interface{}) error {
 	cmd := fmt.Sprintf("docker inspect %s", fmt.Sprintf("%s", otherArgs[0]))
-	stdout, _, err := cli.Exec(cmd, []string{})
+	stdout, _, err := cli.Exec(cmd, []string{}, false)
 	if err != nil {
 		return err
 	}
@@ -305,7 +305,7 @@ func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args
 
 	cmd := fmt.Sprintf("agentctl --host %s --http-port %d --grpc-port=%d report -i -o %s",
 		host, httpPort, grpcPort, tempDirName)
-	_, _, err = cli.Exec(cmd, []string{})
+	_, _, err = cli.Exec(cmd, []string{}, false)
 	if err != nil {
 		return err
 	}
@@ -341,7 +341,7 @@ func writeAgentCtlInfo(cli Cli, w io.Writer, components []client.Component, args
 func writeDockerLogs(cli Cli, w io.Writer, components []client.Component, args ...interface{}) error {
 	serviceName := args[0]
 	cmd := fmt.Sprintf("docker compose logs --no-color -n 10000 %s", serviceName)
-	stdout, stderr, err := cli.Exec(cmd, []string{})
+	stdout, stderr, err := cli.Exec(cmd, []string{}, false)
 	if err != nil {
 		return err
 	}
