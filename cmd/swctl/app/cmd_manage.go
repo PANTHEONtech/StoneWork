@@ -377,17 +377,25 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		opts.Format = "yaml"
 	}
 
-	var fileName string
+	var filePath string
 	var writer io.Writer
 
 	if opts.OutputFile == "" {
-		fileName = fmt.Sprintf("%s.%s", entityName, opts.Format)
+		filePath = fmt.Sprintf("%s.%s", entityName, opts.Format)
 	} else {
-		outputFilePrefix := strings.Split(opts.OutputFile, ".")
-		fileName = fmt.Sprintf("%s.%s", outputFilePrefix[0], opts.Format)
+		dir := filepath.Dir(opts.OutputFile)
+		base := filepath.Base(opts.OutputFile)
+		err = os.MkdirAll(dir, 0777)
+		if err != nil {
+			return err
+		}
+
+		outputFilePrefix := strings.Split(base, ".")
+		filePath = fmt.Sprintf("%s.%s", outputFilePrefix[0], opts.Format)
+		filePath = filepath.Join(dir, filePath)
 	}
 
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		logrus.Warnln(fmt.Errorf("%s : the configuration file will be printed to stdout", err))
 		writer = cli.Out()
