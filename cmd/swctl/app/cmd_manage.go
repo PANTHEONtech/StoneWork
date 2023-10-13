@@ -64,6 +64,7 @@ type ManageOptions struct {
 	Vars        map[string]string
 	ShowConfig  bool
 	Interactive bool
+	OutputFile  string
 }
 
 func (opts *ManageOptions) InstallFlags(flagset *pflag.FlagSet) {
@@ -76,6 +77,8 @@ func (opts *ManageOptions) InstallFlags(flagset *pflag.FlagSet) {
 	flagset.BoolVar(&opts.ShowConfig, "show-config", false, "Print config for entity detail")
 	flagset.BoolVarP(&opts.Interactive, "interactive", "i", false, "Enable interactive mode")
 	flagset.StringToStringVar(&opts.Vars, "var", nil, "Override values for variables (--var VAR_NAME=value)")
+	flagset.StringVar(&opts.OutputFile, "output-file", "", `Define the output file name. Format from format flag will be used as suffix
+	 (default: <entityName>.<actual format suffix>)`)
 }
 
 func NewManageCmd(cli Cli) *cobra.Command {
@@ -370,11 +373,39 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		finalConf = mainConf
 	}
 
-	// format final output
 	if opts.Format == "" {
 		opts.Format = "yaml"
 	}
-	if err := formatAsTemplate(cli.Out(), opts.Format, finalConf); err != nil {
+
+	var filePath string
+	var writer io.Writer
+
+	if opts.OutputFile == "" {
+		filePath = fmt.Sprintf("%s.%s", entityName, opts.Format)
+	} else {
+		dir := filepath.Dir(opts.OutputFile)
+		base := filepath.Base(opts.OutputFile)
+		err = os.MkdirAll(dir, 0777)
+		if err != nil {
+			return err
+		}
+
+		outputFilePrefix := strings.Split(base, ".")
+		filePath = fmt.Sprintf("%s.%s", outputFilePrefix[0], opts.Format)
+		filePath = filepath.Join(dir, filePath)
+	}
+
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		logrus.Warnln(fmt.Errorf("%s : the configuration file will be printed to stdout", err))
+		writer = cli.Out()
+	} else {
+		defer file.Close()
+		writer = file
+	}
+
+	// format final output
+	if err := formatAsTemplate(writer, opts.Format, finalConf); err != nil {
 		return err
 	}
 
