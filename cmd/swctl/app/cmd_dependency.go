@@ -98,20 +98,20 @@ func installExternalToolsCmd(cli Cli) *cobra.Command {
 		Short: "Install external tools",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintln(cli.Out(), "checking docker availability...")
+			color.Fprintln(cli.Out(), "checking docker availability...")
 			docker, err := IsDockerAvailable(cli)
 			if err != nil {
 				return errors.New(fmt.Sprintf("Unable to check docker availability: %v", err))
 			}
 			if docker {
-				fmt.Fprintln(cli.Out(), "Docker is already installed")
+				color.Fprintln(cli.Out(), "Docker is already installed")
 			} else {
-				fmt.Fprintln(cli.Out(), "Installing docker...")
+				color.Fprintln(cli.Out(), "Installing docker...")
 				err = InstallDocker(cli, dockerVersion)
 				if err != nil {
 					return err
 				}
-				fmt.Fprintln(cli.Out(), "Installation of docker was successful")
+				color.Fprintln(cli.Out(), "Installation of docker was successful")
 			}
 
 			vppProbeAvailable, err := IsVPPProbeAvailable(vppProbeTagVersion, cli.Out())
@@ -119,14 +119,14 @@ func installExternalToolsCmd(cli Cli) *cobra.Command {
 				return errors.New(fmt.Sprintf("Unable to check vpp-probe availability: %v", err))
 			}
 			if vppProbeAvailable {
-				fmt.Fprintln(cli.Out(), "VPP-probe is already installed")
+				color.Fprintln(cli.Out(), "VPP-probe is already installed")
 			} else {
-				fmt.Fprintln(cli.Out(), "Installing vpp-probe...")
+				color.Fprintln(cli.Out(), "Installing vpp-probe...")
 				err = InstallVPPProbe(cli, vppProbeTagVersion)
 				if err != nil {
 					return err
 				}
-				fmt.Fprintln(cli.Out(), "Installation of the vpp-probe tool was successful")
+				color.Fprintln(cli.Out(), "Installation of the vpp-probe tool was successful")
 			}
 
 			agentctlAvailable, err := IsAgentctlAvailable(agentctlCommitVersion, cli.Out())
@@ -134,14 +134,14 @@ func installExternalToolsCmd(cli Cli) *cobra.Command {
 				return errors.New(fmt.Sprintf("Unable to check agentctl availability: %v", err))
 			}
 			if agentctlAvailable {
-				fmt.Fprintln(cli.Out(), "Agentctl is already installed")
+				color.Fprintln(cli.Out(), "Agentctl is already installed")
 			} else {
-				fmt.Fprintln(cli.Out(), "Installing agentctl...")
+				color.Fprintln(cli.Out(), "Installing agentctl...")
 				err = InstallAgentCtl(cli, agentctlCommitVersion)
 				if err != nil {
 					return err
 				}
-				fmt.Fprintln(cli.Out(), "Installation of the agentctl tool was successful")
+				color.Fprintln(cli.Out(), "Installation of the agentctl tool was successful")
 			}
 
 			return nil
@@ -177,7 +177,7 @@ func dependencyStatusCmd(cli Cli) *cobra.Command {
 			} else if vppProbeAvailable {
 				status = "OK"
 			}
-			fmt.Fprintf(cli.Out(), "VPP-Probe: %s\n", status)
+			color.Fprintf(cli.Out(), "VPP-Probe: %s\n", status)
 
 			// agentctl
 			agentctlAvailable, err := IsAgentctlAvailable(agentctlCommitVersion, nil)
@@ -188,7 +188,7 @@ func dependencyStatusCmd(cli Cli) *cobra.Command {
 			} else if agentctlAvailable {
 				status = "OK"
 			}
-			fmt.Fprintf(cli.Out(), "Agentctl: %s\n", status)
+			color.Fprintf(cli.Out(), "Agentctl: %s\n", status)
 
 			// hugepages
 			hugePagesCount, err := AllocatedHugePages(cli)
@@ -198,18 +198,18 @@ func dependencyStatusCmd(cli Cli) *cobra.Command {
 			} else if hugePagesCount != 0 {
 				status = strconv.Itoa(hugePagesCount)
 			}
-			fmt.Fprintf(cli.Out(), "Hugepages: %s\n", status)
+			color.Fprintf(cli.Out(), "Hugepages: %s\n", status)
 
 			// physical interfaces
 			physicalInterfaces, err := DumpDevices(cli)
 			if err != nil {
-				fmt.Fprintf(cli.Out(), "Physical interfaces: <unable to check: %s>\n", err)
+				color.Fprintf(cli.Out(), "Physical interfaces: <unable to check: %s>\n", err)
 				return err
 			}
 			if physicalInterfaces == nil {
-				fmt.Fprint(cli.Out(), "No available interfaces\n")
+				color.Fprint(cli.Out(), "No available interfaces\n")
 			} else {
-				fmt.Fprint(cli.Out(), "Physical interfaces:\n")
+				color.Fprint(cli.Out(), "Physical interfaces:\n")
 				table := tablewriter.NewWriter(cli.Out())
 				table.SetHeader([]string{"Name", "Pci", "Mode", "Driver"})
 
@@ -292,7 +292,7 @@ func linkSetUpDownCmd(cli Cli) *cobra.Command {
 				if args[len(args)-1] == "up" {
 					//returning interface back to kernel driver
 					if physicalInterfaces[matchId].Driver == "" {
-						fmt.Fprintln(cli.Out(), fmt.Sprintf("don't need to unbind the already unbinded pci %s", physicalInterfaces[matchId].Name))
+						color.Fprintln(cli.Out(), fmt.Sprintf("don't need to unbind the already unbinded pci %s", physicalInterfaces[matchId].Name))
 					} else {
 						err = unbindDevice(cli, physicalInterfaces[matchId].Pci, physicalInterfaces[matchId].Driver)
 						if err != nil {
@@ -437,7 +437,7 @@ func ResizeHugePages(cli Cli, size uint) error {
 	//TODO: Make persistent hugepages
 	//TODO: Handle numa case, Big (1GB)hugepages(are immutable and can be setted only during booting)
 	if size == 0 {
-		fmt.Fprintln(cli.Out(), "Skipping hugepages")
+		color.Fprintln(cli.Out(), "Skipping hugepages")
 		return nil
 	}
 	_, _, err := cli.Exec(fmt.Sprintf("sudo sysctl -w vm.nr_hugepages=%d", size), nil, false)
@@ -487,7 +487,7 @@ func InstallDocker(cli Cli, dockerVersion string) error {
 		if err != nil {
 			return errors.New(err.Error() + "(" + command + ")")
 		}
-		fmt.Fprintln(cli.Out(), out)
+		color.Fprintln(cli.Out(), out)
 
 	}
 
@@ -543,7 +543,7 @@ func isExternalToolAvailable(tool externalExe, targetVersion string, logger io.W
 
 	// Check current state of tool installation directory and binary version file in the system
 	if logger != nil {
-		fmt.Fprintf(logger, "checking availability of external tool %s\n", string(tool))
+		color.Fprintf(logger, "checking availability of external tool %s\n", string(tool))
 	}
 	var installedVersion string
 	if _, err := os.Stat(installPath); err == nil {
@@ -552,7 +552,7 @@ func isExternalToolAvailable(tool externalExe, targetVersion string, logger io.W
 			installedVersion = string(version)
 		} else if os.IsNotExist(err) {
 			if logger != nil {
-				fmt.Fprintf(logger, "%s version file not found, proceed to download\n", string(tool))
+				color.Fprintf(logger, "%s version file not found, proceed to download\n", string(tool))
 			}
 			return false, nil
 		} else if err != nil {
@@ -560,7 +560,7 @@ func isExternalToolAvailable(tool externalExe, targetVersion string, logger io.W
 		}
 	} else if os.IsNotExist(err) {
 		if logger != nil {
-			fmt.Fprintf(logger, "%s install directory not found, proceed to download\n", string(tool))
+			color.Fprintf(logger, "%s install directory not found, proceed to download\n", string(tool))
 		}
 		return false, nil
 	} else if err != nil {
@@ -570,16 +570,16 @@ func isExternalToolAvailable(tool externalExe, targetVersion string, logger io.W
 	// Check whether desired version is already in place
 	if installedVersion != "" {
 		if logger != nil {
-			fmt.Fprintf(logger, "installed version of %s: %v\n", string(tool), installedVersion)
+			color.Fprintf(logger, "installed version of %s: %v\n", string(tool), installedVersion)
 		}
 		if installedVersion == targetVersion {
 			if logger != nil {
-				fmt.Fprintf(logger, "installed version of %s is the correct version to be used\n", string(tool))
+				color.Fprintf(logger, "installed version of %s is the correct version to be used\n", string(tool))
 			}
 			return true, nil
 		}
 		if logger != nil {
-			fmt.Fprintf(logger, "required version of %s is %s, proceed to download\n",
+			color.Fprintf(logger, "required version of %s is %s, proceed to download\n",
 				string(tool), targetVersion)
 		}
 	}
@@ -601,7 +601,7 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 	}
 
 	// run agentctl build in docker
-	fmt.Fprintln(cli.Out(), "building agentctl in docker container...")
+	color.Fprintln(cli.Out(), "building agentctl in docker container...")
 	_, _, err = cli.Exec("docker build", []string{
 		"-f", dockerFile,
 		"--build-arg", fmt.Sprintf("COMMIT=\"%s\"", agentctlCommitVersion),
@@ -642,11 +642,11 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 	// cleanup
 	_, _, err = cli.Exec("docker rm", []string{containerId}, false)
 	if err != nil {
-		fmt.Fprintf(cli.Out(), "clean up of agentctl builder container failed (%v), continuing... ", err)
+		color.Fprintf(cli.Out(), "clean up of agentctl builder container failed (%v), continuing... ", err)
 	}
 	_, _, err = cli.Exec("docker rmi", []string{"-f", builderImage}, false)
 	if err != nil {
-		fmt.Fprintf(cli.Out(), "clean up of agentctl builder image failed (%v), continuing... ", err)
+		color.Fprintf(cli.Out(), "clean up of agentctl builder image failed (%v), continuing... ", err)
 	}
 
 	return nil

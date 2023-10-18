@@ -1,8 +1,7 @@
 package app
 
 import (
-	"fmt"
-
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/exp/slices"
@@ -53,7 +52,7 @@ func runConfigCmd(cli Cli, opts ConfigCmdOptions) error {
 		return err
 	}
 
-	fmt.Fprintln(cli.Err(), stderr)
-	fmt.Fprintln(cli.Out(), stdout)
+	color.Fprintln(cli.Err(), stderr)
+	color.Fprintln(cli.Out(), stdout)
 	return nil
 }

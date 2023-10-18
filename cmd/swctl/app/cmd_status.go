@@ -94,8 +94,8 @@ func runStatusCmd(cli Cli, opts StatusOptions) error {
 						continue
 					}
 				}
-				fmt.Fprintln(cli.Out(), stdout)
-				fmt.Fprintln(cli.Err(), stderr)
+				color.Fprintln(cli.Out(), stdout)
+				color.Fprintln(cli.Err(), stderr)
 			}
 		}
 		return nil

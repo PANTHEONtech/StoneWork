@@ -1,7 +1,6 @@
 package app
 
 import (
-	"archive/zip"
 	"fmt"
 	"io"
 	"os"
@@ -11,7 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"archive/zip"
 	compose "github.com/docker/compose/v2/pkg/api"
+	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -227,7 +228,7 @@ func writeInterfaces(cli Cli, w io.Writer, components []client.Component, otherA
 					continue
 				}
 			}
-			fmt.Fprintln(w, stdout)
+			color.Fprintln(w, stdout)
 		}
 	}
 	return nil
@@ -265,7 +266,7 @@ func writeDockerComposeConfig(cli Cli, w io.Writer, components []client.Componen
 	if stderr != "" {
 		return fmt.Errorf("%s: %s", cmd, stderr)
 	}
-	fmt.Fprintln(w, stdout)
+	color.Fprintln(w, stdout)
 	return nil
 }
 
@@ -278,7 +279,7 @@ func writeDockerContainers(cli Cli, w io.Writer, components []client.Component, 
 	if stderr != "" {
 		return fmt.Errorf("%s: %s", cmd, stderr)
 	}
-	fmt.Fprintln(w, stdout)
+	color.Fprintln(w, stdout)
 	return nil
 }
 
@@ -288,7 +289,7 @@ func writeDockerInspect(cli Cli, w io.Writer, components []client.Component, oth
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(w, stdout)
+	color.Fprintln(w, stdout)
 	return nil
 }
 
@@ -348,7 +349,7 @@ func writeDockerLogs(cli Cli, w io.Writer, components []client.Component, args .
 	if stderr != "" {
 		return fmt.Errorf("%s: %s", cmd, stderr)
 	}
-	fmt.Fprintln(w, stdout)
+	color.Fprintln(w, stdout)
 	return nil
 }
 
@@ -419,8 +420,8 @@ func writeErrors(cli Cli, w io.Writer, components []client.Component, otherArgs 
 
 	for _, error := range errors {
 		if error != nil {
-			fmt.Fprintln(w, "###########################")
-			fmt.Fprintln(w, error)
+			color.Fprintln(w, "###########################")
+			color.Fprintln(w, error)
 		}
 	}
 	return nil

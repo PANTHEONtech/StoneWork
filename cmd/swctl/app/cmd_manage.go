@@ -627,8 +627,8 @@ func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string)
 			desc := prefixTmpl(v.Description, "   ")
 			color.Fprintln(w, color.Gray.Sprint(desc))
 		}
-		fmt.Fprintln(w)
-		fmt.Fprintf(w, "    ")
+		color.Fprintln(w)
+		color.Fprintf(w, "    ")
 		cval, err := promptUserValue(v.Name, vv)
 		if err != nil {
 			return nil, err
@@ -648,7 +648,7 @@ func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string)
 		evars[v.Name] = val
 
 		color.Fprintf(w, "%s=%s\n", color.Cyan.Sprint(v.Name), color.LightGreen.Sprint(val))
-		fmt.Fprintln(w)
+		color.Fprintln(w)
 	}
 	return evars, nil
 }
