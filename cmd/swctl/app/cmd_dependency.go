@@ -541,7 +541,7 @@ func isExternalToolAvailable(tool externalExe, targetVersion string, logger io.W
 	installPath := tool.installPath() // absolute path to tool executable
 	versionPath := installPath + ".version"
 
-	// Check current state of tool installation directory and binary version file in the system
+	// Check current state of tool installation and tool version file in the system
 	if logger != nil {
 		color.Fprintf(logger, "checking availability of external tool %s\n", string(tool))
 	}
@@ -560,7 +560,7 @@ func isExternalToolAvailable(tool externalExe, targetVersion string, logger io.W
 		}
 	} else if os.IsNotExist(err) {
 		if logger != nil {
-			color.Fprintf(logger, "%s install directory not found, proceed to download\n", string(tool))
+			color.Fprintf(logger, "%s installation not found, proceed to download\n", string(tool))
 		}
 		return false, nil
 	} else if err != nil {
@@ -604,7 +604,7 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 	color.Fprintln(cli.Out(), "building agentctl in docker container...")
 	_, _, err = cli.Exec("docker build", []string{
 		"-f", dockerFile,
-		"--build-arg", fmt.Sprintf("COMMIT=\"%s\"", agentctlCommitVersion),
+		"--build-arg", fmt.Sprintf("COMMIT=%s", agentctlCommitVersion),
 		"-t", builderImage,
 		"--rm=true",
 		dir},
@@ -612,6 +612,12 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 	if err != nil {
 		return fmt.Errorf("can't build agentctl due to builder docker build failure: %w", err)
 	}
+	defer func() { // cleanup of docker image
+		_, _, err = cli.Exec("docker rmi", []string{"-f", builderImage}, false)
+		if err != nil {
+			color.Fprintf(cli.Out(), "clean up of agentctl builder image failed (%v), continuing... ", err)
+		}
+	}()
 
 	// extract agentctl into external tools binary folder
 	stdout, _, err := cli.Exec("docker create", []string{builderImage}, false)
@@ -620,14 +626,20 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 			"to container creation failure: %w", err)
 	}
 	containerId := fmt.Sprint(stdout)
+	defer func() { // cleanup of docker container
+		_, _, err = cli.Exec("docker rm", []string{containerId}, false)
+		if err != nil {
+			color.Fprintf(cli.Out(), "clean up of agentctl builder container failed (%v), continuing... ", err)
+		}
+	}()
 	_, _, err = cli.Exec("docker cp", []string{
-		fmt.Sprintf("%s:/go/bin/agentctl", containerId), "-", ">",
-		fmt.Sprintf("\"%s\"", cmdAgentCtl.installPath()),
+		fmt.Sprintf("%s:/go/bin/agentctl", containerId), cmdAgentCtl.installPath(),
 	}, false)
 	if err != nil {
 		return fmt.Errorf("can't extract agentctl from builder docker image due "+
 			"to docker cp failure: %w", err)
 	}
+
 	err = os.Chmod(cmdAgentCtl.installPath(), 0755)
 	if err != nil {
 		return fmt.Errorf("can't set for agentctl proper file permissions: %w", err)
@@ -637,16 +649,6 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 	versionPath := cmdAgentCtl.installPath() + ".version"
 	if err := os.WriteFile(versionPath, []byte(agentctlCommitVersion), 0755); err != nil {
 		return fmt.Errorf("writing version to file failed: %w", err)
-	}
-
-	// cleanup
-	_, _, err = cli.Exec("docker rm", []string{containerId}, false)
-	if err != nil {
-		color.Fprintf(cli.Out(), "clean up of agentctl builder container failed (%v), continuing... ", err)
-	}
-	_, _, err = cli.Exec("docker rmi", []string{"-f", builderImage}, false)
-	if err != nil {
-		color.Fprintf(cli.Out(), "clean up of agentctl builder image failed (%v), continuing... ", err)
 	}
 
 	return nil

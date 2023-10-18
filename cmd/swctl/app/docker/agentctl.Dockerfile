@@ -33,7 +33,7 @@ RUN mkdir -p "/src/ligato" && \
     git clone https://github.com/ligato/vpp-agent.git
 WORKDIR /src/ligato/vpp-agent
 ARG COMMIT
-RUN git checkout "$COMMIT"
+RUN git checkout $COMMIT
 
 ARG VERSION
 ARG BRANCH
