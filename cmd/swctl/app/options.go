@@ -14,9 +14,8 @@ import (
 )
 
 const (
-	EnvVarDebug              = "SWCTL_DEBUG"
-	EnvVarLogLevel           = "SWCTL_LOGLEVEL"
-	EnvVarVppProbeNoDownload = "SWCTL_VPP_PROBE_NO_DOWNLOAD"
+	EnvVarDebug    = "SWCTL_DEBUG"
+	EnvVarLogLevel = "SWCTL_LOGLEVEL"
 )
 
 type GlobalOptions struct {

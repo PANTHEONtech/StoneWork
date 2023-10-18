@@ -1,8 +1,12 @@
 package app
 
 import (
+	_ "embed"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -12,12 +16,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//go:embed docker/agentctl.Dockerfile
+var embeddedAgentctlDockerfile []byte
+
+const (
+	dockerVersion         = "default"
+	vppProbeTagVersion    = "v0.2.0"
+	agentctlCommitVersion = "723f8db0bf7a67908e2dda1d860444a4747a99d8"
+)
+
+var binaryToolsInstallDir = filepath.Join(os.Getenv("HOME"), ".cache", "stonework", "bin")
+
 func exampleDependencyCmd(appName string) string {
 	return `
   <white># Status of all dependencies</>
   $ <yellow>` + appName + ` dependency status</>
 
-  <white># Install external tools (docker, docker compose)</>
+  <white># Install external tools (docker, docker compose, vpp-probe, agentctl)</>
   $ <yellow>` + appName + ` dependency install-tools</>
 
   <white># Set quantity of runtime 2MB HugePages manually</>
@@ -55,7 +70,6 @@ func NewDependencyCmd(cli Cli) *cobra.Command {
 		// overriding Root's PersistentPreRunE because in any dependency
 		// commands is not needed docker client connection
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-
 			return nil
 		},
 	}
@@ -69,12 +83,74 @@ func NewDependencyCmd(cli Cli) *cobra.Command {
 	}
 	cli.Initialize(&glob)
 
-	cmd.AddCommand(installExternalTools(cli), dependencyStatus(cli), installHugePages(cli), linkSetUpDown(cli), startupConf(cli))
+	cmd.AddCommand(installExternalToolsCmd(cli),
+		dependencyStatusCmd(cli),
+		installHugePagesCmd(cli),
+		linkSetUpDownCmd(cli),
+		startupConfCmd(cli))
 
 	return cmd
 }
 
-func dependencyStatus(cli Cli) *cobra.Command {
+func installExternalToolsCmd(cli Cli) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "install-tools",
+		Short: "Install external tools",
+		Args:  cobra.ArbitraryArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Fprintln(cli.Out(), "checking docker availability...")
+			docker, err := IsDockerAvailable(cli)
+			if err != nil {
+				return errors.New(fmt.Sprintf("Unable to check docker availability: %v", err))
+			}
+			if docker {
+				fmt.Fprintln(cli.Out(), "Docker is already installed")
+			} else {
+				fmt.Fprintln(cli.Out(), "Installing docker...")
+				err = InstallDocker(cli, dockerVersion)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintln(cli.Out(), "Installation of docker was successful")
+			}
+
+			vppProbeAvailable, err := IsVPPProbeAvailable(vppProbeTagVersion, cli.Out())
+			if err != nil {
+				return errors.New(fmt.Sprintf("Unable to check vpp-probe availability: %v", err))
+			}
+			if vppProbeAvailable {
+				fmt.Fprintln(cli.Out(), "VPP-probe is already installed")
+			} else {
+				fmt.Fprintln(cli.Out(), "Installing vpp-probe...")
+				err = InstallVPPProbe(cli, vppProbeTagVersion)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintln(cli.Out(), "Installation of the vpp-probe tool was successful")
+			}
+
+			agentctlAvailable, err := IsAgentctlAvailable(agentctlCommitVersion, cli.Out())
+			if err != nil {
+				return errors.New(fmt.Sprintf("Unable to check agentctl availability: %v", err))
+			}
+			if agentctlAvailable {
+				fmt.Fprintln(cli.Out(), "Agentctl is already installed")
+			} else {
+				fmt.Fprintln(cli.Out(), "Installing agentctl...")
+				err = InstallAgentCtl(cli, agentctlCommitVersion)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintln(cli.Out(), "Installation of the agentctl tool was successful")
+			}
+
+			return nil
+		},
+	}
+	return cmd
+}
+
+func dependencyStatusCmd(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "status",
 		Short:         "status",
@@ -82,38 +158,58 @@ func dependencyStatus(cli Cli) *cobra.Command {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			docker, err := IsDockerAvailable(cli)
+			// docker
+			dockerAvailable, err := IsDockerAvailable(cli)
+			status := "Not installed"
 			if err != nil {
-				return err
-			}
-			hugePages, err := AllocatedHugePages(cli)
-			if err != nil {
-				return err
-
-			}
-			physicalInterfaces, err := DumpDevices(cli)
-			if err != nil {
-				return err
-			}
-			var status string
-			if docker {
+				status = fmt.Sprintf("<unable to check: %s>", err)
+			} else if dockerAvailable {
 				status = "OK"
-			} else {
-				status = "Not installed"
 			}
-			fmt.Fprintf(cli.Out(), "Docker: %s\n", status)
+			color.Fprintf(cli.Out(), "Docker: %s\n", status)
 
-			if hugePages == 0 {
-				status = "Disabled"
-			} else {
-				status = strconv.Itoa(hugePages)
+			// vpp-probe
+			vppProbeAvailable, err := IsVPPProbeAvailable(vppProbeTagVersion, nil)
+			status = fmt.Sprintf("Not installed/installed incorrect version "+
+				"(needed version is %s)", vppProbeTagVersion)
+			if err != nil {
+				status = fmt.Sprintf("<unable to check: %s>", err)
+			} else if vppProbeAvailable {
+				status = "OK"
+			}
+			fmt.Fprintf(cli.Out(), "VPP-Probe: %s\n", status)
+
+			// agentctl
+			agentctlAvailable, err := IsAgentctlAvailable(agentctlCommitVersion, nil)
+			status = fmt.Sprintf("Not installed/installed incorrect version "+
+				"(needed version from commit %s in ligato/vpp-agent repository)", agentctlCommitVersion)
+			if err != nil {
+				status = fmt.Sprintf("<unable to check: %s>", err)
+			} else if agentctlAvailable {
+				status = "OK"
+			}
+			fmt.Fprintf(cli.Out(), "Agentctl: %s\n", status)
+
+			// hugepages
+			hugePagesCount, err := AllocatedHugePages(cli)
+			status = "Disabled"
+			if err != nil {
+				status = fmt.Sprintf("<unable to check: %s>", err)
+			} else if hugePagesCount != 0 {
+				status = strconv.Itoa(hugePagesCount)
 			}
 			fmt.Fprintf(cli.Out(), "Hugepages: %s\n", status)
 
+			// physical interfaces
+			physicalInterfaces, err := DumpDevices(cli)
+			if err != nil {
+				fmt.Fprintf(cli.Out(), "Physical interfaces: <unable to check: %s>\n", err)
+				return err
+			}
 			if physicalInterfaces == nil {
-				status = "No available interfaces\n"
-				fmt.Fprintf(cli.Out(), status)
+				fmt.Fprint(cli.Out(), "No available interfaces\n")
 			} else {
+				fmt.Fprint(cli.Out(), "Physical interfaces:\n")
 				table := tablewriter.NewWriter(cli.Out())
 				table.SetHeader([]string{"Name", "Pci", "Mode", "Driver"})
 
@@ -130,41 +226,15 @@ func dependencyStatus(cli Cli) *cobra.Command {
 				}
 				table.Render()
 			}
-			return nil
+			// errors are already logged to console, so returning only last error to indicate
+			// partial/full failure in cmd status/return code
+			return err
 		},
 	}
 	return cmd
 }
 
-func installExternalTools(cli Cli) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "install-tools",
-		Short: "Install external tools",
-		Args:  cobra.ArbitraryArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			docker, err := IsDockerAvailable(cli)
-			if err != nil {
-				return errors.New(fmt.Sprintf("Unable to check docker availability: %v", err))
-			}
-
-			if docker {
-				fmt.Fprintln(cli.Out(), "Docker is already installed")
-				return nil
-			}
-
-			err = InstallDocker(cli, "default")
-			if err != nil {
-				return err
-			}
-
-			return nil
-		},
-	}
-	return cmd
-}
-
-func installHugePages(cli Cli) *cobra.Command {
+func installHugePagesCmd(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "set-hugepages",
 		Short: "set-hugepages <value>",
@@ -184,14 +254,12 @@ func installHugePages(cli Cli) *cobra.Command {
 	return cmd
 }
 
-/*
-linkSetUpDown changes the link state and binds/unbinds the pci driver
-(up=kernel driver usable for kernel network stack, down=no kernel driver).
-The kernel driver unbinding is helpfull in case of DPDK interfaces that
-can't have kernel network stack usable driver when VPP should use them
-as DPDK interfaces.
-*/
-func linkSetUpDown(cli Cli) *cobra.Command {
+// linkSetUpDownCmd changes the link state and binds/unbinds the pci driver
+// (up=kernel driver usable for kernel network stack, down=no kernel driver).
+// The kernel driver unbinding is helpfull in case of DPDK interfaces that
+// can't have kernel network stack usable driver when VPP should use them
+// as DPDK interfaces.
+func linkSetUpDownCmd(cli Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "link ",
 		Short: "link < pci ...> up | down",
@@ -268,94 +336,7 @@ func linkSetUpDown(cli Cli) *cobra.Command {
 	return cmd
 }
 
-func IsDockerAvailable(cli Cli) (bool, error) {
-	out, _, err := cli.Exec("whereis docker", nil, false)
-	if err != nil {
-		return false, err
-	}
-	if strings.Contains(out, "/docker") {
-		return true, nil
-	}
-	return false, nil
-}
-
-func AllocatedHugePages(cli Cli) (int, error) {
-	out, _, err := cli.Exec("sysctl vm.nr_hugepages -n", nil, false)
-	if err != nil {
-		return 0, err
-	}
-	hugePgSize, err := strconv.Atoi(strings.TrimSpace(out))
-	if err != nil {
-		return 0, err
-	}
-
-	return hugePgSize, nil
-}
-
-func ResizeHugePages(cli Cli, size uint) error {
-	const hugePageSize = 2048
-	//TODO: Make persistent hugepages
-	//TODO: Handle numa case, Big (1GB)hugepages(are immutable and can be setted only during booting)
-	if size == 0 {
-		fmt.Fprintln(cli.Out(), "Skipping hugepages")
-		return nil
-	}
-	_, _, err := cli.Exec(fmt.Sprintf("sudo sysctl -w vm.nr_hugepages=%d", size), nil, false)
-	if err != nil {
-		return err
-	}
-	allocatedHP, err := AllocatedHugePages(cli)
-	if err != nil {
-		return err
-	}
-
-	if size != uint(allocatedHP) {
-		return errors.New(fmt.Sprintf("failed to allocate enough hugepages (%d),successfully allocated %d hugepages, totally continuous memory %d MB ",
-			size, allocatedHP, (allocatedHP*hugePageSize)/1000))
-	}
-
-	return nil
-}
-
-func InstallDocker(cli Cli, dockerVersion string) error {
-
-	commands := []string{"sudo apt-get update -y",
-		"sudo apt-get install ca-certificates curl gnupg -y",
-		"sudo install -m 0755 -d /etc/apt/keyrings",
-		"curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg --yes",
-		"sudo chmod a+r /etc/apt/keyrings/docker.gpg",
-		`echo \
-		"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-		"$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
-		sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`,
-		"sudo apt-get update -y",
-		"echo \"uio_pci_generic\" | sudo tee -a /etc/modules",
-	}
-	if dockerVersion == "default" {
-		cmd := `sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`
-		commands = append(commands, cmd)
-	} else {
-		cmd := `sudo apt-get install -y docker-ce=` + dockerVersion + ` docker-ce-cli=` + dockerVersion + ` containerd.io docker-buildx-plugin docker-compose-plugin`
-		commands = append(commands, cmd)
-
-	}
-
-	for _, command := range commands {
-		out, stderr, err := cli.Exec("bash -c", []string{command}, false)
-		if stderr != "" {
-			return errors.New(command + ": " + stderr)
-		}
-		if err != nil {
-			return errors.New(err.Error() + "(" + command + ")")
-		}
-		fmt.Fprintln(cli.Out(), out)
-
-	}
-
-	return nil
-}
-
-func startupConf(cli Cli) *cobra.Command {
+func startupConfCmd(cli Cli) *cobra.Command {
 	const startupconfig = `unix {
 cli-no-pager
 cli-listen /run/vpp/cli.sock
@@ -425,6 +406,250 @@ punt {
 		},
 	}
 	return cmd
+}
+
+func IsDockerAvailable(cli Cli) (bool, error) {
+	out, _, err := cli.Exec("whereis docker", nil, false)
+	if err != nil {
+		return false, err
+	}
+	if strings.Contains(out, "/docker") {
+		return true, nil
+	}
+	return false, nil
+}
+
+func AllocatedHugePages(cli Cli) (int, error) {
+	out, _, err := cli.Exec("sysctl vm.nr_hugepages -n", nil, false)
+	if err != nil {
+		return 0, err
+	}
+	hugePgSize, err := strconv.Atoi(strings.TrimSpace(out))
+	if err != nil {
+		return 0, err
+	}
+
+	return hugePgSize, nil
+}
+
+func ResizeHugePages(cli Cli, size uint) error {
+	const hugePageSize = 2048
+	//TODO: Make persistent hugepages
+	//TODO: Handle numa case, Big (1GB)hugepages(are immutable and can be setted only during booting)
+	if size == 0 {
+		fmt.Fprintln(cli.Out(), "Skipping hugepages")
+		return nil
+	}
+	_, _, err := cli.Exec(fmt.Sprintf("sudo sysctl -w vm.nr_hugepages=%d", size), nil, false)
+	if err != nil {
+		return err
+	}
+	allocatedHP, err := AllocatedHugePages(cli)
+	if err != nil {
+		return err
+	}
+
+	if size != uint(allocatedHP) {
+		return errors.New(fmt.Sprintf("failed to allocate enough hugepages (%d),successfully allocated %d hugepages, totally continuous memory %d MB ",
+			size, allocatedHP, (allocatedHP*hugePageSize)/1000))
+	}
+
+	return nil
+}
+
+func InstallDocker(cli Cli, dockerVersion string) error {
+	commands := []string{"sudo apt-get update -y",
+		"sudo apt-get install ca-certificates curl gnupg -y",
+		"sudo install -m 0755 -d /etc/apt/keyrings",
+		"curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg --yes",
+		"sudo chmod a+r /etc/apt/keyrings/docker.gpg",
+		`echo \
+		"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+		"$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+		sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`,
+		"sudo apt-get update -y",
+		"echo \"uio_pci_generic\" | sudo tee -a /etc/modules",
+	}
+	if dockerVersion == "default" {
+		cmd := `sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`
+		commands = append(commands, cmd)
+	} else {
+		cmd := `sudo apt-get install -y docker-ce=` + dockerVersion + ` docker-ce-cli=` + dockerVersion + ` containerd.io docker-buildx-plugin docker-compose-plugin`
+		commands = append(commands, cmd)
+
+	}
+
+	for _, command := range commands {
+		out, stderr, err := cli.Exec("bash -c", []string{command}, false)
+		if stderr != "" {
+			return errors.New(command + ": " + stderr)
+		}
+		if err != nil {
+			return errors.New(err.Error() + "(" + command + ")")
+		}
+		fmt.Fprintln(cli.Out(), out)
+
+	}
+
+	return nil
+}
+
+func InstallVPPProbe(cli Cli, vppProbeTagVersion string) error {
+	const (
+		repoOwner = "ligato"
+		repoName  = "vpp-probe"
+	)
+
+	// Construct the path to the installation file
+	installPath := cmdVppProbe.installPath() // absolute path to vpp-probe executable
+	versionPath := installPath + ".version"
+
+	// Get release info from vpp-probe github repo
+	assetUrl, err := retrieveReleaseAssetUrl(repoOwner, repoName, vppProbeTagVersion)
+	if err != nil {
+		return err
+	}
+
+	// Create the installation directory if it doesn't exist
+	if err := os.MkdirAll(binaryToolsInstallDir, 0755); err != nil {
+		return err
+	}
+
+	// Get the vpp-probe binary and copy it to install
+	err = downloadAndExtractSubAsset(assetUrl, "vpp-probe", installPath)
+	if err != nil {
+		return err
+	}
+
+	// Store the release version info
+	if err := os.WriteFile(versionPath, []byte(vppProbeTagVersion), 0755); err != nil {
+		return fmt.Errorf("writing version to file failed: %w", err)
+	}
+
+	return nil
+}
+func IsVPPProbeAvailable(vppProbeTagVersion string, logger io.Writer) (bool, error) {
+	return isExternalToolAvailable(cmdVppProbe, vppProbeTagVersion, logger)
+}
+
+func IsAgentctlAvailable(agentctlCommitVersion string, logger io.Writer) (bool, error) {
+	return isExternalToolAvailable(cmdAgentCtl, agentctlCommitVersion, logger)
+}
+
+func isExternalToolAvailable(tool externalExe, targetVersion string, logger io.Writer) (bool, error) {
+	// Construct the path to the installation file
+	installPath := tool.installPath() // absolute path to tool executable
+	versionPath := installPath + ".version"
+
+	// Check current state of tool installation directory and binary version file in the system
+	if logger != nil {
+		fmt.Fprintf(logger, "checking availability of external tool %s\n", string(tool))
+	}
+	var installedVersion string
+	if _, err := os.Stat(installPath); err == nil {
+		version, err := os.ReadFile(versionPath)
+		if err == nil {
+			installedVersion = string(version)
+		} else if os.IsNotExist(err) {
+			if logger != nil {
+				fmt.Fprintf(logger, "%s version file not found, proceed to download\n", string(tool))
+			}
+			return false, nil
+		} else if err != nil {
+			return false, err
+		}
+	} else if os.IsNotExist(err) {
+		if logger != nil {
+			fmt.Fprintf(logger, "%s install directory not found, proceed to download\n", string(tool))
+		}
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	// Check whether desired version is already in place
+	if installedVersion != "" {
+		if logger != nil {
+			fmt.Fprintf(logger, "installed version of %s: %v\n", string(tool), installedVersion)
+		}
+		if installedVersion == targetVersion {
+			if logger != nil {
+				fmt.Fprintf(logger, "installed version of %s is the correct version to be used\n", string(tool))
+			}
+			return true, nil
+		}
+		if logger != nil {
+			fmt.Fprintf(logger, "required version of %s is %s, proceed to download\n",
+				string(tool), targetVersion)
+		}
+	}
+	return false, nil
+}
+
+func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
+	const builderImage = "agentctl.builder:latest"
+
+	// write embedded agentctl builder dockerfile to tmp folder
+	dir, err := os.MkdirTemp("", "agentctl-builder-*")
+	if err != nil {
+		return fmt.Errorf("can't create tmp folder for agentctl building due to %w", err)
+	}
+	defer os.RemoveAll(dir) // cleanup of files needed for docker build of agentctl
+	dockerFile := filepath.Join(dir, "agentctl.Dockerfile")
+	if err = os.WriteFile(dockerFile, embeddedAgentctlDockerfile, 0644); err != nil {
+		return fmt.Errorf("can't write agenctl builder dockerfile to tmp folder %s due to %w", dir, err)
+	}
+
+	// run agentctl build in docker
+	fmt.Fprintln(cli.Out(), "building agentctl in docker container...")
+	_, _, err = cli.Exec("docker build", []string{
+		"-f", dockerFile,
+		"--build-arg", fmt.Sprintf("COMMIT=\"%s\"", agentctlCommitVersion),
+		"-t", builderImage,
+		"--rm=true",
+		dir},
+		true)
+	if err != nil {
+		return fmt.Errorf("can't build agentctl due to builder docker build failure: %w", err)
+	}
+
+	// extract agentctl into external tools binary folder
+	stdout, _, err := cli.Exec("docker create", []string{builderImage}, false)
+	if err != nil {
+		return fmt.Errorf("can't extract agentctl from builder docker image due "+
+			"to container creation failure: %w", err)
+	}
+	containerId := fmt.Sprint(stdout)
+	_, _, err = cli.Exec("docker cp", []string{
+		fmt.Sprintf("%s:/go/bin/agentctl", containerId), "-", ">",
+		fmt.Sprintf("\"%s\"", cmdAgentCtl.installPath()),
+	}, false)
+	if err != nil {
+		return fmt.Errorf("can't extract agentctl from builder docker image due "+
+			"to docker cp failure: %w", err)
+	}
+	err = os.Chmod(cmdAgentCtl.installPath(), 0755)
+	if err != nil {
+		return fmt.Errorf("can't set for agentctl proper file permissions: %w", err)
+	}
+
+	// store the release version info
+	versionPath := cmdAgentCtl.installPath() + ".version"
+	if err := os.WriteFile(versionPath, []byte(agentctlCommitVersion), 0755); err != nil {
+		return fmt.Errorf("writing version to file failed: %w", err)
+	}
+
+	// cleanup
+	_, _, err = cli.Exec("docker rm", []string{containerId}, false)
+	if err != nil {
+		fmt.Fprintf(cli.Out(), "clean up of agentctl builder container failed (%v), continuing... ", err)
+	}
+	_, _, err = cli.Exec("docker rmi", []string{"-f", builderImage}, false)
+	if err != nil {
+		fmt.Fprintf(cli.Out(), "clean up of agentctl builder image failed (%v), continuing... ", err)
+	}
+
+	return nil
 }
 
 func unbindDevice(cli Cli, pci string, driver string) error {
