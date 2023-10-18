@@ -42,7 +42,8 @@ func (ee externalExe) validateUsability(cli *CLI) error {
 			if messageOverride, found := cli.customizations[MissingExternalToolMessageKey]; found {
 				return fmt.Errorf(messageOverride.(string), ee.installPath())
 			}
-			return fmt.Errorf("%s is not installed, try running `swctl install-tools`", ee.installPath())
+			return fmt.Errorf("%s is not installed, try running "+
+				"`swctl dependency install-tools`", ee.installPath())
 		}
 		return fmt.Errorf("existence of %s could not be determined due to %w", ee.installPath(), err)
 	}
