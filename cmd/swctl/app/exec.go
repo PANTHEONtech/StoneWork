@@ -142,7 +142,19 @@ type ExecResult struct {
 
 func (ec *externalCmd) exec(liveOutput bool) (*ExecResult, error) {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(ec.name, ec.args...)
+
+	// compute executable name that will define used filepath to executable file
+	executable := ec.name // just file name -> using PATH to resolve to absolute path
+	if ec.exe == cmdVppProbe || ec.exe == cmdAgentCtl {
+		// this is override of executed command to take the properly installed version of external command
+		// instead of whetever is in the linux PATH
+		executable = filepath.Join(binaryToolsInstallDir, string(ec.exe)) // absolute path to external tool
+		if err := ec.exe.validateUsability(ec.cli); err != nil {
+			return nil, fmt.Errorf("can't use external tool %s due to: %w", string(ec.exe), err)
+		}
+	}
+
+	cmd := exec.Command(executable, ec.args...)
 	if liveOutput {
 		stdoutMultiWriter := io.MultiWriter(&stdout, ec.cli.out)
 		stderrMultiWriter := io.MultiWriter(&stderr, ec.cli.err)
@@ -154,15 +166,6 @@ func (ec *externalCmd) exec(liveOutput bool) (*ExecResult, error) {
 	}
 
 	cmd.Env = ec.env
-
-	// override of executed command to take the properly installed version of external command
-	// instead of whetever is in the linux PATH
-	if ec.exe == cmdVppProbe || ec.exe == cmdAgentCtl {
-		cmd.Path = filepath.Join(binaryToolsInstallDir, string(ec.exe))
-		if err := ec.exe.validateUsability(ec.cli); err != nil {
-			return nil, fmt.Errorf("can't use external tool %s due to: %w", string(ec.exe), err)
-		}
-	}
 
 	now := time.Now()
 	logrus.Tracef("[%s] %q", color.Gray.Sprint("EXEC"), cmd.String())
