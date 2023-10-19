@@ -4,18 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/moby/term"
-	"github.com/sirupsen/logrus"
-
 	"go.pantheon.tech/stonework/client"
 )
-
-// TODO: to be refactored:
-//   - refactor the usage of external apps: agentctl, vpp-probe
 
 // Cli is a client API for CLI application.
 type Cli interface {
@@ -37,7 +31,6 @@ type CLI struct {
 	client client.API
 
 	entities      []Entity
-	vppProbePath  string
 	globalOptions *GlobalOptions
 
 	out *streams.Out
@@ -45,6 +38,9 @@ type CLI struct {
 	in  *streams.In
 
 	appName string
+	// customizations is the generic way how to pass CLI customizations without extending the API. It should
+	// be used for small modifications or changes that are not worthy to change the CLI API.
+	customizations map[string]interface{}
 }
 
 // NewCli returns a new CLI instance. It accepts CliOption for customization.
@@ -90,14 +86,6 @@ func (cli *CLI) Initialize(opts *GlobalOptions) (err error) {
 		return fmt.Errorf("loading embedded entity files failed: %w", err)
 	}
 
-	// get vpp-probe
-	vppProbePath, err := initVppProbe()
-	if err != nil {
-		logrus.Errorf("vpp-probe error: %v", err)
-	} else {
-		cli.vppProbePath = vppProbePath
-	}
-
 	return nil
 }
 
@@ -108,20 +96,6 @@ func initClient(opts ...client.Option) (*client.Client, error) {
 	}
 
 	return c, nil
-}
-
-func initVppProbe() (string, error) {
-	if os.Getenv(EnvVarVppProbeNoDownload) != "" {
-		logrus.Debugf("vpp-probe download disabled by user")
-		return "", fmt.Errorf("downloading disabled by user")
-	}
-
-	vppProbePath, err := downloadVppProbe()
-	if err != nil {
-		return "", fmt.Errorf("downloading vpp-probe failed: %w", err)
-	}
-
-	return vppProbePath, nil
 }
 
 func (cli *CLI) Client() client.API {

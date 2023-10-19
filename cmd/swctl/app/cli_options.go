@@ -64,3 +64,11 @@ func WithClient(c client.API) CliOption {
 		return nil
 	}
 }
+
+// WithCustomizations sets the generic customizations of the CLI.
+func WithCustomizations(customizations map[string]interface{}) CliOption {
+	return func(cli *CLI) error {
+		cli.customizations = customizations
+		return nil
+	}
+}

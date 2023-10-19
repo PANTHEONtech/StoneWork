@@ -3,8 +3,11 @@ package app
 import (
 	"bytes"
 	"fmt"
+	"golang.org/x/sys/unix"
 	"io"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -12,6 +15,10 @@ import (
 	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
+)
+
+const (
+	MissingExternalToolMessageKey = "MissingExternalTool"
 )
 
 type externalExe string
@@ -22,6 +29,36 @@ const (
 	cmdVppProbe externalExe = "vpp-probe"
 	cmdAgentCtl externalExe = "agentctl"
 )
+
+func (ee externalExe) installPath() string {
+	return filepath.Join(binaryToolsInstallDir, string(ee))
+}
+
+func (ee externalExe) validateUsability(cli *CLI) error {
+	// check for file existence
+	fileInfo, err := os.Stat(ee.installPath())
+	if err != nil {
+		if os.IsNotExist(err) {
+			if messageOverride, found := cli.customizations[MissingExternalToolMessageKey]; found {
+				return fmt.Errorf(messageOverride.(string), ee.installPath())
+			}
+			return fmt.Errorf("%s is not installed, try running "+
+				"`swctl dependency install-tools`", ee.installPath())
+		}
+		return fmt.Errorf("existence of %s could not be determined due to %w", ee.installPath(), err)
+	}
+
+	// check for execution permissions
+	if uint32(fileInfo.Mode()&0111) != 0111 {
+		// someone can execute the file (file owner or owner's group or someone else)
+		// -> need to check if this process can execute it with more expensive OS call
+		if unix.Access(ee.installPath(), unix.X_OK) != nil {
+			return fmt.Errorf("%s can't be executed by this process/user", ee.installPath())
+		}
+	}
+
+	return nil
+}
 
 type externalCmd struct {
 	cli   *CLI
@@ -84,9 +121,6 @@ func (ec *externalCmd) setMiscFlags() {
 		if ec.color {
 			ec.prependUniqueArg("--color", "always")
 		}
-		if ec.cli.vppProbePath != "" {
-			ec.name = ec.cli.vppProbePath
-		}
 	case cmdAgentCtl:
 		ec.prependUniqueArg("--host", ec.cli.client.GetHost(), "-H")
 	case cmdDocker:
@@ -109,7 +143,19 @@ type ExecResult struct {
 
 func (ec *externalCmd) exec(liveOutput bool) (*ExecResult, error) {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(ec.name, ec.args...)
+
+	// compute executable name that will define used filepath to executable file
+	executable := ec.name // just file name -> using PATH to resolve to absolute path
+	if ec.exe == cmdVppProbe || ec.exe == cmdAgentCtl {
+		// this is override of executed command to take the properly installed version of external command
+		// instead of whetever is in the linux PATH
+		executable = filepath.Join(binaryToolsInstallDir, string(ec.exe)) // absolute path to external tool
+		if err := ec.exe.validateUsability(ec.cli); err != nil {
+			return nil, fmt.Errorf("can't use external tool %s due to: %w", string(ec.exe), err)
+		}
+	}
+
+	cmd := exec.Command(executable, ec.args...)
 	if liveOutput {
 		stdoutMultiWriter := io.MultiWriter(&stdout, ec.cli.out)
 		stderrMultiWriter := io.MultiWriter(&stderr, ec.cli.err)

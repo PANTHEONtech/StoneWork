@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
 
@@ -37,8 +38,8 @@ func runTraceCmd(cli Cli, opts TraceCmdOptions) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(cli.Out(), stdout)
-	fmt.Fprintln(cli.Err(), stderr)
+	color.Fprintln(cli.Out(), stdout)
+	color.Fprintln(cli.Err(), stderr)
 
 	return nil
 }

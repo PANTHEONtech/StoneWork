@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
@@ -97,8 +95,8 @@ func newDeploymentConfig(cli Cli) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), stdout)
-			fmt.Fprintln(cli.Err(), stderr)
+			color.Fprintln(cli.Out(), stdout)
+			color.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}
@@ -116,8 +114,8 @@ func newDeploymentInfo(cli Cli) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), stdout)
-			fmt.Fprintln(cli.Err(), stderr)
+			color.Fprintln(cli.Out(), stdout)
+			color.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}
@@ -135,8 +133,8 @@ func newDeploymentImages(cli Cli) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), stdout)
-			fmt.Fprintln(cli.Err(), stderr)
+			color.Fprintln(cli.Out(), stdout)
+			color.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}
@@ -154,8 +152,8 @@ func newDeploymentServices(cli Cli) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cli.Out(), stdout)
-			fmt.Fprintln(cli.Err(), stderr)
+			color.Fprintln(cli.Out(), stdout)
+			color.Fprintln(cli.Err(), stderr)
 			return nil
 		},
 	}
