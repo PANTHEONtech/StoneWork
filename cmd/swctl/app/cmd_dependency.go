@@ -41,11 +41,11 @@ func exampleDependencyCmd(appName string) string {
   <white># Assign(up) or Unassign(down) interfaces to/from kernel</>
   $ <yellow>` + appName + ` dependency link <pci ...> up | down</>
 
-  <white># Print out startup config with dpdk interfaces</>
-  $ <yellow>` + appName + ` dependency get-startup [<interfacePci:StoneworkInterfaceName ...>]</>
+  <white># Print out VPP startup config with dpdk interfaces</>
+  $ <yellow>` + appName + ` dependency get-vpp-startup [<interfacePci:StoneworkInterfaceName ...>]</>
 
-  <white># Print out startup config with dpdk plugin disable</>
-  $ <yellow>` + appName + ` dependency get-startup</>
+  <white># Print out VPP startup config with dpdk plugin disable</>
+  $ <yellow>` + appName + ` dependency get-vpp-startup</>
 `
 }
 
@@ -87,7 +87,7 @@ func NewDependencyCmd(cli Cli) *cobra.Command {
 		dependencyStatusCmd(cli),
 		installHugePagesCmd(cli),
 		linkSetUpDownCmd(cli),
-		startupConfCmd(cli))
+		vppStartupConfCmd(cli))
 
 	return cmd
 }
@@ -336,8 +336,8 @@ func linkSetUpDownCmd(cli Cli) *cobra.Command {
 	return cmd
 }
 
-func startupConfCmd(cli Cli) *cobra.Command {
-	const startupconfig = `unix {
+func vppStartupConfCmd(cli Cli) *cobra.Command {
+	const vppStartupconfig = `unix {
 cli-no-pager
 cli-listen /run/vpp/cli.sock
 log /tmp/vpp.log
@@ -375,8 +375,8 @@ punt {
 }
 `
 	cmd := &cobra.Command{
-		Use:   "get-startup",
-		Short: "Print out startup config",
+		Use:   "get-vpp-startup",
+		Short: "Print out VPP startup config",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -397,7 +397,7 @@ punt {
 
 			}
 
-			t := template.Must(template.New("startupConf").Parse(startupconfig))
+			t := template.Must(template.New("vppStartupConf").Parse(vppStartupconfig))
 			err := t.Execute(cli.Out(), desiredInterfaces)
 			if err != nil {
 				return err
