@@ -43,20 +43,12 @@ func NewConfigCmd(cli Cli) *cobra.Command {
 	return cmd
 }
 
-type temporaryFlag struct {
-	// full name flag
-	key string
-	// full line
-	value string
-}
-
 func runConfigCmd(cli Cli, opts ConfigCmdOptions, cmd *cobra.Command) error {
-	var ParsedFlags []temporaryFlag
 	args := opts.Args
 
 	if slices.Contains(args, "--help") || slices.Contains(args, "-h") {
 		// add Local flags to stdout of agentctl
-		stdout, stderr, shouldReturn, returnValue := mergeHelpers(cmd, ParsedFlags, cli, args)
+		stdout, stderr, shouldReturn, returnValue := mergeHelpers(cmd, cli, args)
 		if shouldReturn {
 			return returnValue
 		}
@@ -87,29 +79,15 @@ func runConfigCmd(cli Cli, opts ConfigCmdOptions, cmd *cobra.Command) error {
 	return nil
 }
 
-func mergeHelpers(cmd *cobra.Command, ParsedFlags []temporaryFlag, cli Cli, args []string) (string, string, bool, error) {
+func mergeHelpers(cmd *cobra.Command, cli Cli, args []string) (string, string, bool, error) {
 	flags := cmd.LocalFlags()
 	bufb := flags.FlagUsages()
-
-	for _, v := range strings.Split(bufb, "\n") {
-		var flag temporaryFlag
-		ls := strings.ReplaceAll(v, ",", " ")
-		tokenized := strings.Fields(ls)
-		for _, token := range tokenized {
-			if strings.Contains(token, "--") {
-				flag.key = token
-				flag.value = v
-				break
-			}
-		}
-		ParsedFlags = append(ParsedFlags, flag)
-	}
-	_ = ParsedFlags
 
 	stdout, stderr, err := cli.Exec("agentctl config", args, false)
 	if err != nil {
 		return "", "", true, err
 	}
+	stdout = strings.ReplaceAll(stdout, "agentctl", "swctl")
 
 	globalsIndex := strings.Index(stdout, "GLOBALS:")
 	if globalsIndex != -1 {
