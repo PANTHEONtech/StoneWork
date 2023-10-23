@@ -491,6 +491,14 @@ func InstallDocker(cli Cli, dockerVersion string) error {
 		color.Fprintln(cli.Out(), out)
 
 	}
+	errorGroup := postInstall(cli)
+	if len(errorGroup) != 0 {
+		for _, err := range errorGroup {
+			color.Fprintln(cli.Out(), err)
+		}
+	} else {
+		color.Fprintln(cli.Out(), "Please log out and then log back in for the group membership changes to take effect or enter command \"newgrp docker\"")
+	}
 
 	return nil
 }
@@ -746,4 +754,43 @@ func isUserRoot() (bool, error) {
 	}
 	return true, nil
 
+}
+func postInstall(cli Cli) []error {
+	var errorGroup []error
+	sudoName, err := logname(cli)
+	fmt.Fprintln(cli.Out(), sudoName)
+	// handling case when linux has no login name (e.g. container)
+	if err == nil {
+		commands := []string{
+			"usermod -aG docker " + sudoName, // add user do docker group
+		}
+
+		for _, command := range commands {
+
+			out, stderr, err := cli.Exec(GetSudoPrefix(cli)+"bash -c", []string{command}, false)
+
+			if stderr != "" {
+				errorGroup = append(errorGroup, errors.New(command+": "+stderr))
+			}
+			if err != nil {
+				errorGroup = append(errorGroup, errors.New(err.Error()+"("+command+")"))
+			}
+			color.Fprintln(cli.Out(), out)
+		}
+	} else {
+		color.Fprintln(cli.Out(), err)
+	}
+
+	return errorGroup
+}
+
+func logname(cli Cli) (string, error) {
+	stdout, stderr, err := cli.Exec("logname", nil, false)
+	if stderr != "" {
+		return "", errors.New(stderr)
+	}
+	if err != nil {
+		return "", err
+	}
+	return stdout, err
 }
