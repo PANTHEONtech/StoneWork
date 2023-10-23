@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -315,7 +316,7 @@ func linkSetUpDownCmd(cli Cli) *cobra.Command {
 						return err
 					}
 					if stdout != "" {
-						_, _, err = cli.Exec("sudo ip link set "+stdout+" down", nil, false)
+						_, _, err = cli.Exec(GetSudoPrefix(cli)+"ip link set "+stdout+" down", nil, false)
 						if err != err {
 							return err
 						}
@@ -440,7 +441,7 @@ func ResizeHugePages(cli Cli, size uint) error {
 		color.Fprintln(cli.Out(), "Skipping hugepages")
 		return nil
 	}
-	_, _, err := cli.Exec(fmt.Sprintf("sudo sysctl -w vm.nr_hugepages=%d", size), nil, false)
+	_, _, err := cli.Exec(fmt.Sprintf(GetSudoPrefix(cli)+"sysctl -w vm.nr_hugepages=%d", size), nil, false)
 	if err != nil {
 		return err
 	}
@@ -458,29 +459,29 @@ func ResizeHugePages(cli Cli, size uint) error {
 }
 
 func InstallDocker(cli Cli, dockerVersion string) error {
-	commands := []string{"sudo apt-get update -y",
-		"sudo apt-get install ca-certificates curl gnupg -y",
-		"sudo install -m 0755 -d /etc/apt/keyrings",
-		"curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg --yes",
-		"sudo chmod a+r /etc/apt/keyrings/docker.gpg",
+	commands := []string{"apt-get update -y",
+		"apt-get install ca-certificates curl gnupg -y",
+		"install -m 0755 -d /etc/apt/keyrings",
+		"curl -fsSL https://download.docker.com/linux/ubuntu/gpg | " + GetSudoPrefix(cli) + "gpg --dearmor -o /etc/apt/keyrings/docker.gpg --yes",
+		"chmod a+r /etc/apt/keyrings/docker.gpg",
 		`echo \
 		"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
 		"$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
-		sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`,
-		"sudo apt-get update -y",
-		"echo \"uio_pci_generic\" | sudo tee -a /etc/modules",
+		` + GetSudoPrefix(cli) + `tee /etc/apt/sources.list.d/docker.list > /dev/null`,
+		"apt-get update -y",
+		"echo \"uio_pci_generic\" | " + GetSudoPrefix(cli) + "tee -a /etc/modules",
 	}
 	if dockerVersion == "default" {
-		cmd := `sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`
+		cmd := `apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin`
 		commands = append(commands, cmd)
 	} else {
-		cmd := `sudo apt-get install -y docker-ce=` + dockerVersion + ` docker-ce-cli=` + dockerVersion + ` containerd.io docker-buildx-plugin docker-compose-plugin`
+		cmd := `apt-get install -y docker-ce=` + dockerVersion + ` docker-ce-cli=` + dockerVersion + ` containerd.io docker-buildx-plugin docker-compose-plugin`
 		commands = append(commands, cmd)
 
 	}
 
 	for _, command := range commands {
-		out, stderr, err := cli.Exec("bash -c", []string{command}, false)
+		out, stderr, err := cli.Exec(GetSudoPrefix(cli)+"bash -c", []string{command}, false)
 		if stderr != "" {
 			return errors.New(command + ": " + stderr)
 		}
@@ -660,7 +661,7 @@ func unbindDevice(cli Cli, pci string, driver string) error {
 	//Mostly
 	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/unbind", driver)
 
-	_, stderr, err := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path}, false)
+	_, stderr, err := cli.Exec(GetSudoPrefix(cli)+"bash -c", []string{"echo \"" + pci + "\" > " + path}, false)
 	if stderr != "" {
 		return errors.New(stderr)
 	}
@@ -673,7 +674,7 @@ func bindDevice(cli Cli, pci string, driver string) error {
 
 	path := fmt.Sprintf("/sys/bus/pci/drivers/%s/bind", driver)
 
-	_, stderr, err := cli.Exec("sudo bash -c", []string{"echo \"" + pci + "\" > " + path}, false)
+	_, stderr, err := cli.Exec(GetSudoPrefix(cli)+"bash -c", []string{"echo \"" + pci + "\" > " + path}, false)
 	if stderr != "" {
 		return errors.New(stderr)
 	}
@@ -719,5 +720,30 @@ func DumpDevices(cli Cli) ([]NetworkInterface, error) {
 		nics = append(nics, nic)
 	}
 	return nics, nil
+
+}
+
+func GetSudoPrefix(cli Cli) string {
+	isRoot, err := isUserRoot()
+	if err != nil {
+		fmt.Fprintf(cli.Err(), "isUserRoot: %s", err)
+		return "sudo "
+	}
+	if isRoot {
+		return ""
+	}
+	return "sudo "
+
+}
+
+func isUserRoot() (bool, error) {
+	user, err := user.Current()
+	if err != nil {
+		return false, err
+	}
+	if user.Uid != "0" {
+		return false, nil
+	}
+	return true, nil
 
 }
