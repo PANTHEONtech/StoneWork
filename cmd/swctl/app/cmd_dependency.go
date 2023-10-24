@@ -145,7 +145,9 @@ func installExternalToolsCmd(cli Cli) *cobra.Command {
 				}
 				color.Fprintln(cli.Out(), "Installation of the agentctl tool was successful")
 			}
-			color.Fprintln(cli.Out(), color.Red.Sprintf("Please log out and then log back in for the group membership changes to take effect or enter command \"newgrp docker\""))
+			if !docker {
+				color.Fprintln(cli.Out(), color.Red.Sprintf("Please log out and then log back in for the group membership changes to take effect or enter command \"newgrp docker\""))
+			}
 			return nil
 		},
 	}
@@ -648,10 +650,10 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 
 	_, stderr, err := cli.Exec(GetSudoPrefix(cli)+"chmod", []string{"755", cmdAgentCtl.installPath()}, false)
 	if stderr != "" {
-		return fmt.Errorf("chmod error: %s", stderr)
+		return fmt.Errorf("InstallAgentCtl: chmod error: %s", stderr)
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("InstallAgentCtl: %s", err)
 	}
 
 	// store the release version info
@@ -756,9 +758,8 @@ func isUserRoot() (bool, error) {
 
 }
 func dockerPostInstall(cli Cli) error {
-	var err error
 	sudoName, err := logname(cli)
-	logrus.Tracef(sudoName)
+	logrus.Tracef("detected login name: %s\n", sudoName)
 	if err != nil {
 		// handling case when linux has no login name (e.g. container)
 		if strings.Contains(err.Error(), "no login") {
@@ -770,7 +771,7 @@ func dockerPostInstall(cli Cli) error {
 	command := fmt.Sprintf("usermod -aG docker %s", sudoName) // add user do docker group
 
 	out, stderr, err := cli.Exec(GetSudoPrefix(cli)+"bash -c", []string{command}, false)
-	logrus.Traceln(out)
+	logrus.Tracef("dockerPostInstall %s: %s\n", command, out)
 
 	if stderr != "" {
 		return errors.New(command + ": " + stderr)
