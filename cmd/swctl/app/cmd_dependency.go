@@ -14,6 +14,7 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/olekukonko/tablewriter"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -144,7 +145,7 @@ func installExternalToolsCmd(cli Cli) *cobra.Command {
 				}
 				color.Fprintln(cli.Out(), "Installation of the agentctl tool was successful")
 			}
-
+			color.Fprintln(cli.Out(), color.Red.Sprintf("Please log out and then log back in for the group membership changes to take effect or enter command \"newgrp docker\""))
 			return nil
 		},
 	}
@@ -491,13 +492,9 @@ func InstallDocker(cli Cli, dockerVersion string) error {
 		color.Fprintln(cli.Out(), out)
 
 	}
-	errorGroup := postInstall(cli)
-	if len(errorGroup) != 0 {
-		for _, err := range errorGroup {
-			color.Fprintln(cli.Out(), err)
-		}
-	} else {
-		color.Fprintln(cli.Out(), "Please log out and then log back in for the group membership changes to take effect or enter command \"newgrp docker\"")
+	err := dockerPostInstall(cli)
+	if err != nil {
+		return errors.New("dockerPostInstall:" + err.Error())
 	}
 
 	return nil
@@ -611,7 +608,7 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 
 	// run agentctl build in docker
 	color.Fprintln(cli.Out(), "building agentctl in docker container...")
-	_, _, err = cli.Exec("docker build", []string{
+	_, _, err = cli.Exec(GetSudoPrefix(cli)+"docker build", []string{
 		"-f", dockerFile,
 		"--build-arg", fmt.Sprintf("COMMIT=%s", agentctlCommitVersion),
 		"-t", builderImage,
@@ -629,19 +626,19 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 	}()
 
 	// extract agentctl into external tools binary folder
-	stdout, _, err := cli.Exec("docker create", []string{builderImage}, false)
+	stdout, _, err := cli.Exec(GetSudoPrefix(cli)+"docker create", []string{builderImage}, false)
 	if err != nil {
 		return fmt.Errorf("can't extract agentctl from builder docker image due "+
 			"to container creation failure: %w", err)
 	}
 	containerId := fmt.Sprint(stdout)
 	defer func() { // cleanup of docker container
-		_, _, err = cli.Exec("docker rm", []string{containerId}, false)
+		_, _, err = cli.Exec(GetSudoPrefix(cli)+"docker rm", []string{containerId}, false)
 		if err != nil {
 			color.Fprintf(cli.Out(), "clean up of agentctl builder container failed (%v), continuing... ", err)
 		}
 	}()
-	_, _, err = cli.Exec("docker cp", []string{
+	_, _, err = cli.Exec(GetSudoPrefix(cli)+"docker cp", []string{
 		fmt.Sprintf("%s:/go/bin/agentctl", containerId), cmdAgentCtl.installPath(),
 	}, false)
 	if err != nil {
@@ -649,9 +646,12 @@ func InstallAgentCtl(cli Cli, agentctlCommitVersion string) error {
 			"to docker cp failure: %w", err)
 	}
 
-	err = os.Chmod(cmdAgentCtl.installPath(), 0755)
+	_, stderr, err := cli.Exec(GetSudoPrefix(cli)+"chmod", []string{"755", cmdAgentCtl.installPath()}, false)
+	if stderr != "" {
+		return fmt.Errorf("chmod error: %s", stderr)
+	}
 	if err != nil {
-		return fmt.Errorf("can't set for agentctl proper file permissions: %w", err)
+		return err
 	}
 
 	// store the release version info
@@ -755,33 +755,30 @@ func isUserRoot() (bool, error) {
 	return true, nil
 
 }
-func postInstall(cli Cli) []error {
-	var errorGroup []error
+func dockerPostInstall(cli Cli) error {
+	var err error
 	sudoName, err := logname(cli)
-	fmt.Fprintln(cli.Out(), sudoName)
-	// handling case when linux has no login name (e.g. container)
-	if err == nil {
-		commands := []string{
-			"usermod -aG docker " + sudoName, // add user do docker group
+	logrus.Tracef(sudoName)
+	if err != nil {
+		// handling case when linux has no login name (e.g. container)
+		if strings.Contains(err.Error(), "no login") {
+			return nil
 		}
-
-		for _, command := range commands {
-
-			out, stderr, err := cli.Exec(GetSudoPrefix(cli)+"bash -c", []string{command}, false)
-
-			if stderr != "" {
-				errorGroup = append(errorGroup, errors.New(command+": "+stderr))
-			}
-			if err != nil {
-				errorGroup = append(errorGroup, errors.New(err.Error()+"("+command+")"))
-			}
-			color.Fprintln(cli.Out(), out)
-		}
-	} else {
-		color.Fprintln(cli.Out(), err)
+		return err
 	}
 
-	return errorGroup
+	command := fmt.Sprintf("usermod -aG docker %s", sudoName) // add user do docker group
+
+	out, stderr, err := cli.Exec(GetSudoPrefix(cli)+"bash -c", []string{command}, false)
+	logrus.Traceln(out)
+
+	if stderr != "" {
+		return errors.New(command + ": " + stderr)
+	}
+	if err != nil {
+		return errors.New(err.Error() + "(" + command + ")")
+	}
+	return err
 }
 
 func logname(cli Cli) (string, error) {
