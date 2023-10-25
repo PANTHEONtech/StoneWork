@@ -146,7 +146,7 @@ func installExternalToolsCmd(cli Cli) *cobra.Command {
 				color.Fprintln(cli.Out(), "Installation of the agentctl tool was successful")
 			}
 			if !docker {
-				color.Fprintln(cli.Out(), color.Red.Sprintf("Please log out and then log back in for the group membership changes to take effect or enter command \"newgrp docker\""))
+				color.Fprintln(cli.Out(), color.Red.Sprintf("Please restart for the docker group membership changes to take effect"))
 			}
 			return nil
 		},
