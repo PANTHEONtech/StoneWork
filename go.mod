@@ -31,7 +31,7 @@ require (
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20230824082901-356dce1f1754
 	go.ligato.io/vpp-agent/v3 v3.5.0-alpha.0.20231009134600-723f8db0bf7a
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
-	golang.org/x/sys v0.13.0
+	golang.org/x/sys v0.14.0
 	google.golang.org/grpc v1.56.2
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v3 v3.0.1
