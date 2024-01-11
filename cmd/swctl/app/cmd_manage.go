@@ -552,6 +552,13 @@ var funcMap = map[string]any{
 	"trimprefix": func(s, prefix string) string {
 		return strings.TrimPrefix(s, prefix)
 	},
+	"loop": func(from, to int) []int {
+		var items []int
+		for i := from; i <= to; i++ {
+			items = append(items, i)
+		}
+		return items
+	},
 }
 
 func renderTmpl(t string, data any) (string, error) {
@@ -565,12 +572,36 @@ func renderTmpl(t string, data any) (string, error) {
 	return b.String(), nil
 }
 
-func renderEntityTemplate(cfg string, evars map[string]string) (string, error) {
-	tmpl, err := interpolateStr(cfg, evars)
+// interpolateStrIgnoringNonInputVars is variation of interpolateStr function that does not erase the variables
+// that are not present in inputVars and have prefix NonInputVariablePrefix. With interpolateStr function, these
+// variables are replaced by empty string as they are not included in inputVars and effectively got erased from
+// output configuration.
+func interpolateStrIgnoringNonInputVars(cfg string, inputVars map[string]string) (string, error) {
+	// create new variable map (allVars) that contains also interpolateStr-function-erasable variables and
+	// make identity mapping for them
+	cfgIdentifiers, err := interpolate.Identifiers(cfg)
 	if err != nil {
 		return "", err
 	}
-	config, err := renderTmpl(tmpl, evars)
+	allVars := make(map[string]string)
+	for _, cfgIdentifier := range cfgIdentifiers {
+		if strings.HasPrefix(strings.ToLower(cfgIdentifier), NonInputVariablePrefix) {
+			allVars[cfgIdentifier] = "$" + cfgIdentifier // counter erasure in upcoming interpolateStr call
+		} else {
+			allVars[cfgIdentifier] = inputVars[cfgIdentifier]
+		}
+	}
+
+	// using updated variable map with added identity mappings and do the interpolation
+	return interpolateStr(cfg, allVars)
+}
+
+func renderEntityTemplate(cfg string, inputVars map[string]string) (string, error) {
+	tmpl, err := interpolateStrIgnoringNonInputVars(cfg, inputVars)
+	if err != nil {
+		return "", err
+	}
+	config, err := renderTmpl(tmpl, inputVars)
 	if err != nil {
 		return "", err
 	}

@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/buildkite/interpolate"
 	"github.com/sirupsen/logrus"
@@ -10,7 +11,8 @@ import (
 )
 
 const (
-	defaultEntityFile = "entities.yaml"
+	defaultEntityFile      = "entities.yaml"
+	NonInputVariablePrefix = "noninput_" // used for go templating variables that are not Entity input variables, i.e. temporal range loop variable
 )
 
 // EntityFile is a file containing entities loaded during initialization.
@@ -188,7 +190,8 @@ func validateEntity(entity *Entity) error {
 			}
 			continue
 		}
-		if _, ok := vars[ident]; !ok {
+
+		if _, ok := vars[ident]; !ok && !strings.HasPrefix(ident, NonInputVariablePrefix) {
 			return fmt.Errorf("undefined var reference %v found in config", ident)
 		}
 	}
