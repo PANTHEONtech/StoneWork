@@ -88,6 +88,8 @@ $ virt-install \
 --graphics none \
 --console pty,target_type=serial
 ```
+(NOTE: Stonework repository moved to usage of ubuntu 22.04 for docker/tooling/development)
+(TODO: retest this guide with newer ubuntu)
 
 2. List all VMs:
 ```

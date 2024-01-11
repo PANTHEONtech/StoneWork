@@ -19,7 +19,7 @@ ARG VPPAGENT_IMAGE=ligato/vpp-agent:v3.4.0
 
 FROM $VPP_IMAGE as vpp
 FROM $VPPAGENT_IMAGE as vppagent
-FROM ubuntu:20.04 as base
+FROM ubuntu:22.04 as base
 
 RUN apt-get update && apt-get install -y \
 		git \
