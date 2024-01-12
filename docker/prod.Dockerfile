@@ -19,7 +19,7 @@ ARG DEV_IMAGE=stonework-dev:23.06
 
 FROM $VPP_IMAGE as vpp
 FROM $DEV_IMAGE as dev
-FROM ubuntu:20.04 as base
+FROM ubuntu:22.04 as base
 
 # utils just for testing - to be removed
 RUN set -ex; \

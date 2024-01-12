@@ -7,7 +7,7 @@ StoneWork introduces a **complete routing platform**, based on VPP, running well
 
 Dependencies
 ============
-StoneWork requires an **Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **20.04 (Focal Fossa)**.
+StoneWork requires an **Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **22.04 (Jammy Jellyfish)**.
 
 Other required dependencies of StoneWork are Docker and Docker Compose plugin.
 

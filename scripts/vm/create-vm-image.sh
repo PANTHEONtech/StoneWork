@@ -24,6 +24,7 @@ FILENAME=stonework.qcow2
 VM_IMAGE=$BUILD/$FILENAME
 BASE_OS=ubuntu-20.04
 # NOTE: to list possibilities for BASE_OS use: virt-builder --list
+# FIXME could not upgrade to ubuntu 22.04 as the rest of the repo because given ubuntu is missing in the birt-builder listing
 
 rm -rf $BUILD
 mkdir -p $BUILD

@@ -148,7 +148,7 @@ documentation (`*.md`) and some examples to get you started.
 
 #### Requirements
 
-1. StoneWork requires an **Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **20.04 (Focal Fossa)**.
+1. StoneWork requires an **Ubuntu VM** or a **bare-metal server** running Ubuntu, preferably version **22.04 (Jammy Jellyfish)**.
 
 
 2. Next, Docker and Docker Compose plugin must be installed.
