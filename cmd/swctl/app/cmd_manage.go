@@ -295,6 +295,14 @@ func runManageCmd(cli Cli, opts ManageOptions, args []string) error {
 		}
 
 		for _, f := range entity.Files {
+			useFile, err := canUseExtraFile(f, evars)
+			if err != nil {
+				return fmt.Errorf("failed to evaluate When statement (%v) for file (%v): %w", f.When, f.Name, err)
+			}
+			if !useFile {
+				continue
+			}
+
 			rawData, err := renderEntityTemplate(f.Content, vars)
 			if err != nil {
 				return fmt.Errorf("failed to render file (%v): %w", f.Name, err)
@@ -629,25 +637,14 @@ func prepareVarValues(e Entity, evars map[string]string) (map[string]string, err
 
 func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string) (map[string]string, error) {
 	for _, v := range e.Vars {
-		if v.When != "" {
-			tmpl, err := interpolateStr(v.When, evars)
-			if err != nil {
-				return nil, err
-			}
-			res, err := renderTmpl(tmpl, evars)
-			if err != nil {
-				return nil, err
-			}
-			ok, err := strconv.ParseBool(res)
-			if err != nil {
-				logrus.Tracef("parse bool err: %v", err)
-				continue
-			}
-			logrus.Tracef("when %s returned %q (%v)", v.Name, res, ok)
-			if !ok {
-				continue
-			}
+		useValue, err := canUseValue(v, evars)
+		if err != nil {
+			return nil, err
 		}
+		if !useValue {
+			continue
+		}
+
 		vv := v.Value
 		if ov, ok := evars[v.Name]; ok {
 			vv = ov
@@ -682,6 +679,35 @@ func prepareVarValuesInteractive(w io.Writer, e Entity, evars map[string]string)
 		color.Fprintln(w)
 	}
 	return evars, nil
+}
+
+func canUseValue(value EntityVar, evars map[string]string) (bool, error) {
+	return isWhenTrue(value.When, evars, value.Name)
+}
+
+func canUseExtraFile(extraFile ExtraFile, evars map[string]string) (bool, error) {
+	return isWhenTrue(extraFile.When, evars, extraFile.Name)
+}
+
+func isWhenTrue(whenStatement string, evars map[string]string, name string) (bool, error) {
+	if whenStatement == "" {
+		return true, nil // by default, the value/file/... should be used
+	}
+	tmpl, err := interpolateStr(whenStatement, evars)
+	if err != nil {
+		return false, err
+	}
+	res, err := renderTmpl(tmpl, evars)
+	if err != nil {
+		return false, err
+	}
+	ok, err := strconv.ParseBool(res)
+	if err != nil {
+		logrus.Tracef("parse bool err: %v", err)
+		return false, nil
+	}
+	logrus.Tracef("when for %s returned %q (%v)", name, res, ok)
+	return ok, nil
 }
 
 func promptUserValue(label string, defval string) (string, error) {

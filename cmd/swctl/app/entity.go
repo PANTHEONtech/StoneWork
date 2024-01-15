@@ -123,6 +123,7 @@ type Entity struct {
 type ExtraFile struct {
 	Name    string `json:"name"`
 	Content string `json:"content"`
+	When    string `json:"when"`
 }
 
 func (e Entity) GetName() string {
