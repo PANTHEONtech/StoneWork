@@ -1,5 +1,11 @@
 # StoneWork
 
+> **⚠️ StoneWork is discontinued.**
+>
+> As of 2026-07-17 this repository is archived and read-only. No further releases, issues, or pull requests will be accepted.
+>
+> [PANTHEON.tech](https://pantheon.tech/services/) provides custom services on top of SONiC and FD.io. Please contact us for more details.
+
  [![CI](https://github.com/PANTHEONtech/StoneWork/actions/workflows/ci.yml/badge.svg)](https://github.com/PANTHEONtech/StoneWork/actions/workflows/ci.yml)
  [![stable](https://img.shields.io/github/release/PANTHEONtech/StoneWork.svg?label=latest%20release&logo=github)](https://github.com/PANTHEONtech/StoneWork/releases/latest)
  [![ligato/vpp-agent](https://img.shields.io/badge/image-ghcr.io/pantheontech/stonework-blue.svg?logo=docker&logoColor=white)](https://github.com/PANTHEONtech/StoneWork/pkgs/container/stonework)
